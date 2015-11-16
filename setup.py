@@ -52,7 +52,6 @@ setup(name='mbed-flasher',
       entry_points={
         "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
-      install_requires=["PrettyTable>=0.7.2",
-        "mbed-ls",
-        "colorama>=0.3,<0.4",
-       ])
+      install_requires=[
+        "mbed-ls"
+      ])

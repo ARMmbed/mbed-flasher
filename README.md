@@ -2,6 +2,9 @@
 mbed-flasher is simple python tool to flash single or multiple mbed boards.
 It provide simple Command Line Interface and python API for flashing.
 
+## Installation
+
+`python setup.py install`
 
 ## Usage with CLI
 
