@@ -93,13 +93,17 @@ class Flash(object):
             self.logger.error(err)
             return -3
 
+        if not platform_name:
+            platform_name = target_mbed['platform_name']
+        if not platform_name in self.SUPPORTED_TARGETS:
+            raise NotImplementedError("Platform '%s' is not supproted by mbed-flasher" % platform_name )
 
         #if not isinstance(build, Build):
         #    build = Build.init(ref=build)
-        target_mbed.update(self.SUPPORTED_TARGETS[target_mbed['platform_name']])
+        target_mbed.update(self.SUPPORTED_TARGETS[platform_name])
         self.logger.debug("Flashing: %s",target_mbed["target_id"])
 
-        flasher = self.__get_flasher(target_mbed['platform_name'])
+        flasher = self.__get_flasher(platform_name)
         try:
             retcode = flasher.flash(source=build, target=target_mbed)
         except KeyboardInterrupt:

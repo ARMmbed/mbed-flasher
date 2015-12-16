@@ -67,3 +67,4 @@ html/
 latex/
 mbed_flasher/logs/
 logs/
+*.hex
