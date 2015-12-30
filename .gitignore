@@ -53,5 +53,18 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# Dia temp diagrams
+doc/*.dia~
+
 # PyBuilder
 target/
+
+# PyCharm
+*.idea
+
+# Doxygen
+html/
+latex/
+mbed_flasher/logs/
+logs/
+*.hex
