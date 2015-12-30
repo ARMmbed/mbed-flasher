@@ -81,7 +81,12 @@ class Flash(object):
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
-        if device_mapping_table is None:
+        if device_mapping_table:
+            if isinstance(device_mapping_table, dict):
+                device_mapping_table = [device_mapping_table]
+            elif not isinstance(device_mapping_table, list):
+                raise SystemError('device_mapping_table wasnt list or dictionary')
+        else:
             device_mapping_table = self.get_available_device_mapping()
 
         try:
