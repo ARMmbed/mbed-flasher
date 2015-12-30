@@ -1,7 +1,7 @@
 from FlasherMbed import FlasherMbed
-from FlasherAtprogram import FlasherAtprogram
+from FlasherAtmelAt import FlasherAtmelAt
 
 AvailableFlashers = [
     FlasherMbed,
-    FlasherAtprogram
+    FlasherAtmelAt
 ]

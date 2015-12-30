@@ -25,14 +25,14 @@ import subprocess
 import logging
 import tempfile
 
-class FlasherAtprogram(object):
+class FlasherAtmelAt(object):
     name = "Atprogram"
     exe = None
     supported_targets=["SAM4E"]
     logger = logging
 
     def __init__(self, exe=None):
-        FlasherAtprogram.set_atprogram_exe(exe)
+        FlasherAtmelAt.set_atprogram_exe(exe)
         self.logger = logging.getLogger('mbed-flasher')
 
     @staticmethod
@@ -55,28 +55,28 @@ class FlasherAtprogram(object):
             alternatives = [
                 "C:/Program Files (x86)/Atmel/Atmel Studio 6.2/atbackend/atprogram.exe"
             ]
-            FlasherAtprogram.exe = FlasherAtprogram.lookupExe(alternatives)
-            if FlasherAtprogram.exe is None:
-                FlasherAtprogram.exe = "atprogram.exe" # assume that atprogram is in path
+            FlasherAtmelAt.exe = FlasherAtmelAt.lookupExe(alternatives)
+            if FlasherAtmelAt.exe is None:
+                FlasherAtmelAt.exe = "atprogram.exe" # assume that atprogram is in path
         else:
-            FlasherAtprogram.exe = exe
+            FlasherAtmelAt.exe = exe
 
-        FlasherAtprogram.logger.debug("atprogram location: %s", FlasherAtprogram.exe)
+        FlasherAtmelAt.logger.debug("atprogram location: %s", FlasherAtmelAt.exe)
 
 
     @staticmethod
     def get_available_devices():
         """list available devices
         """
-        FlasherAtprogram.set_atprogram_exe(FlasherAtprogram.exe)
-        cmd = FlasherAtprogram.exe + " list"
+        FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
+        cmd = FlasherAtmelAt.exe + " list"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
         stdout, stderr = proc.communicate()
         connected_devices = []
         if proc.returncode == 0 :
             lines = stdout.splitlines()
             for line in lines:
-                ret = FlasherAtprogram.find(line, 'edbg\W+(.*)')
+                ret = FlasherAtmelAt.find(line, 'edbg\W+(.*)')
                 if ret:
                     connected_devices.append({
                         "platform_name": "SAM4E",
@@ -85,7 +85,7 @@ class FlasherAtprogram(object):
                         "target_id": ret,
                         "baud_rate": 460800
                     })
-        FlasherAtprogram.logger.debug("Connected atprogrammer supported devices: %s", connected_devices)
+        FlasherAtmelAt.logger.debug("Connected atprogrammer supported devices: %s", connected_devices)
         return connected_devices
 
     # actual flash procedure
@@ -104,8 +104,8 @@ class FlasherAtprogram(object):
              cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+temp.name
              proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
              stdout, stderr = proc.communicate()
-             FlasherAtprogram.logger.debug(stdout)
-             FlasherAtprogram.logger.debug(stderr)
+             FlasherAtmelAt.logger.debug(stdout)
+             FlasherAtmelAt.logger.debug(stderr)
              return proc.returncode
 
     @staticmethod

@@ -91,11 +91,11 @@ def cmd_parser_setup():
                         action="store_true",
                         help='Prints list of supported flashers')
 
-    parser.add_argument('-t', '--target_id',
+    parser.add_argument('--tid', '--target_id',
                         dest='target_id', help='Target to be flash')
     
-    parser.add_argument('-p', '--platform_name',
-                        dest='platform_name', help='Platform name to be flashed')
+    parser.add_argument('-t', '--platform_name',
+                        dest='platform_name', help='Platform/Target name to be flashed')
 
     args = parser.parse_args()
     return args
