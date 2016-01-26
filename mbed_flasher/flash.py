@@ -17,7 +17,8 @@ Jussi Vatjus-Anttila <jussi.vatjus-anttila@arm.com>
 
 import logging
 import subprocess
-
+from Queue import Queue
+import threading
 from os.path import join, abspath, walk
 from time import sleep
 
@@ -70,7 +71,42 @@ class Flash(object):
 
         raise Exception("oh nou")
 
-    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None):
+    def flash_multiple(self, build, platform_name, device_mapping_table=None):
+        device_mapping_table = self.get_available_device_mapping()
+        device_count = len(device_mapping_table)
+        if device_count == 0:
+            self.logger.error('no devices to flash')
+            return -3
+        self.logger.debug(device_mapping_table)
+        ans_q = Queue()
+        parameters = [(build, target['target_id'], None, device_mapping_table, ans_q) for target in device_mapping_table]
+        threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
+
+        for t in threads:
+            t.start()
+
+        passes = []
+        retcodes = 0
+        for t in threads:
+            t.join()
+
+        results = [ ans_q.get() for _ in threads ]
+        for retcode in results:
+            retcodes += retcode
+            if retcode == 0:
+                passes.append(True)
+            else:
+                passes.append(False)
+
+        i=1
+        for ok in passes:
+            if ok: self.logger.debug("dev#%i -> SUCCESS" % i)
+            else:  self.logger.warning("dev#%i -> FAIL :(" % i)
+            i += 1
+
+        return retcodes
+
+    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, ret_q=None):
         """Flash (mbed) device
         :param build:  Build -object or string (file-path)
         :param target_id: target_id
@@ -80,6 +116,9 @@ class Flash(object):
 
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
+
+        if target_id == '*':
+            return self.flash_multiple(build, platform_name, device_mapping_table)
 
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
@@ -96,6 +135,8 @@ class Flash(object):
                 target_mbed = self.__find_by_platform_name(platform_name, device_mapping_table)
         except KeyError as err:
             self.logger.error(err)
+            if ret_q:
+                ret_q.put(-3)
             return -3
 
         if not platform_name:
@@ -113,9 +154,13 @@ class Flash(object):
             retcode = flasher.flash(source=build, target=target_mbed)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
+            if ret_q:
+                ret_q.put(-1)
             return -1
         except SystemExit:
             self.logger.error("Aborted by SystemExit event")
+            if ret_q:
+                ret_q.put(-2)
             return -2
 
         if retcode == 0:
@@ -125,6 +170,8 @@ class Flash(object):
             self.logger.info("flash ready")
         else:
             self.logger.info("flash fails")
+        if ret_q:
+            ret_q.put(retcode)
         return retcode
 
     def __find_by_target_id(self, target_id, ls):
