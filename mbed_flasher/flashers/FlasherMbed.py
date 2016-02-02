@@ -18,6 +18,7 @@ Jussi Vatjus-Anttila <jussi.vatjus-anttila@arm.com>
 import json
 import logging
 import sys
+import six
 from os.path import join, abspath, walk, dirname
 
 class FlasherMbed(object):
@@ -49,7 +50,7 @@ class FlasherMbed(object):
         binary_type = target['properties']['binary_type']
         destination=abspath(join(mount_point, 'image'+binary_type))
 
-        if isinstance(source, str):
+        if isinstance(source, six.string_types):
             self.logger.debug('read source file')
             source = open(source, 'rb').read()
 
