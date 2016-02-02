@@ -62,40 +62,40 @@ def cmd_parser_setup():
     parser.add_argument('-v', '--verbose',
                         dest="verbose",
                         action="count",
-                        help="verbose level... repeat up to three times.")
+                        help="Verbose level... repeat up to three times.")
 
     parser.add_argument('-s', '--silent',
                         dest="silent", default=False,
                         action="store_true",
-                        help="Silent - only errors will be printed")
+                        help="Silent - only errors will be printed.")
 
     parser.add_argument('--version',
                         dest='version',
                         action="store_true",
-                        help='Prints package version and exits')
+                        help='Prints the package version and exits.')
 
 
     parser.add_argument('-i', '--input',
-                        dest='input', help='Binary input to be flash')
+                        dest='input', help='Binary input to be flash.')
 
     parser.add_argument('-m', '--mapping',
-                        dest='device_mapping_table', help='Device mapping table')
+                        dest='device_mapping_table', help='Device mapping table.')
 
     parser.add_argument('-l', '--list',
                         dest='list',
                         action="store_true",
-                        help='Prints list of supported platforms')
+                        help='Prints a list of supported platforms.')
 
     parser.add_argument('--flashers',
                         dest='flashers',
                         action="store_true",
-                        help='Prints list of supported flashers')
+                        help='Prints a list of supported flashers.')
 
     parser.add_argument('--tid', '--target_id',
-                        dest='target_id', help='Target to be flash')
+                        dest='target_id', help='Target to be flashed')
     
     parser.add_argument('-t', '--platform_name',
-                        dest='platform_name', help='Platform/Target name to be flashed')
+                        dest='platform_name', help='Platform/target name to be flashed')
 
     args = parser.parse_args()
     return args
