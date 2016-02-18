@@ -1,22 +1,40 @@
-# mbed-flasher
-mbed-flasher is simple python tool to flash single or multiple mbed boards.
-It provide simple Command Line Interface and python API for flashing.
+# mbed-flasher 
+
+## Description
+
+mbed-flasher is a simple Python-based tool for flashing single or multiple boards.
+It provides a simple Command Line Interface and Python API for flashing. 
+
+The purpose is to provide a clean and simple library that is easy to integrate to other tools
+and that can be easily developed further to support flashing in mbed OS and other platforms.
+Developers can also use it as a standalone tool for flashing their development boards.
+
 
 ## Installation
 
+To install the flasher, use:
+
 `python setup.py install`
+
+To install the flasher in development mode:
+
+`python setup.py develop`
 
 ## Usage with CLI
 
-Flash single board by id:
+To flash a single board by ID:
 
 `mbedflash -i myfile.bin --tid 123456`
 
-Flash single board by platform_name:
+To flash a single board by platform_name:
 
 `mbedflash -i myfile.bin -t K64F`
 
-## Usage with python API
+To flash all connected boards by platform_name:
+
+`mbedflash -i myfile.bin -t K64F --tid *`
+
+## Usage with Python API
 
 ```python
 from mbed_flasher import Flash
@@ -37,24 +55,35 @@ usage: mbedflash-script.py [-h] [-v] [-s] [--version] [-i INPUT]
                            [--tid TARGET_ID] [-t PLATFORM_NAME]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -v, --verbose         verbose level... repeat up to three times.
-  -s, --silent          Silent - only errors will be printed
-  --version             Prints package version and exits
+  -h, --help            Show this help message and exit.
+  -v, --verbose         Verbose level... repeat up to three times.
+  -s, --silent          Silent - only errors will be printed.
+  --version             Prints the package version and exits.
   -i INPUT, --input INPUT
-                        Binary input to be flash
+                        Binary input to be flashed.
   -m DEVICE_MAPPING_TABLE, --mapping DEVICE_MAPPING_TABLE
-                        Device mapping table
-  -l, --list            Prints list of supported platforms
-  --flashers            Prints list of supported flashers
+                        Device mapping table.
+  -l, --list            Prints a list of supported platforms.
+  --flashers            Prints s list of supported flashers.
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be flash
+                        Target to be flashed.
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
-                        Platform/Target name to be flashed
+                        Platform/target name to be flashed.
 
 ```
 
-## Releasing
+## Creating the installer
 
-### Windows installer
+**For Windows:**
+```
+python setup.py build
+python setup.py bdist_msi
+```
 
+**For Linux:**
+```
+python setup.py build
+//for rpm package
+python setup.py bdist_rpm
+```
+Read [more on installers](https://docs.python.org/2/distutils/builtdist.html).
