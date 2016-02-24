@@ -24,6 +24,7 @@ import re
 import subprocess
 import logging
 import tempfile
+import platform
 
 class FlasherAtmelAt(object):
     name = "Atprogram"
