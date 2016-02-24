@@ -24,6 +24,7 @@ import re
 import subprocess
 import logging
 import tempfile
+import platform
 
 class FlasherAtmelAt(object):
     name = "Atprogram"
@@ -68,6 +69,8 @@ class FlasherAtmelAt(object):
     def get_available_devices():
         """list available devices
         """
+        if platform.system() != 'Windows':
+            return []
         FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
         cmd = FlasherAtmelAt.exe + " list"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
