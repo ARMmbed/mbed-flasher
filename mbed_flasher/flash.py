@@ -21,6 +21,7 @@ from Queue import Queue
 import threading
 from os.path import join, abspath, walk
 from time import sleep
+from enhancedserial import EnhancedSerial
 
 class Flash(object):
     """ Flash object, which manage flashing single device
@@ -164,10 +165,26 @@ class Flash(object):
             return -2
 
         if retcode == 0:
-            waitTime = target_mbed['properties']['program_cycle_s']
-            self.logger.info("waiting for %.1f second" % waitTime)
-            sleep(waitTime)
+            self.logger.info("waiting for 10 second")
+            sleep(10)
             self.logger.info("flash ready")
+
+            self.port = False
+            self.port = EnhancedSerial(target_mbed["serial_port"])
+            self.port.baudrate = 115200
+            self.port.timeout = 0.01
+            self.port.xonxoff = False
+            self.port.rtscts = False
+            self.port.flushInput()
+            self.port.flushOutput()
+            
+            if self.port:
+                self.logger.info("sendBreak to device to reboot")
+                result = self.port.safe_sendBreak()
+                if result:
+                    self.logger.info("reset completed")
+                else:
+                    self.logger.info("reset failed")
         else:
             self.logger.info("flash fails")
         if ret_q:
