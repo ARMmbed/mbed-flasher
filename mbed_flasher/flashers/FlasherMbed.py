@@ -20,6 +20,7 @@ import logging
 import sys
 import six
 from os.path import join, abspath, walk, dirname
+import os
 
 class FlasherMbed(object):
     name = "Mbed"
@@ -57,9 +58,9 @@ class FlasherMbed(object):
         self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(source))
 
         try:
-            new_file=open(destination,'wb')
-            new_file.write(source)
-            new_file.close()
+            new_file=os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
+            os.write(new_file, source)
+            os.close(new_file)
             self.logger.debug("ready")
             return 0
         except IOError as err:
