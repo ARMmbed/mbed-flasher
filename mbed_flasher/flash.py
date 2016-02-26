@@ -170,21 +170,22 @@ class Flash(object):
             self.logger.info("flash ready")
 
             self.port = False
-            self.port = EnhancedSerial(target_mbed["serial_port"])
-            self.port.baudrate = 115200
-            self.port.timeout = 0.01
-            self.port.xonxoff = False
-            self.port.rtscts = False
-            self.port.flushInput()
-            self.port.flushOutput()
-            
-            if self.port:
-                self.logger.info("sendBreak to device to reboot")
-                result = self.port.safe_sendBreak()
-                if result:
-                    self.logger.info("reset completed")
-                else:
-                    self.logger.info("reset failed")
+            if 'serial_port' in target_mbed:
+                self.port = EnhancedSerial(target_mbed["serial_port"])
+                self.port.baudrate = 115200
+                self.port.timeout = 0.01
+                self.port.xonxoff = False
+                self.port.rtscts = False
+                self.port.flushInput()
+                self.port.flushOutput()
+                
+                if self.port:
+                    self.logger.info("sendBreak to device to reboot")
+                    result = self.port.safe_sendBreak()
+                    if result:
+                        self.logger.info("reset completed")
+                    else:
+                        self.logger.info("reset failed")
         else:
             self.logger.info("flash fails")
         if ret_q:
