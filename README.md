@@ -32,7 +32,7 @@ To flash a single board by platform_name:
 
 To flash all connected boards by platform_name:
 
-`mbedflash -i myfile.bin -t K64F --tid *`
+`mbedflash -i myfile.bin -t K64F --tid ALL`
 
 ## Usage with Python API
 
