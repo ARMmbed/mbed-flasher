@@ -19,7 +19,7 @@ import logging
 import subprocess
 from Queue import Queue
 import threading
-from os.path import join, abspath, walk
+from os.path import join, abspath, walk, isfile
 from time import sleep
 from enhancedserial import EnhancedSerial
 
@@ -118,7 +118,7 @@ class Flash(object):
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
-        if target_id == '*':
+        if target_id == 'ALL':
             return self.flash_multiple(build, platform_name, device_mapping_table)
 
         if device_mapping_table:
@@ -128,7 +128,7 @@ class Flash(object):
                 raise SystemError('device_mapping_table wasnt list or dictionary')
         else:
             device_mapping_table = self.get_available_device_mapping()
-
+        
         try:
             if not target_id is None:
                 target_mbed = self.__find_by_target_id(target_id, device_mapping_table)
@@ -186,6 +186,15 @@ class Flash(object):
                         self.logger.info("reset completed")
                     else:
                         self.logger.info("reset failed")
+            self.logger.info("waiting 10 seconds before flash verification")
+            sleep(10)
+            #verify flashing went as planned
+            if 'mount_point' in target_mbed:
+                if isfile(join(target_mbed['mount_point'], 'FAIL.TXT')):
+                    with open(join(target_mbed['mount_point'], 'FAIL.TXT'), 'r') as fault:
+                        fault = fault.read().strip()
+                    self.logger.error("Flashing failed: %s. tid=%s" % (fault, target_mbed["target_id"]))
+                    retcode = -4
         else:
             self.logger.info("flash fails")
         if ret_q:
