@@ -50,9 +50,9 @@ flasher.flash( source='myfile.bin', platform_name='K64F')
 ## Help
 ```
 /> mbedflash --help
-usage: mbedflash-script.py [-h] [-v] [-s] [--version] [-i INPUT]
-                           [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
-                           [--tid TARGET_ID] [-t PLATFORM_NAME]
+usage: mbedflash [-h] [-v] [-s] [--version] [-i INPUT]
+                 [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
+                 [--tid TARGET_ID] [-t PLATFORM_NAME]
 
 optional arguments:
   -h, --help            Show this help message and exit.

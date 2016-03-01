@@ -68,6 +68,8 @@ class FlasherAtmelAt(object):
     def get_available_devices():
         """list available devices
         """
+        if not FlasherAtmelAt.exe:
+            return []
         FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
         cmd = FlasherAtmelAt.exe + " list"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )

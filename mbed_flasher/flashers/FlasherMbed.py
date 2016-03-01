@@ -19,8 +19,11 @@ import json
 import logging
 import sys
 import six
-from os.path import join, abspath, walk, dirname
+from os.path import join, abspath, dirname
+from shutil import copy
 import os
+import platform
+
 
 class FlasherMbed(object):
     name = "Mbed"
@@ -52,17 +55,20 @@ class FlasherMbed(object):
         destination=abspath(join(mount_point, 'image'+binary_type))
 
         if isinstance(source, six.string_types):
-            self.logger.debug('read source file')
-            source = open(source, 'rb').read()
+            try:
+                if platform.system() == 'Windows':
+                    self.logger.debug("copying file")
+                    copy(source, destination)
+                else:
+                    self.logger.debug('read source file')
+                    source = open(source, 'rb').read()
+                    self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(source))
+                    new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
+                    os.write(new_file, source)
+                    os.close(new_file)
 
-        self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(source))
-
-        try:
-            new_file=os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
-            os.write(new_file, source)
-            os.close(new_file)
-            self.logger.debug("ready")
-            return 0
-        except IOError as err:
-            self.logger.error(err)
-            raise err
+                self.logger.debug("ready")
+                return 0
+            except IOError as err:
+                self.logger.error(err)
+                raise err
