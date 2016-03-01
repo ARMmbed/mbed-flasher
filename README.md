@@ -22,6 +22,8 @@ To install the flasher in development mode:
 
 ## Usage with CLI
 
+This tool has been tested to work with Windows 7 and Ubuntu(14.04 LTS) Linux.
+
 To flash a single board by ID:
 
 `mbedflash -i myfile.bin --tid 123456`
