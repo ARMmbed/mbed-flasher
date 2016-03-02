@@ -57,7 +57,7 @@ class FlasherMbed(object):
         if isinstance(source, six.string_types):
             try:
                 if platform.system() == 'Windows':
-                    self.logger.debug("copying file")
+                    self.logger.debug("copying file: %s to %s" % (source, destination))
                     copy(source, destination)
                 else:
                     self.logger.debug('read source file')
