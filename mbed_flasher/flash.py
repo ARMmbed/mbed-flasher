@@ -117,7 +117,11 @@ class Flash(object):
 
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
-
+        
+        if not isfile(build):
+            self.logger.error("Given file does not exist")
+            return -5
+            
         if target_id.lower() == 'all':
             return self.flash_multiple(build, platform_name, device_mapping_table)
 
