@@ -146,7 +146,7 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flash"):
                 exit_status = flasher.flash(build=args.input, target_id=args.target_id, platform_name=args.platform_name, device_mapping_table=args.device_mapping_table)
             else:
                 if not args.input and not args.target_id and not args.platform_name:
-                    sys.exit()
+                    sys.exit("No input, nothing to do.\nTry mbedflash --help")
                 elif not args.input:
                     sys.exit("Missing file to flash, provide a file with -i <file>")
                 elif not args.target_id:
