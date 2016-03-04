@@ -79,7 +79,6 @@ class FlasherMbed(object):
                     new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
                     os.write(new_file, source)
                     os.close(new_file)
-                    #copy(source, destination)
                 sleep(3)
                 t = Thread(target=self.runner, args=(target['mount_point'],))
                 t.start()
