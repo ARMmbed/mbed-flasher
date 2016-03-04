@@ -16,12 +16,11 @@ Jussi Vatjus-Anttila <jussi.vatjus-anttila@arm.com>
 """
 
 import logging
-import subprocess
 from Queue import Queue
 import threading
-from os.path import join, abspath, walk, isfile
-from time import sleep
-from enhancedserial import EnhancedSerial
+from os.path import isfile
+
+
 
 class Flash(object):
     """ Flash object, which manage flashing single device
@@ -117,11 +116,11 @@ class Flash(object):
 
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
-        
+
         if not isfile(build):
             self.logger.error("Given file does not exist")
             return -5
-            
+
         if target_id.lower() == 'all':
             return self.flash_multiple(build, platform_name, device_mapping_table)
 
@@ -169,36 +168,7 @@ class Flash(object):
             return -2
 
         if retcode == 0:
-            self.logger.info("waiting for 10 second")
-            sleep(10)
             self.logger.info("flash ready")
-
-            self.port = False
-            if 'serial_port' in target_mbed:
-                self.port = EnhancedSerial(target_mbed["serial_port"])
-                self.port.baudrate = 115200
-                self.port.timeout = 0.01
-                self.port.xonxoff = False
-                self.port.rtscts = False
-                self.port.flushInput()
-                self.port.flushOutput()
-                
-                if self.port:
-                    self.logger.info("sendBreak to device to reboot")
-                    result = self.port.safe_sendBreak()
-                    if result:
-                        self.logger.info("reset completed")
-                    else:
-                        self.logger.info("reset failed")
-            self.logger.info("waiting 10 seconds before flash verification")
-            sleep(10)
-            #verify flashing went as planned
-            if 'mount_point' in target_mbed:
-                if isfile(join(target_mbed['mount_point'], 'FAIL.TXT')):
-                    with open(join(target_mbed['mount_point'], 'FAIL.TXT'), 'r') as fault:
-                        fault = fault.read().strip()
-                    self.logger.error("Flashing failed: %s. tid=%s" % (fault, target_mbed["target_id"]))
-                    retcode = -4
         else:
             self.logger.info("flash fails")
         if ret_q:

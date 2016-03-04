@@ -19,10 +19,13 @@ import json
 import logging
 import sys
 import six
-from os.path import join, abspath, dirname
+from os.path import join, abspath, dirname, isfile
 from shutil import copy
 import os
 import platform
+from time import sleep
+from threading import Thread
+from enhancedserial import EnhancedSerial
 
 
 class FlasherMbed(object):
@@ -43,6 +46,16 @@ class FlasherMbed(object):
         import mbed_lstools
         mbeds = mbed_lstools.create()
         return mbeds.list_mbeds()
+       
+    def runner(self, drive):
+        while True:
+            if platform.system() == 'Windows':
+                out = os.popen('dir %s' %drive).read()
+            else:
+                out = os.popen('ls %s 2> /dev/null' %drive).read()
+            if out.find('MBED.HTM') != -1:
+                break
+                
 
     def flash(self, source, target):
         """copy file to the destination
@@ -66,7 +79,38 @@ class FlasherMbed(object):
                     new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
                     os.write(new_file, source)
                     os.close(new_file)
+                    #copy(source, destination)
+                sleep(3)
+                t = Thread(target=self.runner, args=(target['mount_point'],))
+                t.start()
+                while True:
+                    if not t.is_alive():
+                        break
+                self.port = False
+                if 'serial_port' in target:
+                    self.port = EnhancedSerial(target["serial_port"])
+                    self.port.baudrate = 115200
+                    self.port.timeout = 0.01
+                    self.port.xonxoff = False
+                    self.port.rtscts = False
+                    self.port.flushInput()
+                    self.port.flushOutput()
 
+                    if self.port:
+                        self.logger.info("sendBreak to device to reboot")
+                        result = self.port.safe_sendBreak()
+                        if result:
+                            self.logger.info("reset completed")
+                        else:
+                            self.logger.info("reset failed")
+
+                #verify flashing went as planned
+                if 'mount_point' in target:
+                    if isfile(join(target['mount_point'], 'FAIL.TXT')):
+                        with open(join(target['mount_point'], 'FAIL.TXT'), 'r') as fault:
+                            fault = fault.read().strip()
+                        self.logger.error("Flashing failed: %s. tid=%s" % (fault, target["target_id"]))
+                        return -4
                 self.logger.debug("ready")
                 return 0
             except IOError as err:
