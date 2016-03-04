@@ -52,15 +52,25 @@ class FlasherAtmelAt(object):
     @staticmethod
     def set_atprogram_exe(exe):
         if exe is None:
-            alternatives = [
-                "C:/Program Files (x86)/Atmel/Atmel Studio 6.2/atbackend/atprogram.exe"
-            ]
-            FlasherAtmelAt.exe = FlasherAtmelAt.lookupExe(alternatives)
-            if FlasherAtmelAt.exe is None:
-                FlasherAtmelAt.exe = "atprogram.exe" # assume that atprogram is in path
-        else:
-            FlasherAtmelAt.exe = exe
-
+            path = ''
+            if os.path.exists('C:\\Program File\\Atmel\\'):
+                path = 'C:\\Program Files\\Atmel\\'
+            elif os.path.exists('C:\\Program File (x86)\\Atmel\\'):
+                path = 'C:\\Program Files (x86)\\Atmel\\'
+            if path:
+                for dirpath, subdirs, files in os.walk(path):
+                    for x in files:
+                        if x.find("atprogram.exe") != -1:
+                            FlasherAtmelAt.exe = os.path.join(dirpath, x)
+                            print FlasherAtmelAt.exe
+        if not FlasherAtmelAt.exe:
+            for dir in os.environ['PATH'].split(os.pathsep):
+                if dir.find('Atmel') != -1:
+                    FlasherAtmelAt.exe = "atprogram.exe" # assume that atprogram is in path
+                    break
+            else:
+                FlasherAtmelAt.exe = exe
+        
         FlasherAtmelAt.logger.debug("atprogram location: %s", FlasherAtmelAt.exe)
 
 
