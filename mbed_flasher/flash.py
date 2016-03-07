@@ -71,13 +71,26 @@ class Flash(object):
 
         raise Exception("oh nou")
 
-    def flash_multiple(self, build, platform_name, device_mapping_table=None):
+    def flash_multiple(self, build, platform_name, device_mapping_table=None, target_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
+        aux_device_mapping_table = []
+        if target_prefix:
+            if len(target_prefix) >= 1:
+                for item in device_mapping_table:
+                    if item['target_id'].startswith(str(target_prefix)):
+                        aux_device_mapping_table.append(item)
+                    
+        if len(aux_device_mapping_table) > 0:
+            device_mapping_table = aux_device_mapping_table
+            
         device_count = len(device_mapping_table)
         if device_count == 0:
             self.logger.error('no devices to flash')
             return -3
         self.logger.debug(device_mapping_table)
+        print 'Going to flash following devices:'
+        for item in device_mapping_table:
+            print item['target_id']
         ans_q = Queue()
         parameters = [(build, target['target_id'], None, device_mapping_table, ans_q) for target in device_mapping_table]
         threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
@@ -123,12 +136,14 @@ class Flash(object):
 
         if target_id.lower() == 'all':
             return self.flash_multiple(build, platform_name, device_mapping_table)
+        elif len(target_id) < 48:
+            return self.flash_multiple(build, platform_name, device_mapping_table, target_id)
 
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
                 device_mapping_table = [device_mapping_table]
             elif not isinstance(device_mapping_table, list):
-                raise SystemError('device_mapping_table wasnt list or dictionary')
+                raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
             device_mapping_table = self.get_available_device_mapping()
         
