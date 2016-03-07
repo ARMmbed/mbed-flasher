@@ -26,6 +26,7 @@ import platform
 from time import sleep
 from threading import Thread
 from enhancedserial import EnhancedSerial
+from uuid import uuid1
 
 
 class FlasherMbed(object):
@@ -65,7 +66,7 @@ class FlasherMbed(object):
 
         mount_point = target['mount_point']+'/'
         binary_type = target['properties']['binary_type']
-        destination=abspath(join(mount_point, 'image'+binary_type))
+        destination=abspath(join(mount_point, str(uuid1())+binary_type))
 
         if isinstance(source, six.string_types):
             try:
