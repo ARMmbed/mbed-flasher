@@ -22,6 +22,8 @@ To install the flasher in development mode:
 
 ## Usage with CLI
 
+This tool has been tested to work with Windows 7 and Ubuntu(14.04 LTS) Linux.
+
 To flash a single board by ID:
 
 `mbedflash -i myfile.bin --tid 123456`
@@ -32,7 +34,7 @@ To flash a single board by platform_name:
 
 To flash all connected boards by platform_name:
 
-`mbedflash -i myfile.bin -t K64F --tid *`
+`mbedflash -i myfile.bin -t K64F --tid ALL`
 
 ## Usage with Python API
 
@@ -50,9 +52,9 @@ flasher.flash( source='myfile.bin', platform_name='K64F')
 ## Help
 ```
 /> mbedflash --help
-usage: mbedflash-script.py [-h] [-v] [-s] [--version] [-i INPUT]
-                           [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
-                           [--tid TARGET_ID] [-t PLATFORM_NAME]
+usage: mbedflash [-h] [-v] [-s] [--version] [-i INPUT]
+                 [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
+                 [--tid TARGET_ID] [-t PLATFORM_NAME]
 
 optional arguments:
   -h, --help            Show this help message and exit.

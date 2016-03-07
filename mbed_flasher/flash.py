@@ -16,11 +16,11 @@ Jussi Vatjus-Anttila <jussi.vatjus-anttila@arm.com>
 """
 
 import logging
-import subprocess
 from Queue import Queue
 import threading
-from os.path import join, abspath, walk
-from time import sleep
+from os.path import isfile
+
+
 
 class Flash(object):
     """ Flash object, which manage flashing single device
@@ -71,13 +71,26 @@ class Flash(object):
 
         raise Exception("oh nou")
 
-    def flash_multiple(self, build, platform_name, device_mapping_table=None):
+    def flash_multiple(self, build, platform_name, device_mapping_table=None, target_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
+        aux_device_mapping_table = []
+        if target_prefix:
+            if len(target_prefix) >= 1:
+                for item in device_mapping_table:
+                    if item['target_id'].startswith(str(target_prefix)):
+                        aux_device_mapping_table.append(item)
+                    
+        if len(aux_device_mapping_table) > 0:
+            device_mapping_table = aux_device_mapping_table
+            
         device_count = len(device_mapping_table)
         if device_count == 0:
             self.logger.error('no devices to flash')
             return -3
         self.logger.debug(device_mapping_table)
+        print 'Going to flash following devices:'
+        for item in device_mapping_table:
+            print item['target_id']
         ans_q = Queue()
         parameters = [(build, target['target_id'], None, device_mapping_table, ans_q) for target in device_mapping_table]
         threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
@@ -117,17 +130,23 @@ class Flash(object):
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
-        if target_id == '*':
+        if not isfile(build):
+            self.logger.error("Given file does not exist")
+            return -5
+
+        if target_id.lower() == 'all':
             return self.flash_multiple(build, platform_name, device_mapping_table)
+        elif len(target_id) < 48:
+            return self.flash_multiple(build, platform_name, device_mapping_table, target_id)
 
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
                 device_mapping_table = [device_mapping_table]
             elif not isinstance(device_mapping_table, list):
-                raise SystemError('device_mapping_table wasnt list or dictionary')
+                raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
             device_mapping_table = self.get_available_device_mapping()
-
+        
         try:
             if not target_id is None:
                 target_mbed = self.__find_by_target_id(target_id, device_mapping_table)
@@ -142,7 +161,7 @@ class Flash(object):
         if not platform_name:
             platform_name = target_mbed['platform_name']
         if not platform_name in self.SUPPORTED_TARGETS:
-            raise NotImplementedError("Platform '%s' is not supproted by mbed-flasher" % platform_name )
+            raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name )
 
         #if not isinstance(build, Build):
         #    build = Build.init(ref=build)
@@ -164,9 +183,6 @@ class Flash(object):
             return -2
 
         if retcode == 0:
-            waitTime = target_mbed['properties']['program_cycle_s']
-            self.logger.info("waiting for %.1f second" % waitTime)
-            sleep(waitTime)
             self.logger.info("flash ready")
         else:
             self.logger.info("flash fails")

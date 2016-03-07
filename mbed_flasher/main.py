@@ -92,7 +92,7 @@ def cmd_parser_setup():
                         help='Prints a list of supported flashers.')
 
     parser.add_argument('--tid', '--target_id',
-                        dest='target_id', help='Target to be flashed, "*" will flash all connected devices with given platform-name')
+                        dest='target_id', help='Target to be flashed, ALL will flash all connected devices with given platform-name')
     
     parser.add_argument('-t', '--platform_name',
                         dest='platform_name', help='Platform/target name to be flashed')
@@ -124,7 +124,7 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flash"):
     @details Function exits back to command line with exit_status(=ERRORLEVEL in windows)
     """
     exit_status = 0
-
+    
     args = cmd_parser_setup() if cmd_args == None else cmd_args
     set_log_level_from_verbose(args)
 
@@ -142,6 +142,14 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flash"):
         elif args.flashers:
             print(json.dumps(flasher.get_supported_flashers()))
         else:
-            exit_status = flasher.flash(build=args.input, target_id=args.target_id, platform_name=args.platform_name, device_mapping_table=args.device_mapping_table)
-
+            if args.input and args.target_id:
+                exit_status = flasher.flash(build=args.input, target_id=args.target_id, platform_name=args.platform_name, device_mapping_table=args.device_mapping_table)
+            else:
+                if not args.input and not args.target_id and not args.platform_name:
+                    sys.exit("No input, nothing to do.\nTry mbedflash --help")
+                elif not args.input:
+                    sys.exit("Missing file to flash, provide a file with -i <file>")
+                elif not args.target_id:
+                    sys.exit("Missing TargetID to flash.\nProvide a TargetID with --tid <TID> or --tid ALL to flash all connected devices corresponding to provided platform")
+                    
     sys.exit(exit_status)
