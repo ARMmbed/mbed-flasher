@@ -74,7 +74,8 @@ class FlasherMbed(object):
                     copy(source, destination)
                 else:
                     self.logger.debug('read source file')
-                    source = open(source, 'rb').read()
+                    with open(source, 'rb') as f:
+                        source = f.read()
                     self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(source))
                     new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
                     os.write(new_file, source)
