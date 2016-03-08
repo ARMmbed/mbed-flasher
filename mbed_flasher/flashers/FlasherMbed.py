@@ -27,6 +27,7 @@ from time import sleep
 from threading import Thread
 from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
+import hashlib
 
 
 class FlasherMbed(object):
@@ -71,15 +72,23 @@ class FlasherMbed(object):
         if isinstance(source, six.string_types):
             try:
                 if platform.system() == 'Windows':
+                    with open(source, 'rb') as f:
+                        aux_source = f.read()
+                        self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                     self.logger.debug("copying file: %s to %s" % (source, destination))
                     copy(source, destination)
                 else:
                     self.logger.debug('read source file')
+                    aux_source = None
                     with open(source, 'rb') as f:
-                        source = f.read()
-                    self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(source))
+                        aux_source = f.read()
+                    if not aux_source:
+                        self.logger.error("File couldn't be read")
+                        return -7
+                    self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
+                    self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
                     new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
-                    os.write(new_file, source)
+                    os.write(new_file, aux_source)
                     os.close(new_file)
                 sleep(3)
                 t = Thread(target=self.runner, args=(target['mount_point'],))
