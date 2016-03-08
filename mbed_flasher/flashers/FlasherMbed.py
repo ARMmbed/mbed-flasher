@@ -26,6 +26,7 @@ import platform
 from time import sleep
 from threading import Thread
 from enhancedserial import EnhancedSerial
+from serial.serialutil import SerialException
 
 
 class FlasherMbed(object):
@@ -88,7 +89,14 @@ class FlasherMbed(object):
                         break
                 self.port = False
                 if 'serial_port' in target:
-                    self.port = EnhancedSerial(target["serial_port"])
+                    try:
+                        self.port = EnhancedSerial(target["serial_port"])
+                    except SerialException as e:
+                        self.logger.info("reset could not be sent")
+                        self.logger.error(e)
+                        if e.message.find('could not open port') != -1:
+                            print 'Reset could not be given. Close your Serial connection to device.'
+                        return -6
                     self.port.baudrate = 115200
                     self.port.timeout = 0.01
                     self.port.xonxoff = False
