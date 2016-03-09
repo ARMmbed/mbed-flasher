@@ -41,7 +41,7 @@ log_file_handler = logging.handlers.TimedRotatingFileHandler(
     'logs/mbed-flasher.log', when='M', interval=2)
 log_file_handler.setFormatter(
     logging.Formatter(
-        '%(asctime)s [%(levelname)s](%(name)s:%(funcName)s:%(lineno)d): %(message)s'))
+        '%(asctime)s [%(levelname)s](%(name)s:%(funcName)s:%(lineno)d):%(thread)d: %(message)s'))
 log_file_handler.setLevel(logging.DEBUG)
 logger.addHandler(log_file_handler)
 
