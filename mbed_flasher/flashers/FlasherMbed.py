@@ -48,6 +48,31 @@ class FlasherMbed(object):
         import mbed_lstools
         mbeds = mbed_lstools.create()
         return mbeds.list_mbeds()
+        
+    def reset_board(self, target_id):
+        try:
+            self.port = EnhancedSerial(target_id)
+        except SerialException as e:
+            self.logger.info("reset could not be sent")
+            self.logger.error(e)
+            if e.message.find('could not open port') != -1:
+                print 'Reset could not be given. Close your Serial connection to device.'
+            return -6
+        self.port.baudrate = 115200
+        self.port.timeout = 0.01
+        self.port.xonxoff = False
+        self.port.rtscts = False
+        self.port.flushInput()
+        self.port.flushOutput()
+
+        if self.port:
+            self.logger.info("sendBreak to device to reboot")
+            result = self.port.safe_sendBreak()
+            if result:
+                self.logger.info("reset completed")
+            else:
+                self.logger.info("reset failed")
+        self.port.close()
        
     def runner(self, drive):
         while True:
@@ -71,6 +96,8 @@ class FlasherMbed(object):
 
         if isinstance(source, six.string_types):
             try:
+                if 'serial_port' in target:
+                    self.reset_board(target['serial_port'])
                 if platform.system() == 'Windows':
                     with open(source, 'rb') as f:
                         aux_source = f.read()
@@ -98,29 +125,7 @@ class FlasherMbed(object):
                         break
                 self.port = False
                 if 'serial_port' in target:
-                    try:
-                        self.port = EnhancedSerial(target["serial_port"])
-                    except SerialException as e:
-                        self.logger.info("reset could not be sent")
-                        self.logger.error(e)
-                        if e.message.find('could not open port') != -1:
-                            print 'Reset could not be given. Close your Serial connection to device.'
-                        return -6
-                    self.port.baudrate = 115200
-                    self.port.timeout = 0.01
-                    self.port.xonxoff = False
-                    self.port.rtscts = False
-                    self.port.flushInput()
-                    self.port.flushOutput()
-
-                    if self.port:
-                        self.logger.info("sendBreak to device to reboot")
-                        result = self.port.safe_sendBreak()
-                        if result:
-                            self.logger.info("reset completed")
-                        else:
-                            self.logger.info("reset failed")
-
+                    self.reset_board(target['serial_port'])
                 #verify flashing went as planned
                 if 'mount_point' in target:
                     if isfile(join(target['mount_point'], 'FAIL.TXT')):
