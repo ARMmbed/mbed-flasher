@@ -67,6 +67,7 @@ optional arguments:
                         Device mapping table.
   -l, --list            Prints a list of supported platforms.
   --flashers            Prints s list of supported flashers.
+  --pyocd               Uses pyOCD for flashing.
   --tid TARGET_ID, --target_id TARGET_ID
                         Target to be flashed.
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME

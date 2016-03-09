@@ -90,6 +90,11 @@ def cmd_parser_setup():
                         dest='flashers',
                         action="store_true",
                         help='Prints a list of supported flashers.')
+                        
+    parser.add_argument('--pyocd',
+                        dest='pyocd', default=False,
+                        action="store_true",
+                        help='Uses pyOCD for flashing.')
 
     parser.add_argument('--tid', '--target_id',
                         dest='target_id', help='Target to be flashed, ALL will flash all connected devices with given platform-name')
@@ -143,7 +148,7 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flash"):
             print(json.dumps(flasher.get_supported_flashers()))
         else:
             if args.input and args.target_id:
-                exit_status = flasher.flash(build=args.input, target_id=args.target_id, platform_name=args.platform_name, device_mapping_table=args.device_mapping_table)
+                exit_status = flasher.flash(build=args.input, target_id=args.target_id, platform_name=args.platform_name, device_mapping_table=args.device_mapping_table, pyocd=args.pyocd)
             else:
                 if not args.input and not args.target_id and not args.platform_name:
                     sys.exit("No input, nothing to do.\nTry mbedflash --help")
