@@ -113,7 +113,7 @@ class FlasherMbed(object):
                 try:
                     if 'serial_port' in target:
                         self.reset_board(target['serial_port'])
-                    if platform.system() == 'Windows':
+                    if platform.system() == 'Windows' or platform.system() == 'Darwin':
                         with open(source, 'rb') as f:
                             aux_source = f.read()
                             self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
