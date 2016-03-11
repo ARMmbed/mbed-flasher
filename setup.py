@@ -37,7 +37,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='mbed-flasher',
-      version='0.3.2',
+      version='0.3.1',
       description=DESCRIPTION,
       long_description=read('README.md'),
       author=OWNER_NAMES,
