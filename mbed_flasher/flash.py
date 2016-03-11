@@ -94,6 +94,7 @@ class Flash(object):
             print item['target_id']
         retcodes = 0
         if pyocd and platform.system() != 'Windows':
+            # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
             i = 0
             for device in device_mapping_table:
                 ret = self.flash(build, device['target_id'], None, device_mapping_table, pyocd)
