@@ -102,13 +102,17 @@ class FlasherMbed(object):
         
         if isinstance(source, six.string_types):
             if pyocd:
-                with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
-                    target = board.target
-                    flash = board.flash
-                    target.reset()
-                    flash.flashBinary(source)
-                    target.reset()
-                return 0
+                try:
+                    with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
+                        target = board.target
+                        flash = board.flash
+                        target.reset()
+                        flash.flashBinary(source)
+                        target.reset()
+                    return 0
+                except AttributeError as e:
+                    self.logger.error("Flashing failed: %s. tid=%s" % (e, target["target_id"]))
+                    return -4
             else:
                 try:
                     if 'serial_port' in target:

@@ -55,5 +55,6 @@ setup(name='mbed-flasher',
       install_requires=[
         "mbed-ls",
         "six",
-        "pyserial"
+        "pyserial",
+        "pyOCD"
       ])

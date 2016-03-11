@@ -19,7 +19,8 @@ import logging
 from Queue import Queue
 import threading
 from os.path import isfile
-
+import platform
+from time import sleep
 
 
 class Flash(object):
@@ -92,7 +93,7 @@ class Flash(object):
         for item in device_mapping_table:
             print item['target_id']
         retcodes = 0
-        if pyocd:
+        if pyocd and platform.system() != 'Windows':
             i = 0
             for device in device_mapping_table:
                 ret = self.flash(build, device['target_id'], None, device_mapping_table, pyocd)
@@ -109,6 +110,7 @@ class Flash(object):
             threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
 
             for t in threads:
+                sleep(0.2)
                 t.start()
 
             passes = []
