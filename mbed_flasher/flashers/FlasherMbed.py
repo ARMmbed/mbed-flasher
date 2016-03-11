@@ -59,7 +59,7 @@ class FlasherMbed(object):
                 print 'Reset could not be given. Close your Serial connection to device.'
             return -6
         self.port.baudrate = 115200
-        self.port.timeout = 0.01
+        self.port.timeout = 1
         self.port.xonxoff = False
         self.port.rtscts = False
         self.port.flushInput()
@@ -106,8 +106,11 @@ class FlasherMbed(object):
                     with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
                         target = board.target
                         flash = board.flash
+                        self.logger.debug("resetting device: %s" % target["target_id"])
                         target.reset()
+                        self.logger.debug("flashing device: %s" % target["target_id"])
                         flash.flashBinary(source)
+                        self.logger.debug("resetting device: %s" % target["target_id"])
                         target.reset()
                     return 0
                 except AttributeError as e:
