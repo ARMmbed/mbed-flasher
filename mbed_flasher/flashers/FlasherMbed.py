@@ -107,10 +107,12 @@ class FlasherMbed(object):
                         target = board.target
                         flash = board.flash
                         self.logger.debug("resetting device: %s" % target["target_id"])
+                        sleep(0.5)
                         target.reset()
                         self.logger.debug("flashing device: %s" % target["target_id"])
                         flash.flashBinary(source)
                         self.logger.debug("resetting device: %s" % target["target_id"])
+                        sleep(0.5)
                         target.reset()
                     return 0
                 except AttributeError as e:
