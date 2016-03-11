@@ -19,7 +19,8 @@ import logging
 from Queue import Queue
 import threading
 from os.path import isfile
-
+import platform
+from time import sleep
 
 
 class Flash(object):
@@ -71,7 +72,7 @@ class Flash(object):
 
         raise Exception("oh nou")
 
-    def flash_multiple(self, build, platform_name, device_mapping_table=None, target_prefix=''):
+    def flash_multiple(self, build, platform_name, device_mapping_table=None, pyocd=False, target_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
         if target_prefix:
@@ -91,35 +92,49 @@ class Flash(object):
         print 'Going to flash following devices:'
         for item in device_mapping_table:
             print item['target_id']
-        ans_q = Queue()
-        parameters = [(build, target['target_id'], None, device_mapping_table, ans_q) for target in device_mapping_table]
-        threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
-
-        for t in threads:
-            t.start()
-
-        passes = []
         retcodes = 0
-        for t in threads:
-            t.join()
+        if pyocd and platform.system() != 'Windows':
+            # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
+            i = 0
+            for device in device_mapping_table:
+                ret = self.flash(build, device['target_id'], None, device_mapping_table, pyocd)
+                if ret == 0:
+                    self.logger.debug("dev#%i -> SUCCESS" % i)
+                else:
+                    self.logger.warning("dev#%i -> FAIL :(" % i)
+                retcodes += ret
+                i += 1
+            
+        else:
+            ans_q = Queue()
+            parameters = [(build, target['target_id'], None, device_mapping_table, pyocd, ans_q) for target in device_mapping_table]
+            threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
 
-        results = [ ans_q.get() for _ in threads ]
-        for retcode in results:
-            retcodes += retcode
-            if retcode == 0:
-                passes.append(True)
-            else:
-                passes.append(False)
+            for t in threads:
+                sleep(0.2)
+                t.start()
 
-        i=1
-        for ok in passes:
-            if ok: self.logger.debug("dev#%i -> SUCCESS" % i)
-            else:  self.logger.warning("dev#%i -> FAIL :(" % i)
-            i += 1
+            passes = []
+            for t in threads:
+                t.join()
+
+            results = [ ans_q.get() for _ in threads ]
+            for retcode in results:
+                retcodes += retcode
+                if retcode == 0:
+                    passes.append(True)
+                else:
+                    passes.append(False)
+
+            i=1
+            for ok in passes:
+                if ok: self.logger.debug("dev#%i -> SUCCESS" % i)
+                else:  self.logger.warning("dev#%i -> FAIL :(" % i)
+                i += 1
 
         return retcodes
 
-    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, ret_q=None):
+    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, pyocd=False, ret_q=None):
         """Flash (mbed) device
         :param build:  Build -object or string (file-path)
         :param target_id: target_id
@@ -135,10 +150,10 @@ class Flash(object):
             return -5
 
         if target_id.lower() == 'all':
-            return self.flash_multiple(build, platform_name, device_mapping_table)
+            return self.flash_multiple(build, platform_name, device_mapping_table, pyocd)
         elif len(target_id) < 48:
-            return self.flash_multiple(build, platform_name, device_mapping_table, target_id)
-
+            return self.flash_multiple(build, platform_name, device_mapping_table, pyocd, target_id)
+        
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
                 device_mapping_table = [device_mapping_table]
@@ -170,7 +185,7 @@ class Flash(object):
 
         flasher = self.__get_flasher(platform_name)
         try:
-            retcode = flasher.flash(source=build, target=target_mbed)
+            retcode = flasher.flash(source=build, target=target_mbed, pyocd=pyocd)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
             if ret_q:
