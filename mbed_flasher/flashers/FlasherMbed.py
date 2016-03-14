@@ -107,12 +107,12 @@ class FlasherMbed(object):
                         ocd_target = board.target
                         ocd_flash = board.flash
                         self.logger.debug("resetting device: %s" % target["target_id"])
-                        sleep(0.5)
+                        sleep(0.5) #small sleep for lesser HW ie raspberry
                         ocd_target.reset()
                         self.logger.debug("flashing device: %s" % target["target_id"])
                         ocd_flash.flashBinary(source)
                         self.logger.debug("resetting device: %s" % target["target_id"])
-                        sleep(0.5)
+                        sleep(0.5) #small sleep for lesser HW ie raspberry
                         ocd_target.reset()
                     return 0
                 except AttributeError as e:
