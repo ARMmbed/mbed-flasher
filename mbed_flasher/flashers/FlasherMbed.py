@@ -59,7 +59,7 @@ class FlasherMbed(object):
                 print 'Reset could not be given. Close your Serial connection to device.'
             return -6
         self.port.baudrate = 115200
-        self.port.timeout = 0.01
+        self.port.timeout = 1
         self.port.xonxoff = False
         self.port.rtscts = False
         self.port.flushInput()
@@ -104,11 +104,16 @@ class FlasherMbed(object):
             if pyocd:
                 try:
                     with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
-                        target = board.target
-                        flash = board.flash
-                        target.reset()
-                        flash.flashBinary(source)
-                        target.reset()
+                        ocd_target = board.target
+                        ocd_flash = board.flash
+                        self.logger.debug("resetting device: %s" % target["target_id"])
+                        sleep(0.5) #small sleep for lesser HW ie raspberry
+                        ocd_target.reset()
+                        self.logger.debug("flashing device: %s" % target["target_id"])
+                        ocd_flash.flashBinary(source)
+                        self.logger.debug("resetting device: %s" % target["target_id"])
+                        sleep(0.5) #small sleep for lesser HW ie raspberry
+                        ocd_target.reset()
                     return 0
                 except AttributeError as e:
                     self.logger.error("Flashing failed: %s. tid=%s" % (e, target["target_id"]))
