@@ -76,6 +76,16 @@ class Flash(object):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
         
+        if not platform_name:
+            found_platform = ''
+            for item in device_mapping_table:
+                if not found_platform:
+                    found_platform = item['platform_name']
+                else:
+                    if item['platform_name'] != found_platform:
+                        self.logger.error('Multiple devices and platforms found, please specify preferred platform with -t <platform>.')
+                        return -9
+        
         if target_prefix:
             if len(target_prefix) >= 1:
                 for item in device_mapping_table:
