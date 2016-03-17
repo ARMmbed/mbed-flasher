@@ -75,10 +75,20 @@ class Flash(object):
     def flash_multiple(self, build, platform_name, device_mapping_table=None, pyocd=False, target_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
+        
         if target_prefix:
             if len(target_prefix) >= 1:
                 for item in device_mapping_table:
+                    if platform_name:
+                        if item['platform_name'] != platform_name:
+                            #skipping boards that do not match with specified platform
+                            continue
                     if item['target_id'].startswith(str(target_prefix)):
+                        aux_device_mapping_table.append(item)
+        else:
+            for item in device_mapping_table:
+                if platform_name:
+                    if item['platform_name'] == platform_name:
                         aux_device_mapping_table.append(item)
                     
         if len(aux_device_mapping_table) > 0:
@@ -89,6 +99,7 @@ class Flash(object):
             self.logger.error('no devices to flash')
             return -3
         self.logger.debug(device_mapping_table)
+        
         print 'Going to flash following devices:'
         for item in device_mapping_table:
             print item['target_id']
@@ -161,6 +172,8 @@ class Flash(object):
                 raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
             device_mapping_table = self.get_available_device_mapping()
+        
+        self.logger.debug(device_mapping_table)
         
         try:
             if not target_id is None:
