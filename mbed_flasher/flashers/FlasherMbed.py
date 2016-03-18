@@ -147,6 +147,7 @@ class FlasherMbed(object):
                     while True:
                         if not t.is_alive():
                             break
+                    sleep(2)
                     self.port = False
                     if 'serial_port' in target:
                         self.reset_board(target['serial_port'])
