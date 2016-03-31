@@ -29,7 +29,6 @@ from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
 
-
 class FlasherMbed(object):
     name = "Mbed"
 
@@ -75,14 +74,19 @@ class FlasherMbed(object):
         self.port.close()
        
     def runner(self, drive):
+        i = 0
         while True:
+            sleep(0.2)
+            i += 1
             if platform.system() == 'Windows':
                 out = os.popen('dir %s' %drive).read()
             else:
                 out = os.popen('ls %s 2> /dev/null' %drive).read()
             if out.find('MBED.HTM') != -1:
                 break
-                
+            if i >= 25:
+                self.logger.debug("re-mount check timed out for %s" % drive)
+                break
 
     def flash(self, source, target, pyocd):
         """copy file to the destination
@@ -122,6 +126,7 @@ class FlasherMbed(object):
                 try:
                     if 'serial_port' in target:
                         self.reset_board(target['serial_port'])
+                        sleep(0.1)
                     if platform.system() == 'Windows' or platform.system() == 'Darwin':
                         with open(source, 'rb') as f:
                             aux_source = f.read()
@@ -147,6 +152,7 @@ class FlasherMbed(object):
                     while True:
                         if not t.is_alive():
                             break
+                    sleep(2)
                     self.port = False
                     if 'serial_port' in target:
                         self.reset_board(target['serial_port'])

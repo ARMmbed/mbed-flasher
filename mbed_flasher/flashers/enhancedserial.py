@@ -13,6 +13,7 @@ like found in the telnetlib.
 import re
 import pkg_resources
 from serial import Serial, SerialException, SerialTimeoutException
+from time import sleep
 
 class EnhancedSerial(Serial):
     def __init__(self, *args, **kwargs):
@@ -61,7 +62,9 @@ class EnhancedSerial(Serial):
             # In Linux a termios.error is raised in sendBreak and in setBreak.
             # The following setBreak() is needed to release the reset signal on the target mcu.
             try:
+                sleep(1)
                 self.setBreak(False)
+                sleep(1)
             except:
                 result = False
         return result
