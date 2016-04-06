@@ -27,6 +27,7 @@ import logging
 import logging.handlers
 import os
 import json
+import time
 
 from flash import Flash
 
@@ -37,8 +38,8 @@ logger.setLevel(logging.DEBUG)
 # always write everything to the rotating log files
 if not os.path.exists('logs'):
     os.mkdir('logs')
-log_file_handler = logging.handlers.TimedRotatingFileHandler(
-    'logs/mbed-flasher.log', when='M', interval=2)
+log_file = 'logs/%s_mbed-flasher.txt' % time.strftime("%Y%m%d-%H%M%S")
+log_file_handler = logging.handlers.RotatingFileHandler(log_file)
 log_file_handler.setFormatter(
     logging.Formatter(
         '%(asctime)s [%(levelname)s](%(name)s:%(funcName)s:%(lineno)d):%(thread)d: %(message)s'))

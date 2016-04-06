@@ -87,6 +87,27 @@ class FlasherMbed(object):
             if i >= 25:
                 self.logger.debug("re-mount check timed out for %s" % drive)
                 break
+                
+    def check_serial_port_unchanged(self, target_id, serial_port):
+        import mbed_lstools
+        mbeds = mbed_lstools.create()
+        serial_unchanged = True
+        if platform.system() == 'Windows':
+            if serial_port != mbeds.get_mbed_com_port(target_id):
+                serial_unchanged = False
+        elif platform.system() == 'Darwin':
+            pass
+        else:
+            for line in os.popen('ls -oA /dev/serial/by-id/').read().splitlines():
+                if line.find(target_id) != -1 and line.find(serial_port.split('/')[-1]) != -1:
+                    break
+            else:
+                serial_unchanged = False
+        if serial_unchanged:
+            self.logger.debug("serial port has not changed")
+        else:
+            self.logger.debug("serial port has changed")
+        return serial_unchanged
 
     def flash(self, source, target, pyocd):
         """copy file to the destination
@@ -146,25 +167,32 @@ class FlasherMbed(object):
                         new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
                         os.write(new_file, aux_source)
                         os.close(new_file)
-                    sleep(3)
-                    t = Thread(target=self.runner, args=(target['mount_point'],))
-                    t.start()
-                    while True:
-                        if not t.is_alive():
-                            break
-                    sleep(2)
-                    self.port = False
-                    if 'serial_port' in target:
-                        self.reset_board(target['serial_port'])
-                    #verify flashing went as planned
-                    if 'mount_point' in target:
-                        if isfile(join(target['mount_point'], 'FAIL.TXT')):
-                            with open(join(target['mount_point'], 'FAIL.TXT'), 'r') as fault:
-                                fault = fault.read().strip()
-                            self.logger.error("Flashing failed: %s. tid=%s" % (fault, target["target_id"]))
-                            return -4
-                    self.logger.debug("ready")
-                    return 0
+                    self.logger.debug("copy finished")
+                    sleep(4)
+                    
+                    serial_unchanged = self.check_serial_port_unchanged(target["target_id"], target['serial_port'])
+                    
+                    if serial_unchanged:
+                        t = Thread(target=self.runner, args=(target['mount_point'],))
+                        t.start()
+                        while True:
+                            if not t.is_alive():
+                                break
+                        sleep(2)
+                        self.port = False
+                        if 'serial_port' in target:
+                            self.reset_board(target['serial_port'])
+                        #verify flashing went as planned
+                        if 'mount_point' in target:
+                            if isfile(join(target['mount_point'], 'FAIL.TXT')):
+                                with open(join(target['mount_point'], 'FAIL.TXT'), 'r') as fault:
+                                    fault = fault.read().strip()
+                                self.logger.error("Flashing failed: %s. tid=%s" % (fault, target["target_id"]))
+                                return -4
+                        self.logger.debug("ready")
+                        return 0
+                    else:
+                        self.logger.debug("Should start using newly assigned serial port")
                 except IOError as err:
                     self.logger.error(err)
                     raise err
