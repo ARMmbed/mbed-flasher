@@ -88,26 +88,66 @@ class FlasherMbed(object):
                 self.logger.debug("re-mount check timed out for %s" % drive)
                 break
                 
-    def check_serial_port_unchanged(self, target_id, serial_port):
-        import mbed_lstools
-        mbeds = mbed_lstools.create()
-        serial_unchanged = True
+    def check_points_unchanged(self, target):
+        new_target = {}
         if platform.system() == 'Windows':
-            if serial_port != mbeds.get_mbed_com_port(target_id):
-                serial_unchanged = False
+            import mbed_lstools
+            mbeds = mbed_lstools.create()
+            if target['serial_port'] != mbeds.get_mbed_com_port(target['target_id']):
+                new_target['serial_port'] = mbeds.get_mbed_com_port(target['target_id'])
         elif platform.system() == 'Darwin':
             pass
         else:
             for line in os.popen('ls -oA /dev/serial/by-id/').read().splitlines():
-                if line.find(target_id) != -1 and line.find(serial_port.split('/')[-1]) != -1:
-                    break
+                if line.find(target['target_id']) != -1:
+                    if target['serial_port'].split('/')[-1] != line.split('/')[-1]:
+                        if 'serial_port' not in new_target:
+                            new_target['serial_port'] = '/dev/' + line.split('/')[-1]
+                        else:
+                            self.logger.error("target_id %s has more than 1 serial port in the system" % target['target_id'])
+                            return -10
+            dev_points = []
+            for dev_line in os.popen('ls -oA /dev/disk/by-id/').read().splitlines():
+                if dev_line.find(target['target_id']) != -1:
+                    if 'dev_point' not in new_target:
+                        new_target['dev_point'] = '/dev/' + dev_line.split('/')[-1]
+                    else:
+                        self.logger.error("target_id %s has more than 1 device point in the system" % target['target_id'])
+                        return -11
+            if dev_points:
+                mounts = None
+                for i in range(10):
+                    for_break = False
+                    mounts = os.popen('mount |grep vfat').read().splitlines()
+                    for mount in mounts:
+                        if mount.find(devpoints[0]) != -1:
+                            if target['mount_point'] == mount.split('on')[1].split('type')[0].strip():
+                                for_break = True
+                                break
+                            else:
+                                for_break = True
+                                new_target['mount_point'] = mount.split('on')[1].split('type')[0].strip()
+                                break
+                        sleep(1)
+                    if for_break:
+                        break
+                else:
+                    self.logger.error("vfat mount point for %s did not re-appear in the system in 10 seconds" % target['target_id'])
+                    return -12
+        
+        if new_target:
+            if 'serial_port' in new_target:
+                self.logger.debug("serial port %s has changed to %s" %(target['serial_port'], new_target['serial_port']))
             else:
-                serial_unchanged = False
-        if serial_unchanged:
-            self.logger.debug("serial port has not changed")
+                self.logger.debug("serial port %s has not changed" % target['serial_port'])
+            if 'mount_point' in new_target:
+                self.logger.debug("mount point %s has changed to %s" %(target['mount_point'], new_target['mount_point']))
+            else:
+                self.logger.debug("mount point %s has not changed" % target['mount_point'])
+            new_target['target_id'] = target['target_id']
+            return new_target
         else:
-            self.logger.debug("serial port has changed")
-        return serial_unchanged
+            return target
 
     def flash(self, source, target, pyocd):
         """copy file to the destination
@@ -170,29 +210,43 @@ class FlasherMbed(object):
                     self.logger.debug("copy finished")
                     sleep(4)
                     
-                    serial_unchanged = self.check_serial_port_unchanged(target["target_id"], target['serial_port'])
+                    new_target = self.check_points_unchanged(target)
                     
-                    if serial_unchanged:
-                        t = Thread(target=self.runner, args=(target['mount_point'],))
-                        t.start()
-                        while True:
-                            if not t.is_alive():
-                                break
-                        sleep(2)
+                    if type(new_target) == type(1):
+                        return new_target
+                    else:
+                        if platform.system() == 'Windows':
+                            t = Thread(target=self.runner, args=(target['mount_point'],))
+                            t.start()
+                            while True:
+                                if not t.is_alive():
+                                    break
+                            sleep(2)                            
                         self.port = False
                         if 'serial_port' in target:
-                            self.reset_board(target['serial_port'])
+                            port = target['serial_port']
+                        if 'serial_port' in new_target:
+                            port = new_target['serial_port']
+                        self.reset_board(target['serial_port'])
+                        
                         #verify flashing went as planned
-                        if 'mount_point' in target:
-                            if isfile(join(target['mount_point'], 'FAIL.TXT')):
-                                with open(join(target['mount_point'], 'FAIL.TXT'), 'r') as fault:
-                                    fault = fault.read().strip()
-                                self.logger.error("Flashing failed: %s. tid=%s" % (fault, target["target_id"]))
-                                return -4
+                        self.logger.debug("verifying flash")
+                        if 'mount_point' in new_target:
+                            mount = new_target['mount_point']
+                        else:
+                            mount = target['mount_point']
+                        if isfile(join(mount, 'FAIL.TXT')):
+                            with open(join(mount, 'FAIL.TXT'), 'r') as fault:
+                                fault = fault.read().strip()
+                            self.logger.error("Flashing failed: %s. tid=%s" % (fault, target["target_id"]))
+                            return -4
+                        if isfile(join(mount, 'ASSERT.TXT')):
+                            with open(join(mount, 'ASSERT.TXT'), 'r') as fault:
+                                fault = fault.read().strip()
+                            self.logger.error("Flashing failed: %s. tid=%s" % (fault, target))
+                            return -4
                         self.logger.debug("ready")
                         return 0
-                    else:
-                        self.logger.debug("Should start using newly assigned serial port")
                 except IOError as err:
                     self.logger.error(err)
                     raise err

@@ -127,6 +127,7 @@ class Flash(object):
                 i += 1
             
         else:
+            '''
             ans_q = Queue()
             parameters = [(build, target['target_id'], None, device_mapping_table, pyocd, ans_q) for target in device_mapping_table]
             threads = [ (threading.Thread(target=self.flash, args=args)) for args in parameters]
@@ -147,6 +148,18 @@ class Flash(object):
                 else:
                     passes.append(False)
 
+            i=1
+            '''
+            passes = []
+            retcodes = 0
+            for target in device_mapping_table:
+                retcode = 0
+                retcode = self.flash(build, target['target_id'], None, device_mapping_table, pyocd)
+                retcodes += retcode
+                if retcode == 0:
+                    passes.append(True)
+                else:
+                    passes.append(False)
             i=1
             for ok in passes:
                 if ok: self.logger.debug("dev#%i -> SUCCESS" % i)
@@ -186,7 +199,7 @@ class Flash(object):
         self.logger.debug(device_mapping_table)
         
         try:
-            if not target_id is None:
+            if target_id:
                 target_mbed = self.__find_by_target_id(target_id, device_mapping_table)
             else:
                 target_mbed = self.__find_by_platform_name(platform_name, device_mapping_table)
