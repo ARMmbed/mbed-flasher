@@ -149,32 +149,6 @@ class FlasherMbed(object):
         else:
             return target
             
-    def verify_core_status(self, target_id):
-        lines = ''
-        if platform.system() == 'Windows':
-            os.popen('pyocd-tool status -b %s' % target_id).read().splitlines()
-        else:
-            os.popen('sudo pyocd-tool status -b %s' % target_id).read().splitlines()
-        for line in lines:
-            if line.find('Running') != -1:
-                return True
-            if line.find('Halted') != -1:
-                return False
-                
-    def reset_with_pyocd(self, target_id):
-        lines = ''
-        if platform.system() == 'Windows':
-            os.popen('pyocd-tool reset -b %s' % target_id)
-            lines = os.popen('pyocd-tool status -b %s' % target_id).read().splitlines()
-        else:
-            os.popen('sudo pyocd-tool reset -b %s' % target_id)
-            lines = os.popen('sudo pyocd-tool status -b %s' % target_id).read().splitlines()
-        for line in lines:
-            if line.find('Running') != -1:
-                return True
-            if line.find('Halted') != -1:
-                return False
-    
     def flash(self, source, target, pyocd):
         """copy file to the destination
         :param binary_data: binary data to be flashed
@@ -236,11 +210,6 @@ class FlasherMbed(object):
                     self.logger.debug("copy finished")
                     sleep(4)
                     
-                    if not self.verify_core_status(target["target_id"]):
-                        self.logger.debug("Flashing halted Core")
-                    else:
-                        self.logger.error("Flashing did not halt the Core, something is wrong")
-                    
                     new_target = self.check_points_unchanged(target)
                     
                     if type(new_target) == type(1):
@@ -259,14 +228,7 @@ class FlasherMbed(object):
                         if 'serial_port' in new_target:
                             port = new_target['serial_port']
                         self.reset_board(target['serial_port'])
-                        
-                        if self.verify_core_status(target["target_id"]):
-                            self.logger.debug("Core is running, reset worked")
-                        else:
-                            self.logger.error("Core halted, should try to reset again")
-                            if not self.reset_with_pyocd(target["target_id"]):
-                                self.logger.error("Could not get Core to Running state")
-                                return -13
+                        sleep(0.4)
                             
                         #verify flashing went as planned
                         self.logger.debug("verifying flash")
