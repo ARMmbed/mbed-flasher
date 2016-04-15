@@ -170,5 +170,6 @@ def main(argv):
             print 'Working binary is not a file'
         else:
             print "Something seriously wrong"
+        sys.exit(3)
 if __name__ == "__main__":
     main(sys.argv[1:])
