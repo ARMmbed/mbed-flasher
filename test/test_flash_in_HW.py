@@ -8,6 +8,7 @@ import time
 import platform
 from mbed_flasher.flash import Flash
 import mbed_lstools
+import sys, getopt
 
 
 class VerifyFlashing():
@@ -19,8 +20,10 @@ class VerifyFlashing():
         if platform.system() == 'Windows':
             mode = os.popen('mode').read().splitlines()
         else:
-            mode = os.popen('ls -lart /dev/serial/by-id/').read().splitlines()
-
+            try:
+                mode = os.popen('ls -lart /dev/serial/by-id/').read().splitlines()
+            except Error as e:
+                print "Could not find any connected devices with serial ports"
         com = []
         for line in mode:
             if platform.system() == 'Windows':
@@ -71,73 +74,101 @@ class VerifyFlashing():
                 ser.close()
                 return False
 
-def main():
-
-    v = VerifyFlashing()
-    devices_on_system = v.gather_all_devices_from_system()
-    devices_from_mbedls = v.gather_all_devices_from_mbedls()
-    if len(devices_on_system) == len(devices_from_mbedls):
-        print "All devices attached to system are visible in mbedls"
+def main(argv):
+    dummy_bin = None
+    working_bin = None
+    try:
+        opts, args = getopt.getopt(argv,"hd:w:",["dbin=","wbin="])
+    except getopt.GetoptError:
+        print 'python test_flash_in_HW.py -d <dummy_binary> -w <working_binary>'
+        sys.exit(2)
+    if opts:
+        for opt, arg in opts:
+            if opt == '-h':
+                print 'python test_flash_in_HW.py -d <dummy_binary> -w <working_binary>'
+                sys.exit()
+            elif opt in ("-d", "--dbin"):
+                dummy_bin = arg
+            elif opt in ("-w", "--wbin"):
+                working_bin = arg
     else:
-        raise SystemError("All of the attached devices are not seen with mbedls")
-
-    # First check that all devices are mounted
-    v.are_devices_mounted(len(devices_on_system))
-
-    result =[]
-    # flash the devices with dummy bin
-    flasher = Flash()
-    status = flasher.flash(build='helloworld.bin', platform_name='K64F', target_id='ALL')
-    if status == 0:
-        time.sleep(0.5)
-        if v.are_devices_mounted(len(devices_on_system)):
-            for device in devices_from_mbedls:
-                if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
-                    raise SystemError("Flashing failed, got response with dummy binary")
-                else:
-                    print "Got no response, as expected"
+        print 'python test_flash_in_HW.py -d <dummy_binary> -w <working_binary>'
+        sys.exit(2)
+    if os.path.isfile(dummy_bin) and os.path.isfile(working_bin):
+        v = VerifyFlashing()
+        devices_on_system = v.gather_all_devices_from_system()
+        if not devices_on_system:
+            print "Could not find any connected devices"
+            sys.exit(2)
+        devices_from_mbedls = v.gather_all_devices_from_mbedls()
+        if len(devices_on_system) == len(devices_from_mbedls):
+            print "All devices attached to system are visible in mbedls"
         else:
-            raise SystemError("Flashing failed, Device missing")
-    else:
-        raise SystemError("Dummy binary flashing failed")
-    result.append('First Dummy binary flash:\tPASS')
+            raise SystemError("All of the attached devices are not seen with mbedls")
 
-    # flash the devices with bin, which responses to "help" command
-    status = flasher.flash(build='testapp.bin', platform_name='K64F', target_id='ALL')
-    if status == 0:
-        time.sleep(0.5)
-        if v.are_devices_mounted(len(devices_on_system)):
-            for device in devices_from_mbedls:
-                if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
-                    print "Got response, as expected"
-                else:
+        # First check that all devices are mounted
+        v.are_devices_mounted(len(devices_on_system))
+
+        result =[]
+        # flash the devices with dummy bin
+        flasher = Flash()
+        status = flasher.flash(build=dummy_bin, platform_name='K64F', target_id='ALL')
+        if status == 0:
+            time.sleep(0.5)
+            if v.are_devices_mounted(len(devices_on_system)):
+                for device in devices_from_mbedls:
                     if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
-                        print "Got response with second try"
+                        raise SystemError("Flashing failed, got response with dummy binary")
                     else:
-                        raise SystemError("Flashing failed, got no response with working binary")
-    else:
-        raise SystemError("Working binary flashing failed")
-    result.append('Working binary flash:\t\tPASS')
-
-    # flash the devices with dummy bin
-    status = flasher.flash(build='helloworld.bin', platform_name='K64F', target_id='ALL')
-    if status == 0:
-        time.sleep(0.5)
-        if v.are_devices_mounted(len(devices_on_system)):
-            for device in devices_from_mbedls:
-                if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
-                    raise SystemError("Flashing failed, got response with dummy binary")
-                else:
-                    print "Got no response, as expected"
+                        print "Got no response, as expected"
+            else:
+                raise SystemError("Flashing failed, Device missing")
         else:
-            raise SystemError("Flashing failed, Device missing")
-    else:
-        raise SystemError("Dummy binary flashing failed")
-    result.append('Second Dummy binary flash:\tPASS')
-    
-    print "\nTested %d mbed boards" % len(devices_from_mbedls)
-    for item in result:
-        print item
+            raise SystemError("Dummy binary flashing failed")
+        result.append('First Dummy binary flash:\tPASS')
 
+        # flash the devices with bin, which responses to "help" command
+        status = flasher.flash(build=working_bin, platform_name='K64F', target_id='ALL')
+        if status == 0:
+            time.sleep(0.5)
+            if v.are_devices_mounted(len(devices_on_system)):
+                for device in devices_from_mbedls:
+                    if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
+                        print "Got response, as expected"
+                    else:
+                        if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
+                            print "Got response with second try"
+                        else:
+                            raise SystemError("Flashing failed, got no response with working binary")
+        else:
+            raise SystemError("Working binary flashing failed")
+        result.append('Working binary flash:\t\tPASS')
+
+        # flash the devices with dummy bin
+        status = flasher.flash(build=dummy_bin, platform_name='K64F', target_id='ALL')
+        if status == 0:
+            time.sleep(0.5)
+            if v.are_devices_mounted(len(devices_on_system)):
+                for device in devices_from_mbedls:
+                    if v.verify_output_per_device(device['serial_port'], 'help', 'echo'):
+                        raise SystemError("Flashing failed, got response with dummy binary")
+                    else:
+                        print "Got no response, as expected"
+            else:
+                raise SystemError("Flashing failed, Device missing")
+        else:
+            raise SystemError("Dummy binary flashing failed")
+        result.append('Second Dummy binary flash:\tPASS')
+        
+        print "\nTested %d mbed boards" % len(devices_from_mbedls)
+        for item in result:
+            print item
+    else:
+        if not os.path.isfile(dummy_bin):
+            print 'Dummy binary is not a file'
+        elif not os.path.isfile(working_bin):
+            print 'Working binary is not a file'
+        else:
+            print "Something seriously wrong"
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
