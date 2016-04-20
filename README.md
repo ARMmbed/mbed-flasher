@@ -75,6 +75,16 @@ optional arguments:
 
 ```
 
+## Running unit tests
+To execute the tests:
+```
+coverage run -m unittest discover -s test
+```
+To generate a coverage report:
+```
+coverage html
+```
+
 ## Creating the installer
 
 **For Windows:**
