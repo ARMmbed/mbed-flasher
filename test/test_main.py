@@ -22,6 +22,8 @@ from mbed_flasher.main import cmd_parser_setup
 from mbed_flasher.main import mbedflash_main
 import argparse
 import pkg_resources
+from StringIO import StringIO
+import mock
 
 class Main_TestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
@@ -76,3 +78,69 @@ class Main_TestCase(unittest.TestCase):
             silent=True
         with self.assertRaises(SystemExit) as cm:
             mbedflash_main(cmd_args=args)
+
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_list(self, mock_stdout):
+        class args:
+            version = False
+            verbose = 0
+            list = True
+            flashers = False
+            silent=False
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=args)
+        self.assertEqual(mock_stdout.getvalue(), '["NRF51822", "K64F", "NRF51_DK", "NUCLEO_F401RE"]\n')
+
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flashers(self, mock_stdout):
+        class args:
+            version = False
+            verbose = False
+            list = False
+            flashers = True
+            silent=False
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=args)
+        self.assertEqual(mock_stdout.getvalue(), '["Mbed"]\n')
+
+    def test_incorrect_file_target_platform(self):
+        class args:
+            version = False
+            input = None
+            target_id = None
+            verbose = False
+            list = False
+            flashers = False
+            silent=False
+            platform_name=False
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=args)
+        self.assertEqual(cm.exception.code, "No input, nothing to do.\nTry mbedflash --help")
+
+    def test_incorrect_file(self):
+        class args:
+            version = False
+            input = None
+            target_id = '01234567890'
+            verbose = False
+            list = False
+            flashers = False
+            silent=False
+            platform_name=False
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=args)
+        self.assertEqual(cm.exception.code, "Missing file to flash, provide a file with -i <file>")
+
+    def test_incorrect_target(self):
+        class args:
+            version = False
+            input = True
+            target_id = False
+            verbose = False
+            list = False
+            flashers = False
+            silent=False
+            platform_name=False
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=args)
+        self.assertEqual(cm.exception.code, "Missing TargetID to flash.\nProvide a TargetID with --tid <TID> or --tid ALL to flash all connected devices corresponding to provided platform")
