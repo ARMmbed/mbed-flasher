@@ -120,13 +120,13 @@ class FlasherMbed(object):
                     for_break = False
                     mounts = os.popen('mount |grep vfat').read().splitlines()
                     for mount in mounts:
-                        if mount.find(devpoints[0]) != -1:
+                        if mount.find(new_target['dev_point']) != -1:
                             if target['mount_point'] == mount.split('on')[1].split('type')[0].strip():
                                 for_break = True
                                 break
                             else:
-                                for_break = True
                                 new_target['mount_point'] = mount.split('on')[1].split('type')[0].strip()
+                                for_break = True
                                 break
                         sleep(1)
                     if for_break:
