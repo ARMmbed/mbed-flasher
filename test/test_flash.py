@@ -18,11 +18,14 @@ limitations under the License.
 
 import logging
 import unittest
-from mbed_flasher.flash import Flash
 import mbed_lstools
 import time
+import mock
+from mbed_flasher.flash import Flash
+from StringIO import StringIO
 
-class Flash_TestCase(unittest.TestCase):
+
+class FlashTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
     mbeds = mbed_lstools.create()
@@ -36,24 +39,27 @@ class Flash_TestCase(unittest.TestCase):
     def test_run_file_does_not_exist(self):
         flasher = Flash()
         with self.assertRaises(SyntaxError) as cm:
-            flasher.flash(build = 'file.bin', target_id = None, platform_name=None, device_mapping_table = False, pyocd = False)
-        self.assertIn("target_id or target_name is required", cm.exception,)
+            flasher.flash(build='file.bin', target_id=None, platform_name=None, device_mapping_table=False, pyocd=False)
+        self.assertIn("target_id or target_name is required", cm.exception, )
 
     def test_run_target_id_and_platform_missing(self):
         flasher = Flash()
-        ret = flasher.flash(build = 'file.bin', target_id = True, platform_name=False, device_mapping_table = False, pyocd = False)
+        ret = flasher.flash(build='file.bin', target_id=True, platform_name=False, device_mapping_table=False,
+                            pyocd=False)
         self.assertEqual(ret, -5)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_target_id_all(self):
         flasher = Flash()
-        ret = flasher.flash(build = 'test/helloworld.bin', target_id = 'all', platform_name=False, device_mapping_table = False, pyocd = False)
+        ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name=False,
+                            device_mapping_table=False, pyocd=False)
         self.assertEqual(ret, -3)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_one_target_id(self):
         flasher = Flash()
-        ret = flasher.flash(build = 'test/helloworld.bin', target_id = '0240000029164e45002f0012706e0006f301000097969900', platform_name=False, device_mapping_table = False, pyocd = False)
+        ret = flasher.flash(build='test/helloworld.bin', target_id='0240000029164e45002f0012706e0006f301000097969900',
+                            platform_name=False, device_mapping_table=False, pyocd=False)
         self.assertEqual(ret, -3)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
@@ -69,8 +75,9 @@ class Flash_TestCase(unittest.TestCase):
         if target_id:
             flasher = Flash()
             with self.assertRaises(NotImplementedError) as cm:
-                flasher.flash(build = 'test/helloworld.bin', target_id = target_id, platform_name='K65G', device_mapping_table = False, pyocd = False)
-            self.assertIn("Platform 'K65G' is not supported by mbed-flasher", cm.exception,)
+                flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K65G',
+                              device_mapping_table=False, pyocd=False)
+            self.assertIn("Platform 'K65G' is not supported by mbed-flasher", cm.exception, )
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_hw_flash(self):
@@ -84,19 +91,30 @@ class Flash_TestCase(unittest.TestCase):
                     break
         if target_id:
             flasher = Flash()
-            ret = flasher.flash(build = 'test/helloworld.bin', target_id = target_id, platform_name=False, device_mapping_table = False, pyocd = False)
+            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name=False,
+                                device_mapping_table=False, pyocd=False)
             self.assertEqual(ret, 0)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    def test_run_with_file_with_all(self):
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_run_with_file_with_all(self, mock_stdout):
         time.sleep(4)
         flasher = Flash()
-        ret = flasher.flash(build = 'test/helloworld.bin', target_id = 'all', platform_name='K64F', device_mapping_table = False, pyocd = False)
+        ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name='K64F',
+                            device_mapping_table=False, pyocd=False)
         self.assertEqual(ret, 0)
+        if mock_stdout:
+            pass
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    def test_run_with_file_with_prefix(self):
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_run_with_file_with_prefix(self, mock_stdout):
         time.sleep(4)
         flasher = Flash()
-        ret = flasher.flash(build = 'test/helloworld.bin', target_id = '0', platform_name=None, device_mapping_table = False, pyocd = False)
+        ret = flasher.flash(build='test/helloworld.bin', target_id='0', platform_name=None, device_mapping_table=False,
+                            pyocd=False)
         self.assertEqual(ret, 0)
+        if mock_stdout:
+            pass
+if __name__ == '__main__':
+    unittest.main()
