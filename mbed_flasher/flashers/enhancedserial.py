@@ -15,11 +15,13 @@ import pkg_resources
 from serial import Serial, SerialException, SerialTimeoutException
 from time import sleep
 
+
 class EnhancedSerial(Serial):
     def __init__(self, *args, **kwargs):
-        #ensure that a reasonable timeout is set
-        timeout = kwargs.get('timeout',0.1)
-        if timeout < 0.01: timeout = 0.1
+        # ensure that a reasonable timeout is set
+        timeout = kwargs.get('timeout', 0.1)
+        if timeout < 0.01:
+            timeout = 0.1
         kwargs['timeout'] = timeout
         Serial.__init__(self, *args, **kwargs)
         self.buf = ''
@@ -84,7 +86,7 @@ class EnhancedSerial(Serial):
             self.break_condition = False
         return result
         
-    def readline(self, maxsize=None, timeout=1):
+    def readline(self, maxsize=None, timeout=1.0):
         """maxsize is ignored, timeout in seconds is the max time that is way for a complete line"""
         tries = 0
         while 1:
@@ -104,7 +106,8 @@ class EnhancedSerial(Serial):
                 block = ''
             except ValueError:
                 # Will be raised when parameter are out of range, e.g. baud rate, data bits.
-                # UnicodeError-Raised when a Unicode-related encoding or decoding error occurs. It is a subclass of ValueError.
+                # UnicodeError-Raised when a Unicode-related encoding or decoding error occurs.
+                # It is a subclass of ValueError.
                 block = ''
             self.buf += block
             pos = self.buf.find('\n')
@@ -117,7 +120,7 @@ class EnhancedSerial(Serial):
         line, self.buf = self.buf, ''
         return line
 
-    def readlines(self, sizehint=None, timeout=1):
+    def readlines(self, sizehint=None, timeout=1.0):
         """read all lines that are available. abort after timout
         when no more data arrives."""
         lines = []
@@ -129,14 +132,14 @@ class EnhancedSerial(Serial):
                 break
         return lines
 
-if __name__=='__main__':
-    #do some simple tests with a Loopback HW (see test.py for details)
+if __name__ == '__main__':
+    # do some simple tests with a Loopback HW (see test.py for details)
     PORT = 0
-    #test, only with Loopback HW (shortcut RX/TX pins (3+4 on DSUB 9 and 25) )
+    # test, only with Loopback HW (shortcut RX/TX pins (3+4 on DSUB 9 and 25) )
     s = EnhancedSerial(PORT)
-    #write out some test data lines
+    # write out some test data lines
     s.write('\n'.join("hello how are you".split()))
-    #and read them back
-    print( s.readlines() )
-    #this one should print an empty list
-    print( s.readlines(timeout=0.4) )
+    # and read them back
+    print(s.readlines())
+    # this one should print an empty list
+    print(s.readlines(timeout=0.4))

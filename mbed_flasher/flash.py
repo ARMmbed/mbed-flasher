@@ -72,7 +72,7 @@ class Flash(object):
 
         raise Exception("oh nou")
 
-    def flash_multiple(self, build, platform_name, device_mapping_table=None, pyocd=False, target_prefix=''):
+    def flash_multiple(self, build, platform_name, pyocd=False, target_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
         
@@ -83,7 +83,8 @@ class Flash(object):
                     found_platform = item['platform_name']
                 else:
                     if item['platform_name'] != found_platform:
-                        self.logger.error('Multiple devices and platforms found, please specify preferred platform with -t <platform>.')
+                        self.logger.error('Multiple devices and platforms found, '
+                                          'please specify preferred platform with -t <platform>.')
                         return -9
         
         if target_prefix:
@@ -91,7 +92,7 @@ class Flash(object):
                 for item in device_mapping_table:
                     if platform_name:
                         if item['platform_name'] != platform_name:
-                            #skipping boards that do not match with specified platform
+                            # skipping boards that do not match with specified platform
                             continue
                     if item['target_id'].startswith(str(target_prefix)):
                         aux_device_mapping_table.append(item)
@@ -130,17 +131,18 @@ class Flash(object):
             passes = []
             retcodes = 0
             for target in device_mapping_table:
-                retcode = 0
                 retcode = self.flash(build, target['target_id'], None, device_mapping_table, pyocd)
                 retcodes += retcode
                 if retcode == 0:
                     passes.append(True)
                 else:
                     passes.append(False)
-            i=1
+            i = 1
             for ok in passes:
-                if ok: self.logger.debug("dev#%i -> SUCCESS" % i)
-                else:  self.logger.warning("dev#%i -> FAIL :(" % i)
+                if ok:
+                    self.logger.debug("dev#%i -> SUCCESS" % i)
+                else:
+                    self.logger.warning("dev#%i -> FAIL :(" % i)
                 i += 1
 
         return retcodes
@@ -161,9 +163,9 @@ class Flash(object):
             return -5
 
         if target_id.lower() == 'all':
-            return self.flash_multiple(build, platform_name, device_mapping_table, pyocd)
+            return self.flash_multiple(build, platform_name, pyocd)
         elif len(target_id) < 48:
-            return self.flash_multiple(build, platform_name, device_mapping_table, pyocd, target_id)
+            return self.flash_multiple(build, platform_name, pyocd, target_id)
         
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
@@ -188,13 +190,13 @@ class Flash(object):
 
         if not platform_name:
             platform_name = target_mbed['platform_name']
-        if not platform_name in self.SUPPORTED_TARGETS:
-            raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name )
+        if platform_name not in self.SUPPORTED_TARGETS:
+            raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name)
 
-        #if not isinstance(build, Build):
+        # if not isinstance(build, Build):
         #    build = Build.init(ref=build)
         target_mbed.update(self.SUPPORTED_TARGETS[platform_name])
-        self.logger.debug("Flashing: %s",target_mbed["target_id"])
+        self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name)
         try:

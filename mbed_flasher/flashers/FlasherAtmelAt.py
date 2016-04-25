@@ -25,10 +25,11 @@ import subprocess
 import logging
 import tempfile
 
+
 class FlasherAtmelAt(object):
     name = "Atprogram"
     exe = None
-    supported_targets=["SAM4E"]
+    supported_targets = ["SAM4E"]
     logger = logging
 
     def __init__(self, exe=None):
@@ -64,15 +65,14 @@ class FlasherAtmelAt(object):
                             FlasherAtmelAt.exe = os.path.join(dirpath, x)
                             print FlasherAtmelAt.exe
         if not FlasherAtmelAt.exe:
-            for dir in os.environ['PATH'].split(os.pathsep):
-                if dir.find('Atmel') != -1:
-                    FlasherAtmelAt.exe = "atprogram.exe" # assume that atprogram is in path
+            for ospath in os.environ['PATH'].split(os.pathsep):
+                if ospath.find('Atmel') != -1:
+                    FlasherAtmelAt.exe = "atprogram.exe"  # assume that atprogram is in path
                     break
             else:
                 FlasherAtmelAt.exe = exe
         
         FlasherAtmelAt.logger.debug("atprogram location: %s", FlasherAtmelAt.exe)
-
 
     @staticmethod
     def get_available_devices():
@@ -82,10 +82,10 @@ class FlasherAtmelAt(object):
             return []
         FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
         cmd = FlasherAtmelAt.exe + " list"
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         connected_devices = []
-        if proc.returncode == 0 :
+        if proc.returncode == 0:
             lines = stdout.splitlines()
             for line in lines:
                 ret = FlasherAtmelAt.find(line, 'edbg\W+(.*)')
@@ -108,17 +108,17 @@ class FlasherAtmelAt(object):
         :return: 0 when flashing success
         """
         with tempfile.TemporaryFile() as temp:
-             temp.write(source)
-             temp.close()
-             temp.name
-             # actual flash procedure
+            temp.write(source)
+            temp.close()
+            temp.name
+            # actual flash procedure
 
-             cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+temp.name
-             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-             stdout, stderr = proc.communicate()
-             FlasherAtmelAt.logger.debug(stdout)
-             FlasherAtmelAt.logger.debug(stderr)
-             return proc.returncode
+            cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+temp.name
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
+            FlasherAtmelAt.logger.debug(stdout)
+            FlasherAtmelAt.logger.debug(stderr)
+            return proc.returncode
 
     @staticmethod
     def lookupExe(alternatives):

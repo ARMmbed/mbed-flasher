@@ -8,10 +8,10 @@ AvailableFlashers = [
 ]
 
 if platform.system() == 'Windows':
-    for dir in os.environ['PATH'].split(os.pathsep):
-        if dir.find('Atmel') != -1:
+    for ospath in os.environ['PATH'].split(os.pathsep):
+        if ospath.find('Atmel') != -1:
             AvailableFlashers.append(FlasherAtmelAt)
-        if not FlasherAtmelAt in AvailableFlashers:
+        if FlasherAtmelAt not in AvailableFlashers:
             path = ''
             if os.path.exists('C:\\Program Files\\Atmel\\'):
                 path = 'C:\\Program Files\\Atmel\\'

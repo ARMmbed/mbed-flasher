@@ -29,6 +29,7 @@ from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
 
+
 class FlasherMbed(object):
     name = "Mbed"
 
@@ -40,7 +41,7 @@ class FlasherMbed(object):
         """Load target mapping information
         """
         libpath = dirname(abspath(sys.modules[__name__].__file__))
-        return json.loads(open( join(libpath, "FlasherMbed.target_info.json"), "rb").read())
+        return json.loads(open(join(libpath, "FlasherMbed.target_info.json"), "rb").read())
 
     @staticmethod
     def get_available_devices():
@@ -48,30 +49,30 @@ class FlasherMbed(object):
         mbeds = mbed_lstools.create()
         return mbeds.list_mbeds()
         
-    def reset_board(self, target_id):
+    def reset_board(self, serial_port):
         try:
-            self.port = EnhancedSerial(target_id)
+            port = EnhancedSerial(serial_port)
         except SerialException as e:
             self.logger.info("reset could not be sent")
             self.logger.error(e)
             if e.message.find('could not open port') != -1:
                 print 'Reset could not be given. Close your Serial connection to device.'
             return -6
-        self.port.baudrate = 115200
-        self.port.timeout = 1
-        self.port.xonxoff = False
-        self.port.rtscts = False
-        self.port.flushInput()
-        self.port.flushOutput()
+        port.baudrate = 115200
+        port.timeout = 1
+        port.xonxoff = False
+        port.rtscts = False
+        port.flushInput()
+        port.flushOutput()
 
-        if self.port:
+        if port:
             self.logger.info("sendBreak to device to reboot")
-            result = self.port.safe_sendBreak()
+            result = port.safe_sendBreak()
             if result:
                 self.logger.info("reset completed")
             else:
                 self.logger.info("reset failed")
-        self.port.close()
+        port.close()
        
     def runner(self, drive):
         i = 0
@@ -79,9 +80,9 @@ class FlasherMbed(object):
             sleep(0.2)
             i += 1
             if platform.system() == 'Windows':
-                out = os.popen('dir %s' %drive).read()
+                out = os.popen('dir %s' % drive).read()
             else:
-                out = os.popen('ls %s 2> /dev/null' %drive).read()
+                out = os.popen('ls %s 2> /dev/null' % drive).read()
             if out.find('MBED.HTM') != -1:
                 break
             if i >= 25:
@@ -104,7 +105,8 @@ class FlasherMbed(object):
                         if 'serial_port' not in new_target:
                             new_target['serial_port'] = '/dev/' + line.split('/')[-1]
                         else:
-                            self.logger.error("target_id %s has more than 1 serial port in the system" % target['target_id'])
+                            self.logger.error("target_id %s has more than 1 "
+                                              "serial port in the system" % target['target_id'])
                             return -10
             dev_points = []
             for dev_line in os.popen('ls -oA /dev/disk/by-id/').read().splitlines():
@@ -112,10 +114,10 @@ class FlasherMbed(object):
                     if 'dev_point' not in new_target:
                         new_target['dev_point'] = '/dev/' + dev_line.split('/')[-1]
                     else:
-                        self.logger.error("target_id %s has more than 1 device point in the system" % target['target_id'])
+                        self.logger.error("target_id %s has more than 1 "
+                                          "device point in the system" % target['target_id'])
                         return -11
             if dev_points:
-                mounts = None
                 for i in range(10):
                     for_break = False
                     mounts = os.popen('mount |grep vfat').read().splitlines()
@@ -137,11 +139,11 @@ class FlasherMbed(object):
         
         if new_target:
             if 'serial_port' in new_target:
-                self.logger.debug("serial port %s has changed to %s" %(target['serial_port'], new_target['serial_port']))
+                self.logger.debug("serial port %s has changed to %s" % (target['serial_port'], new_target['serial_port']))
             else:
                 self.logger.debug("serial port %s has not changed" % target['serial_port'])
             if 'mount_point' in new_target:
-                self.logger.debug("mount point %s has changed to %s" %(target['mount_point'], new_target['mount_point']))
+                self.logger.debug("mount point %s has changed to %s" % (target['mount_point'], new_target['mount_point']))
             else:
                 self.logger.debug("mount point %s has not changed" % target['mount_point'])
             new_target['target_id'] = target['target_id']
@@ -163,7 +165,7 @@ class FlasherMbed(object):
                 return -8
         mount_point = target['mount_point']+'/'
         binary_type = target['properties']['binary_type']
-        destination=abspath(join(mount_point, 'image'+binary_type))
+        destination = abspath(join(mount_point, 'image'+binary_type))
         
         if isinstance(source, six.string_types):
             if pyocd:
@@ -172,12 +174,12 @@ class FlasherMbed(object):
                         ocd_target = board.target
                         ocd_flash = board.flash
                         self.logger.debug("resetting device: %s" % target["target_id"])
-                        sleep(0.5) #small sleep for lesser HW ie raspberry
+                        sleep(0.5)  # small sleep for lesser HW ie raspberry
                         ocd_target.reset()
                         self.logger.debug("flashing device: %s" % target["target_id"])
                         ocd_flash.flashBinary(source)
                         self.logger.debug("resetting device: %s" % target["target_id"])
-                        sleep(0.5) #small sleep for lesser HW ie raspberry
+                        sleep(0.5)  # small sleep for lesser HW ie raspberry
                         ocd_target.reset()
                     return 0
                 except AttributeError as e:
@@ -196,7 +198,6 @@ class FlasherMbed(object):
                         copy(source, destination)
                     else:
                         self.logger.debug('read source file')
-                        aux_source = None
                         with open(source, 'rb') as f:
                             aux_source = f.read()
                         if not aux_source:
@@ -204,7 +205,7 @@ class FlasherMbed(object):
                             return -7
                         self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                         self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
-                        new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR )
+                        new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
                         os.write(new_file, aux_source)
                         os.close(new_file)
                     self.logger.debug("copy finished")
@@ -212,7 +213,7 @@ class FlasherMbed(object):
                     
                     new_target = self.check_points_unchanged(target)
                     
-                    if type(new_target) == type(1):
+                    if isinstance(new_target, int):
                         return new_target
                     else:
                         if platform.system() == 'Windows':
@@ -221,16 +222,15 @@ class FlasherMbed(object):
                             while True:
                                 if not t.is_alive():
                                     break
-                            sleep(2)                            
-                        self.port = False
-                        if 'serial_port' in target:
-                            port = target['serial_port']
+                            sleep(2)
+
                         if 'serial_port' in new_target:
-                            port = new_target['serial_port']
-                        self.reset_board(target['serial_port'])
+                            self.reset_board(new_target['serial_port'])
+                        else:
+                            self.reset_board(target['serial_port'])
                         sleep(0.4)
                             
-                        #verify flashing went as planned
+                        # verify flashing went as planned
                         self.logger.debug("verifying flash")
                         if 'mount_point' in new_target:
                             mount = new_target['mount_point']
