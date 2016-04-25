@@ -150,6 +150,8 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flasher"):
     """! Function used to drive CLI (command line interface) application
     @return Function exits with success-code
     @details Function exits back to command line with exit_status(=ERRORLEVEL in windows)
+    :param cmd_args: command line parameters
+    :param module_name: Name of the installed module
     """
     exit_status = 0
     
