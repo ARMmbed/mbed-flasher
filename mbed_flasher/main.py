@@ -124,7 +124,7 @@ def set_log_level_from_verbose(args):
         logger.critical("UNEXPLAINED NEGATIVE COUNT!")
 
 
-def mbedflash_main(cmd_args=None, module_name="mbed-flash"):
+def mbedflash_main(cmd_args=None, module_name="mbed-flasher"):
     """! Function used to drive CLI (command line interface) application
     @return Function exits with success-code
     @details Function exits back to command line with exit_status(=ERRORLEVEL in windows)

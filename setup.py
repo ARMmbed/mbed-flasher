@@ -49,6 +49,7 @@ setup(name='mbed-flasher',
       package_data={'': ['FlasherMbed.target_info.json']},
       license=LICENSE,
       test_suite = 'test',
+      tests_require=["mock"],
       entry_points={
         "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },

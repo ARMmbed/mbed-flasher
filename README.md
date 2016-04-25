@@ -75,6 +75,20 @@ optional arguments:
 
 ```
 
+## Running unit tests
+Required pre-installed packages: coverage, mock
+```
+sudo pip install coverage mock
+```
+To execute the tests:
+```
+coverage run -m unittest discover -s test
+```
+To generate a coverage report:
+```
+coverage html
+```
+
 ## Creating the installer
 
 **For Windows:**
