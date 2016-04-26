@@ -65,7 +65,7 @@ class Flash(object):
             raise NotImplementedError("Flashing %s is not supported" % platform_name)
 
         for Flasher in self.FLASHERS:
-            if platform_name in self.SUPPORTED_TARGETS.keys():
+            if platform_name in Flasher.get_supported_targets().keys():
                 return Flasher()
 
         raise Exception("oh nou")
@@ -133,7 +133,7 @@ class Flash(object):
             # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
             i = 0
             for device in device_mapping_table:
-                ret = self.flash(build, device['target_id'], None, device_mapping_table, pyocd)
+                ret = self.flash(build, device['target_id'], platform_name, device_mapping_table, pyocd)
                 if ret == 0:
                     self.logger.debug("dev#%i -> SUCCESS" % i)
                 else:
@@ -145,7 +145,7 @@ class Flash(object):
             passes = []
             retcodes = 0
             for target in device_mapping_table:
-                retcode = self.flash(build, target['target_id'], None, device_mapping_table, pyocd)
+                retcode = self.flash(build, target['target_id'], platform_name, device_mapping_table, pyocd)
                 retcodes += retcode
                 if retcode == 0:
                     passes.append(True)
@@ -179,7 +179,9 @@ class Flash(object):
 
         if target_id.lower() == 'all':
             return self.flash_multiple(build, platform_name, pyocd)
-        elif len(target_id) < 48:
+        elif len(target_id) < 48 and platform_name == 'K64F':
+            return self.flash_multiple(build, platform_name, pyocd, target_id)
+        elif len(target_id) < 20 and platform_name == 'SAM4E':
             return self.flash_multiple(build, platform_name, pyocd, target_id)
         
         if device_mapping_table:
@@ -200,16 +202,20 @@ class Flash(object):
         except KeyError as err:
             self.logger.error(err)
             return -3
-
+        
+        
         if not platform_name:
             platform_name = target_mbed['platform_name']
         if platform_name not in self.SUPPORTED_TARGETS:
             raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name)
-
+            
         target_mbed.update(self.SUPPORTED_TARGETS[platform_name])
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name)
+        if target_mbed['platform_name'] != platform_name:
+            raise SyntaxError("Platform '%s' is not supported by Flasher %s, please change the selected flasher" % (target_mbed['platform_name'], flasher.name))
+            
         try:
             retcode = flasher.flash(source=build, target=target_mbed, pyocd=pyocd)
         except KeyboardInterrupt:

@@ -52,18 +52,18 @@ class FlasherAtmelAt(object):
 
     @staticmethod
     def set_atprogram_exe(exe):
+        FlasherAtmelAt.logger = logging.getLogger('mbed-flasher')
         if exe is None:
             path = ''
-            if os.path.exists('C:\\Program File\\Atmel\\'):
+            if os.path.exists('C:\\Program Files\\Atmel\\'):
                 path = 'C:\\Program Files\\Atmel\\'
-            elif os.path.exists('C:\\Program File (x86)\\Atmel\\'):
+            elif os.path.exists('C:\\Program Files (x86)\\Atmel\\'):
                 path = 'C:\\Program Files (x86)\\Atmel\\'
             if path:
                 for dirpath, subdirs, files in os.walk(path):
                     for x in files:
                         if x.find("atprogram.exe") != -1:
                             FlasherAtmelAt.exe = os.path.join(dirpath, x)
-                            print FlasherAtmelAt.exe
         if not FlasherAtmelAt.exe:
             for ospath in os.environ['PATH'].split(os.pathsep):
                 if ospath.find('Atmel') != -1:
@@ -78,9 +78,10 @@ class FlasherAtmelAt(object):
     def get_available_devices():
         """list available devices
         """
+        FlasherAtmelAt.logger = logging.getLogger('mbed-flasher')
+        FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
         if not FlasherAtmelAt.exe:
             return []
-        FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
         cmd = FlasherAtmelAt.exe + " list"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
@@ -88,7 +89,7 @@ class FlasherAtmelAt(object):
         if proc.returncode == 0:
             lines = stdout.splitlines()
             for line in lines:
-                ret = FlasherAtmelAt.find(line, 'edbg\W+(.*)')
+                ret = FlasherAtmelAt.find_match(line, 'edbg\W+(.*)')
                 if ret:
                     connected_devices.append({
                         "platform_name": "SAM4E",
@@ -101,38 +102,22 @@ class FlasherAtmelAt(object):
         return connected_devices
 
     # actual flash procedure
-    def flash(self, source, target):
+    def flash(self, source, target, pyocd=None):
         """flash device
         :param sn: device serial number to be flashed
         :param binary: binary file to be flash
         :return: 0 when flashing success
-        """
-        with tempfile.TemporaryFile() as temp:
-            temp.write(source)
-            temp.close()
-            temp.name
-            # actual flash procedure
-
-            cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+temp.name
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-            FlasherAtmelAt.logger.debug(stdout)
-            FlasherAtmelAt.logger.debug(stderr)
-            return proc.returncode
+        """            
+        cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+source
+        FlasherAtmelAt.logger.debug(cmd)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        FlasherAtmelAt.logger.debug(stdout)
+        FlasherAtmelAt.logger.debug(stderr)
+        return proc.returncode
 
     @staticmethod
-    def lookupExe(alternatives):
-        """lookup existing exe
-        :param alternatives: exes
-        :return: founded exe
-        """
-        for exe in alternatives:
-            if os.path.exists(exe):
-                return exe
-        return None
-
-    @staticmethod
-    def find(line, lookup):
+    def find_match(line, lookup):
         """find with regexp
         :param line:
         :param lookup:

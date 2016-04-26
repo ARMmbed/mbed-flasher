@@ -22,6 +22,7 @@ import mock
 from mbed_flasher.main import cmd_parser_setup
 from mbed_flasher.main import mbedflash_main
 from StringIO import StringIO
+from mbed_flasher.flashers import AvailableFlashers
 
 flasher_version = '0.3.1'
 
@@ -98,9 +99,10 @@ class MainTestCase(unittest.TestCase):
             mbedflash_main(cmd_args=Args, module_name='mbed-flash')
         self.assertEqual(mock_stdout.getvalue(), "not-installed\n")
         self.assertEqual(cm.exception.code, 0)
-
+        
+    @unittest.skipIf(len(AvailableFlashers) > 1, "Both flashers supported in system")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_list(self, mock_stdout):
+    def test_list_with_one_flasher(self, mock_stdout):
         class Args:
             def __init__(self):
                 pass
@@ -114,9 +116,27 @@ class MainTestCase(unittest.TestCase):
             mbedflash_main(cmd_args=Args)
         self.assertEqual(mock_stdout.getvalue(), '["NRF51822", "K64F", "NRF51_DK", "NUCLEO_F401RE"]\n')
         self.assertEqual(cm.exception.code, 0)
-
+        
+    @unittest.skipIf(len(AvailableFlashers) < 2, "Only one flasher supported in system")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_flashers(self, mock_stdout):
+    def test_list_with_multiple_flasher(self, mock_stdout):
+        class Args:
+            def __init__(self):
+                pass
+            version = False
+            verbose = 0
+            list = True
+            flashers = False
+            silent = False
+
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=Args)
+        self.assertEqual(mock_stdout.getvalue(), '["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]\n')
+        self.assertEqual(cm.exception.code, 0)
+    
+    @unittest.skipIf(len(AvailableFlashers) > 1, "Both flashers supported in system")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_one_flasher(self, mock_stdout):
         class Args:
             def __init__(self):
                 pass
@@ -125,10 +145,27 @@ class MainTestCase(unittest.TestCase):
             list = False
             flashers = True
             silent = False
-
+            
         with self.assertRaises(SystemExit) as cm:
             mbedflash_main(cmd_args=Args)
         self.assertEqual(mock_stdout.getvalue(), '["Mbed"]\n')
+        self.assertEqual(cm.exception.code, 0)
+    
+    @unittest.skipIf(len(AvailableFlashers) < 2, "Only one flasher supported in system")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_multiple_flashers(self, mock_stdout):
+        class Args:
+            def __init__(self):
+                pass
+            version = False
+            verbose = False
+            list = False
+            flashers = True
+            silent = False
+            
+        with self.assertRaises(SystemExit) as cm:
+            mbedflash_main(cmd_args=Args)
+        self.assertEqual(mock_stdout.getvalue(), '["Mbed", "Atprogram"]\n')
         self.assertEqual(cm.exception.code, 0)
 
     def test_incorrect_file_target_platform(self):
