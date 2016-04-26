@@ -27,6 +27,7 @@ import logging
 import logging.handlers
 import os
 import json
+import time
 
 from flash import Flash
 
@@ -37,8 +38,27 @@ logger.setLevel(logging.DEBUG)
 # always write everything to the rotating log files
 if not os.path.exists('logs'):
     os.mkdir('logs')
-log_file_handler = logging.handlers.TimedRotatingFileHandler(
-    'logs/mbed-flasher.log', when='M', interval=2)
+files_to_be_removed = []
+old_logs = time.time()-172800  # 2 days
+for root, dirs, files in os.walk('logs/'):
+        for name in files:
+            if str(name).find('_mbed-flasher.txt') != -1:
+                if old_logs > time.mktime(time.strptime(str(name).split('_')[0], "%Y%m%d-%H%M%S")):
+                    files_to_be_removed.append(str(os.path.join(root, name)))
+            elif str(name).find('mbed-flasher.log') != -1:
+                files_to_be_removed.append(str(os.path.join(root, name)))
+            else:
+                pass
+
+if files_to_be_removed:
+    for filename in files_to_be_removed:
+        try:
+            os.remove(filename)
+        except OSError as e:
+            print(e)
+
+log_file = 'logs/%s_mbed-flasher.txt' % time.strftime("%Y%m%d-%H%M%S")
+log_file_handler = logging.handlers.RotatingFileHandler(log_file)
 log_file_handler.setFormatter(
     logging.Formatter(
         '%(asctime)s [%(levelname)s](%(name)s:%(funcName)s:%(lineno)d):%(thread)d: %(message)s'))
@@ -46,11 +66,13 @@ log_file_handler.setLevel(logging.DEBUG)
 logger.addHandler(log_file_handler)
 
 # also log to the console at a level determined by the --verbose flag
-console_handler = logging.StreamHandler() # sys.stderr
+console_handler = logging.StreamHandler()  # sys.stderr
 # set later by set_log_level_from_verbose() in interactive sessions
 console_handler.setLevel(logging.CRITICAL)
 console_handler.setFormatter(logging.Formatter('[%(levelname)s](%(name)s): %(message)s'))
 logger.addHandler(console_handler)
+logger.info('Writing logs to file %s' % log_file)
+
 
 def cmd_parser_setup():
     """! Configure CLI (Command Line options) options
@@ -74,7 +96,6 @@ def cmd_parser_setup():
                         action="store_true",
                         help='Prints the package version and exits.')
 
-
     parser.add_argument('-i', '--input',
                         dest='input', help='Binary input to be flash.')
 
@@ -97,13 +118,15 @@ def cmd_parser_setup():
                         help='Uses pyOCD for flashing.')
 
     parser.add_argument('--tid', '--target_id',
-                        dest='target_id', help='Target to be flashed, ALL will flash all connected devices with given platform-name')
+                        dest='target_id', help='Target to be flashed, '
+                                               'ALL will flash all connected devices with given platform-name')
     
     parser.add_argument('-t', '--platform_name',
                         dest='platform_name', help='Platform/target name to be flashed')
 
     args = parser.parse_args()
     return args
+
 
 def set_log_level_from_verbose(args):
     """ set logging level, silent, or some of verbose level
@@ -127,10 +150,12 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flasher"):
     """! Function used to drive CLI (command line interface) application
     @return Function exits with success-code
     @details Function exits back to command line with exit_status(=ERRORLEVEL in windows)
+    :param cmd_args: command line parameters
+    :param module_name: Name of the installed module
     """
     exit_status = 0
     
-    args = cmd_parser_setup() if cmd_args == None else cmd_args
+    args = cmd_parser_setup() if cmd_args is None else cmd_args
     set_log_level_from_verbose(args)
 
     if args.version:
@@ -155,6 +180,7 @@ def mbedflash_main(cmd_args=None, module_name="mbed-flasher"):
                 elif not args.input:
                     sys.exit("Missing file to flash, provide a file with -i <file>")
                 elif not args.target_id:
-                    sys.exit("Missing TargetID to flash.\nProvide a TargetID with --tid <TID> or --tid ALL to flash all connected devices corresponding to provided platform")
+                    sys.exit("Missing TargetID to flash.\nProvide a TargetID with --tid <TID> or "
+                             "--tid ALL to flash all connected devices corresponding to provided platform")
                     
     sys.exit(exit_status)
