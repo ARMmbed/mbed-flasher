@@ -177,9 +177,9 @@ class Flash(object):
 
         if target_id.lower() == 'all':
             return self.flash_multiple(build, platform_name, pyocd)
-        elif len(target_id) < 48 and platform_name == 'K64F':
+        elif len(target_id) < 48 and platform_name == 'K64F':  # prefix flashing support, ID length is 48 for K64F
             return self.flash_multiple(build, platform_name, pyocd, target_id)
-        elif len(target_id) < 20 and platform_name == 'SAM4E':
+        elif len(target_id) < 20 and platform_name == 'SAM4E':  # prefix flashing support, ID length is 20 for SAM4E
             return self.flash_multiple(build, platform_name, pyocd, target_id)
         
         if device_mapping_table:
