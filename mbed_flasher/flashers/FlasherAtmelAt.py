@@ -24,6 +24,7 @@ import re
 import subprocess
 import logging
 import tempfile
+import platform
 
 
 class FlasherAtmelAt(object):
@@ -73,23 +74,45 @@ class FlasherAtmelAt(object):
                 FlasherAtmelAt.exe = exe
         
         FlasherAtmelAt.logger.debug("atprogram location: %s", FlasherAtmelAt.exe)
-
+    
+    @staticmethod
+    def set_edbg_exe(exe):
+        FlasherAtmelAt.logger = logging.getLogger('mbed-flasher')
+        if exe is None:
+            if platform.system() == 'Windows':
+                FlasherAtmelAt.exe = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg.exe'))
+            elif platform.system() == 'Linux':
+                if os.uname()[4].startswith("arm"):
+                    FlasherAtmelAt.exe = './' + os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg_raspbian'))
+                else:
+                    FlasherAtmelAt.exe = './' + os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg_ubuntu'))
+            elif platform.system() == 'Darwin':
+                print "Support for OS X is missing"
+                FlasherAtmelAt.exe = None
+    
     @staticmethod
     def get_available_devices():
         """list available devices
         """
         FlasherAtmelAt.logger = logging.getLogger('mbed-flasher')
-        FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
+        if platform.system() == 'Windows':
+            FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
+            if FlasherAtmelAt.exe:
+                cmd = FlasherAtmelAt.exe + " list"
+                lookup = 'edbg\W+(.*)'
         if not FlasherAtmelAt.exe:
-            return []
-        cmd = FlasherAtmelAt.exe + " list"
+            FlasherAtmelAt.set_edbg_exe(FlasherAtmelAt.exe)
+            cmd = FlasherAtmelAt.exe + " --list"
+            lookup = '(\S.*) - Atmel.*'
+            if not FlasherAtmelAt.exe:
+                return []
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         connected_devices = []
         if proc.returncode == 0:
             lines = stdout.splitlines()
             for line in lines:
-                ret = FlasherAtmelAt.find_match(line, 'edbg\W+(.*)')
+                ret = FlasherAtmelAt.find_match(line, lookup)
                 if ret:
                     connected_devices.append({
                         "platform_name": "SAM4E",
@@ -107,8 +130,11 @@ class FlasherAtmelAt(object):
         :param sn: device serial number to be flashed
         :param binary: binary file to be flash
         :return: 0 when flashing success
-        """            
-        cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+source
+        """
+        if str(self.exe).find('atprogram.exe') != -1:
+            cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+ source
+        else:
+            cmd = self.exe+" -bpv -t atmel_cm4 -s "+target['target_id']+" -f " + source
         FlasherAtmelAt.logger.debug(cmd)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
