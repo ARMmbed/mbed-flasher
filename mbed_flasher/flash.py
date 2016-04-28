@@ -89,7 +89,7 @@ class Flash(object):
     def flash_multiple(self, build, platform_name, pyocd=False, target_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
-        
+
         if not platform_name:
             found_platform = ''
             for item in device_mapping_table:
@@ -115,10 +115,8 @@ class Flash(object):
                 if platform_name:
                     if item['platform_name'] == platform_name:
                         aux_device_mapping_table.append(item)
-                    
-        if len(aux_device_mapping_table) > 0:
-            device_mapping_table = aux_device_mapping_table
-            
+
+        device_mapping_table = aux_device_mapping_table
         device_count = len(device_mapping_table)
         if device_count == 0:
             self.logger.error('no devices to flash')

@@ -83,9 +83,9 @@ class FlasherAtmelAt(object):
                 FlasherAtmelAt.exe = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg.exe'))
             elif platform.system() == 'Linux':
                 if os.uname()[4].startswith("arm"):
-                    FlasherAtmelAt.exe = './' + os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg_raspbian'))
+                    FlasherAtmelAt.exe = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg_raspbian'))
                 else:
-                    FlasherAtmelAt.exe = './' + os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg_ubuntu'))
+                    FlasherAtmelAt.exe = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg_ubuntu'))
             elif platform.system() == 'Darwin':
                 print "Support for OS X is missing"
                 FlasherAtmelAt.exe = None
@@ -97,15 +97,20 @@ class FlasherAtmelAt(object):
         FlasherAtmelAt.logger = logging.getLogger('mbed-flasher')
         if platform.system() == 'Windows':
             FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
-            if FlasherAtmelAt.exe:
-                cmd = FlasherAtmelAt.exe + " list"
-                lookup = 'edbg\W+(.*)'
-        if not FlasherAtmelAt.exe:
-            FlasherAtmelAt.set_edbg_exe(FlasherAtmelAt.exe)
-            cmd = FlasherAtmelAt.exe + " --list"
-            lookup = '(\S.*) - Atmel.*'
             if not FlasherAtmelAt.exe:
-                return []
+                FlasherAtmelAt.set_edbg_exe(FlasherAtmelAt.exe)
+            if str(FlasherAtmelAt.exe).find('atprogram.exe') != -1:
+                cmd = [FlasherAtmelAt.exe, "list"]
+                lookup = 'edbg\W+(.*)'
+            else:
+                cmd = [FlasherAtmelAt.exe, "--list"]
+                lookup = '(\S.*) - Atmel.*'
+        else:
+            FlasherAtmelAt.set_edbg_exe(FlasherAtmelAt.exe)
+            cmd = [FlasherAtmelAt.exe, "--list"]
+            lookup = '(\S.*) - Atmel.*'
+        if not FlasherAtmelAt.exe:
+            return []
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         connected_devices = []
@@ -132,9 +137,12 @@ class FlasherAtmelAt(object):
         :return: 0 when flashing success
         """
         if str(self.exe).find('atprogram.exe') != -1:
-            cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+ source
+            cmd = [self.exe, "-t", "edbg", "-i", "SWD", "-d", "atsam4e16e", "-s", target['target_id'], "-v", "-cl", "10mhz", "program", "--verify", "-f", source]
         else:
-            cmd = self.exe+" -bpv -t atmel_cm4 -s "+target['target_id']+" -f " + source
+            if platform.system() == 'Windows':
+                cmd = [self.exe, "-bpv", "-t", "atmel_cm4", "-s", target['target_id'],"-f", source]
+            else:
+                cmd = ['sudo', self.exe, "-bpv", "-t", "atmel_cm4", "-s", target['target_id'],"-f", source]
         FlasherAtmelAt.logger.debug(cmd)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
