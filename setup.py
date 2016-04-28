@@ -36,7 +36,8 @@ OWNER_EMAILS = 'Jussi.Vatjus-Anttila@arm.com'
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup(name='mbed-flasher',
+setup(
+      name='mbed-flasher',
       version='0.3.1',
       description=DESCRIPTION,
       long_description=read('README.md'),
@@ -46,9 +47,9 @@ setup(name='mbed-flasher',
       maintainer_email=OWNER_EMAILS,
       url='https://github.com/ARMmbed/mbed-flasher',
       packages=find_packages(),
-      package_data={'': ['FlasherMbed.target_info.json']},
+      package_data={'': ['FlasherMbed.target_info.json', 'edbg_ubuntu', 'edbg_raspbian', 'edbg.exe']},
       license=LICENSE,
-      test_suite = 'test',
+      test_suite='test',
       tests_require=["mock"],
       entry_points={
         "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
