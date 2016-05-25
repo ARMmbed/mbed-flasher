@@ -8,11 +8,15 @@
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
         * [Flashing single device](#flashing-single-device)
-        * [Flashing devices with pre-fix](#)
-        * [Flashing all devices by platform](#)
+        * [Flashing devices with prefix](#flashing-devices-with-prefix)
+        * [Flashing all devices by platform](#flashing-all-devices-by-platform)
+        * [Flashing a device using pyOCD](#Flashing-a-device-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
-    * [List](#list)
+    * [Basic usage](#basic-usage)
+        * [Running mbedflash without input](#running-mbedflash-without-input)
+        * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
+        * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
     
 ## Python API
 
@@ -69,12 +73,71 @@ u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp
 0
 ```
 
-#### Flashing devices with pre-fix
+#### Flashing devices with prefix
 
 ```python
->>> flasher.flash(build="C:\\Temp\\helloworld_k64f.bin", target_id="02400000288", platform_name="K64F")
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="02400000288", platform_name="K64F")
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000028884e450031700f6bf000118021000097969900
 0
 ```
+
+#### Flashing all devices by platform
+
+```python
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="all", platform_name="K64F")
+Going to flash following devices:
+0240000028884e450019700f6bf0000f8021000097969900
+0240000028884e450031700f6bf000118021000097969900
+0
+```
+
+#### Flashing a device using pyOCD
+
+Warning, not working reliably.
+
+```python
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F", pyocd=True)
+DEBUG:mbed-flasher:atprogram location: C:\Program Files (x86)\Atmel\Studio\7.0\atbackend\atprogram.exe
+DEBUG:mbed-flasher:Connected atprogrammer supported devices: []
+DEBUG:mbed-flasher:[{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
+DEBUG:mbed-flasher:Flashing: 0240000028884e450019700f6bf0000f8021000097969900
+DEBUG:mbed-flasher:pyOCD selected for flashing
+DEBUG:mbed-flasher:resetting device: 0240000028884e450019700f6bf0000f8021000097969900
+DEBUG:mbed-flasher:flashing device: 0240000028884e450019700f6bf0000f8021000097969900
+DEBUG:mbed-flasher:resetting device: 0240000028884e450019700f6bf0000f8021000097969900
+INFO:mbed-flasher:flash ready
+0
+```
+
+## Command Line Interface
+
+### Basic usage
+
+Typically we would use mbed-flasher from the command line to:
+
+1. Flash the a device or devices
+
+#### Running mbedflash without input
+
+```batch
+c:\>mbedflash
+No input, nothing to do.
+Try mbedflash --help
+```
+
+#### Running mbedflash to list supported devices
+
+```batch
+c:\>mbedflash -l
+["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]
+```
+
+#### Running mbedflash to list supported flashers
+
+```batch
+c:\>mbedflash --flashers
+["Mbed", "Atprogram"]
+```
+
