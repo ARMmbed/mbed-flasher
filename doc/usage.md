@@ -22,6 +22,7 @@
     * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
     * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
     * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
+    * [Flashing devices from given device mapping table](#flashing-devices-from-given-device-mapping-table)
     
 ## Python API
 
@@ -225,6 +226,16 @@ DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae9810000979
 INFO:mbed-flasher:flash ready
 DEBUG:mbed-flasher:dev#1 -> SUCCESS
 DEBUG:mbed-flasher:dev#2 -> SUCCESS
+
+C:\>
+```
+
+#### Flashing devices from given device mapping table
+
+```batch
+C:\>mbedflash -i C:\path_to_file\myfile.bin --tid all -m "{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}"
+Going to flash following devices:
+0240000033514e45003f500585d4000ae981000097969900
 
 C:\>
 ```
