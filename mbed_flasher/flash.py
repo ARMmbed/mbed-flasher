@@ -138,7 +138,6 @@ class Flash(object):
                     self.logger.warning("dev#%i -> FAIL :(" % i)
                 retcodes += ret
                 i += 1
-            
         else:
             passes = []
             retcodes = 0
@@ -181,7 +180,7 @@ class Flash(object):
             return self.flash_multiple(build, platform_name, pyocd, target_id)
         elif len(target_id) < 20 and platform_name == 'SAM4E':  # prefix flashing support, ID length is 20 for SAM4E
             return self.flash_multiple(build, platform_name, pyocd, target_id)
-        
+
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
                 device_mapping_table = [device_mapping_table]
@@ -189,9 +188,9 @@ class Flash(object):
                 raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
             device_mapping_table = self.get_available_device_mapping()
-        
+
         self.logger.debug(device_mapping_table)
-        
+
         try:
             if target_id:
                 target_mbed = self.__find_by_target_id(target_id, device_mapping_table)
@@ -200,20 +199,19 @@ class Flash(object):
         except KeyError as err:
             self.logger.error(err)
             return -3
-        
-        
+
         if not platform_name:
             platform_name = target_mbed['platform_name']
         if platform_name not in self.SUPPORTED_TARGETS:
             raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name)
-            
+
         target_mbed.update(self.SUPPORTED_TARGETS[platform_name])
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name)
         if target_mbed['platform_name'] != platform_name:
             raise SyntaxError("Platform '%s' is not supported by Flasher %s, please change the selected flasher" % (target_mbed['platform_name'], flasher.name))
-            
+
         try:
             retcode = flasher.flash(source=build, target=target_mbed, pyocd=pyocd)
         except KeyboardInterrupt:
