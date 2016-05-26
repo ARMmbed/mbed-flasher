@@ -31,7 +31,7 @@ See usage documentation [here](doc/usage.md)
 /> mbedflash --help
 usage: mbedflash [-h] [-v] [-s] [--version] [-i INPUT]
                  [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
-                 [--tid TARGET_ID] [-t PLATFORM_NAME]
+                 [--pyocd] [--tid TARGET_ID] [-t PLATFORM_NAME] 
 
 optional arguments:
   -h, --help            Show this help message and exit.
@@ -46,7 +46,10 @@ optional arguments:
   --flashers            Prints s list of supported flashers.
   --pyocd               Uses pyOCD for flashing.
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be flashed.
+                      Target to be flashed, ALL will flash all connected
+                      devices with given platform-name. Giving a prefix will
+                      flash all devices which target_id start with the
+                      prefix
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
                         Platform/target name to be flashed.
 
