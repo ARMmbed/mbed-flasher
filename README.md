@@ -6,7 +6,7 @@ mbed-flasher is a simple Python-based tool for flashing single or multiple board
 It provides a simple Command Line Interface and Python API for flashing. 
 
 The purpose is to provide a clean and simple library that is easy to integrate to other tools
-and that can be easily developed further to support flashing in mbed OS and other platforms.
+and it can be easily developed further to support flashing in mbed OS and other platforms.
 Developers can also use it as a standalone tool for flashing their development boards.
 
 
@@ -20,41 +20,18 @@ To install the flasher in development mode:
 
 `python setup.py develop`
 
-## Usage with CLI
+## Usage
 
 This tool has been tested to work with Windows 7 and Ubuntu(14.04 LTS) Linux.
 
-To flash a single board by ID:
-
-`mbedflash -i myfile.bin --tid 123456`
-
-To flash a single board by platform_name:
-
-`mbedflash -i myfile.bin -t K64F`
-
-To flash all connected boards by platform_name:
-
-`mbedflash -i myfile.bin -t K64F --tid ALL`
-
-## Usage with Python API
-
-```python
-from mbed_flasher import Flash
-flasher = Flash()
-
-# flash single board by id
-flasher.flash( source='myfile.bin', target_id='123456')
-
-# flash single board by platform_name
-flasher.flash( source='myfile.bin', platform_name='K64F')
-```
+See usage documentation [here](doc/usage.md)
 
 ## Help
 ```
 /> mbedflash --help
 usage: mbedflash [-h] [-v] [-s] [--version] [-i INPUT]
                  [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
-                 [--tid TARGET_ID] [-t PLATFORM_NAME]
+                 [--pyocd] [--tid TARGET_ID] [-t PLATFORM_NAME] 
 
 optional arguments:
   -h, --help            Show this help message and exit.
@@ -69,7 +46,10 @@ optional arguments:
   --flashers            Prints s list of supported flashers.
   --pyocd               Uses pyOCD for flashing.
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be flashed.
+                      Target to be flashed, ALL will flash all connected
+                      devices with given platform-name. Giving a prefix will
+                      flash all devices which target_id start with the
+                      prefix
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
                         Platform/target name to be flashed.
 

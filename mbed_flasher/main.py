@@ -119,7 +119,9 @@ def cmd_parser_setup():
 
     parser.add_argument('--tid', '--target_id',
                         dest='target_id', help='Target to be flashed, '
-                                               'ALL will flash all connected devices with given platform-name')
+                                               'ALL will flash all connected devices with given platform-name. '
+                                               'Giving a prefix will flash all devices which target_id starts with'
+                                               ' the prefix')
     
     parser.add_argument('-t', '--platform_name',
                         dest='platform_name', help='Platform/target name to be flashed')
