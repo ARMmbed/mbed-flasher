@@ -13,16 +13,15 @@
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
-    * [Basic usage](#basic-usage-1)
-        * [Running mbedflash without input](#running-mbedflash-without-input)
-        * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
-        * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
-        * [Flashing a single device](#flashing-a-single-device-1)
-        * [Flashing with prefix](#flashing-with-prefix)
-        * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
-        * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
-        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
-        * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
+    * [Running mbedflash without input](#running-mbedflash-without-input)
+    * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
+    * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
+    * [Flashing a single device](#flashing-a-single-device-1)
+    * [Flashing with prefix](#flashing-with-prefix)
+    * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
+    * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
+    * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
+    * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
     
 ## Python API
 
@@ -118,12 +117,6 @@ INFO:mbed-flasher:flash ready
 ```
 
 ## Command Line Interface
-
-### Basic usage
-
-Typically we would use mbed-flasher from the command line to:
-
-1. Flash the a device or devices
 
 #### Running mbedflash without input
 
