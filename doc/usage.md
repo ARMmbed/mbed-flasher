@@ -200,7 +200,7 @@ C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf000
 C:\>
 ```
 
-#### Flashing a single device using pyocd
+#### Flashing a device using pyOCD
 
 ```batch
 C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000033514e45003f500585d4000ae981000097969900 -t K64F --pyocd
