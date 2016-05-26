@@ -7,16 +7,22 @@
         * [Querying available flashers](#querying-available-flashers)
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
-        * [Flashing single device](#flashing-single-device)
+        * [Flashing a single device](#flashing-a-single-device)
         * [Flashing devices with prefix](#flashing-devices-with-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
-        * [Flashing a device using pyOCD](#Flashing-a-device-using-pyocd)
+        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
-    * [Basic usage](#basic-usage)
+    * [Basic usage](#basic-usage-1)
         * [Running mbedflash without input](#running-mbedflash-without-input)
         * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
         * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
+        * [Flashing a single device](#flashing-a-single-device-1)
+        * [Flashing with prefix](#flashing-with-prefix)
+        * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
+        * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
+        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
+        * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
     
 ## Python API
 
@@ -39,14 +45,14 @@ Start by importing the mbed-flasher module:
 #### Querying available flashers
 
 ```python
->>> flashers.FLASHERS
+>>> flasher.FLASHERS
 [<class 'mbed_flasher.flashers.FlasherMbed.FlasherMbed'>, <class 'mbed_flasher.flashers.FlasherAtmelAt.FlasherAtmelAt'>]
 ```
 
 #### Querying supported targets
 
 ```python
->>> flashers.SUPPORTED_TARGETS
+>>> flasher.SUPPORTED_TARGETS
 {
 u'NRF51822': {u'properties': {u'binary_type': u'-combined.hex', u'copy_method': u'cp', u'program_cycle_s': 4, u'reset_method': u'default'}}, 
 u'K64F': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'default', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'frdm-k64f-gcc'}, {u'mbed_toolchain': u'ARM', u'yotta_target': u'frdm-k64f-armcc'}]}, 
@@ -66,7 +72,7 @@ u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp
 [{'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_port': None}]
 ```
 
-#### Flashing single device
+#### Flashing a single device
 
 ```python
 >>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F")
@@ -122,7 +128,7 @@ Typically we would use mbed-flasher from the command line to:
 #### Running mbedflash without input
 
 ```batch
-c:\>mbedflash
+C:\>mbedflash
 No input, nothing to do.
 Try mbedflash --help
 ```
@@ -130,14 +136,102 @@ Try mbedflash --help
 #### Running mbedflash to list supported devices
 
 ```batch
-c:\>mbedflash -l
+C:\>mbedflash -l
 ["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]
 ```
 
 #### Running mbedflash to list supported flashers
 
 ```batch
-c:\>mbedflash --flashers
+C:\>mbedflash --flashers
 ["Mbed", "Atprogram"]
 ```
 
+#### Flashing a single device
+
+```batch
+C:\>mbedflash -i c:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
+
+C:\Temp>
+```
+
+#### Flashing with prefix
+
+```batch
+C:\>mbedflash -i Temp\helloworld_k64f.bin --tid 02400 -t K64F
+Going to flash following devices:
+0240000028884e450019700f6bf0000f8021000097969900
+0240000033514e45003f500585d4000ae981000097969900
+
+C:\>
+```
+
+#### Flashing all devices by platform
+
+```batch
+C:\>mbedflash -i Temp\helloworld_k64f.bin --tid all -t K64F
+Going to flash following devices:
+0240000028884e450019700f6bf0000f8021000097969900
+0240000033514e45003f500585d4000ae981000097969900
+
+C:\>
+```
+
+#### Flashing a single device with verbose output
+
+```batch
+C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F -vvv
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): atprogram location: C:\Program Files (x86)\Atmel\Studio\7.0\atbackend\atprogram.exe
+[DEBUG](mbed-flasher): Connected atprogrammer supported devices: []
+[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
+[DEBUG](mbed-flasher): Flashing: 0240000028884e450019700f6bf0000f8021000097969900
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[DEBUG](mbed-flasher): SHA1: abababababababababababababababababababab
+[DEBUG](mbed-flasher): copying file: path_to_file\myfile.bin to X:\image.bin
+[DEBUG](mbed-flasher): copy finished
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[DEBUG](mbed-flasher): verifying flash
+[DEBUG](mbed-flasher): ready
+[INFO](mbed-flasher): flash ready
+
+C:\>
+```
+
+#### Flashing a single device using pyocd
+
+```batch
+C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000033514e45003f500585d4000ae981000097969900 -t K64F --pyocd
+DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
+DEBUG:mbed-flasher:flashing device: 0240000033514e45003f500585d4000ae981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
+INFO:mbed-flasher:flash ready
+
+C:\>
+```
+
+#### Flashing multiple devices using pyocd
+
+```batch
+C:\>mbedflash -i C:\path_to_file\myfile.bin --tid all -t K64F --pyocd
+Going to flash following devices:
+0240000028884e450019700f6bf0000f8021000097969900
+0240000033514e45003f500585d4000ae981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000028884e450019700f6bf0000f8021000097969900
+DEBUG:mbed-flasher:flashing device: 0240000028884e450019700f6bf0000f8021000097969900
+DEBUG:mbed-flasher:resetting device: 0240000028884e450019700f6bf0000f8021000097969900
+INFO:mbed-flasher:flash ready
+DEBUG:mbed-flasher:[{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F', u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'frdm-k64f-gcc'}, {u'mbed_toolchain': u'ARM', u'yotta_target': u'frdm-k64f-armcc'}], u'properties': {u'binary_type': u'.bin', u'copy_method': u'default', u'program_cycle_s': 4, u'reset_method': u'default'}}, {'target_id_mbed_htm': '0240000033514e45003f500585d4000ae981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45003f500585d4000ae981000097969900', 'serial_port': u'COM79', 'target_id_usb_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}]
+DEBUG:mbed-flasher:Flashing: 0240000033514e45003f500585d4000ae981000097969900
+DEBUG:mbed-flasher:pyOCD selected for flashing
+DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
+DEBUG:mbed-flasher:flashing device: 0240000033514e45003f500585d4000ae981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
+INFO:mbed-flasher:flash ready
+DEBUG:mbed-flasher:dev#1 -> SUCCESS
+DEBUG:mbed-flasher:dev#2 -> SUCCESS
+
+C:\>
+```
