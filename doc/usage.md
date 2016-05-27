@@ -45,21 +45,15 @@ Start by importing the mbed-flasher module:
 #### Querying available flashers
 
 ```python
->>> flasher.FLASHERS
-[<class 'mbed_flasher.flashers.FlasherMbed.FlasherMbed'>, <class 'mbed_flasher.flashers.FlasherAtmelAt.FlasherAtmelAt'>]
+>>> flasher.get_supported_flashers()
+['Mbed', 'Atprogram']
 ```
 
 #### Querying supported targets
 
 ```python
->>> flasher.SUPPORTED_TARGETS
-{
-u'NRF51822': {u'properties': {u'binary_type': u'-combined.hex', u'copy_method': u'cp', u'program_cycle_s': 4, u'reset_method': u'default'}}, 
-u'K64F': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'default', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'frdm-k64f-gcc'}, {u'mbed_toolchain': u'ARM', u'yotta_target': u'frdm-k64f-armcc'}]}, 
-'SAM4E': {'properties': {'binary_type': '.bin', 'copy_method': 'atprogram', 'program_cycle_s': 0, 'reset_method': 'default'}, 'yotta_targets': []}, 
-u'NRF51_DK': {u'properties': {u'binary_type': u'-combined.hex', u'copy_method': u'shell', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'nrf51dk-gcc'}]}, 
-u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'st-nucleo-f401re-gcc'}]}
-}
+>>> flasher.get_supported_targets()
+[u'NRF51822', u'K64F', 'SAM4E', u'NRF51_DK', u'NUCLEO_F401RE']
 ```
 
 #### Querying attached devices:
