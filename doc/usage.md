@@ -72,6 +72,15 @@ u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp
 [{'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_port': None}]
 ```
 
+or get everything in one list:
+
+```python
+>>> flasher.get_available_device_mapping()
+[{'target_id_mbed_htm': '0240000033514e45003f500585d4000ae981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45003f500585d4000ae981000097969900', 'serial_port': u'COM79', 'target_id_us
+b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}, {'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_p
+ort': None}]
+```
+
 #### Flashing a single device
 
 ```python
