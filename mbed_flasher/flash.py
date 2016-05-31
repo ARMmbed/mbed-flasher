@@ -20,6 +20,7 @@ from os.path import isfile
 import platform
 import types
 
+K64F_TARGET_ID_LENGTH = 48
 EXIT_CODE_NO_PLATFORM_GIVEN = 35
 EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
 EXIT_CODE_FILE_DOES_NOT_EXIST = 45
@@ -197,7 +198,7 @@ class Flash(object):
         else:
             if target_id.lower() == 'all':
                 return self.flash_multiple(build, platform_name, method)
-            elif len(target_id) < 48:
+            elif len(target_id) < K64F_TARGET_ID_LENGTH:
                 return self.flash_multiple(build, platform_name, method, target_id)
 
         if device_mapping_table:
