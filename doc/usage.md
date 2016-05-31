@@ -22,7 +22,6 @@
     * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
     * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
     * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
-    * [Flashing devices from given device mapping table](#flashing-devices-from-given-device-mapping-table)
     
 ## Python API
 
@@ -104,7 +103,7 @@ Going to flash following devices:
 Warning, not working reliably.
 
 ```python
->>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F", pyocd=True)
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F", method='pyocd')
 DEBUG:mbed-flasher:atprogram location: C:\Program Files (x86)\Atmel\Studio\7.0\atbackend\atprogram.exe
 DEBUG:mbed-flasher:Connected atprogrammer supported devices: []
 DEBUG:mbed-flasher:[{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
@@ -122,37 +121,36 @@ INFO:mbed-flasher:flash ready
 #### Running mbedflash without input
 
 ```batch
-C:\>mbedflash
-No input, nothing to do.
-Try mbedflash --help
+usage: mbedflash [-h] [-v] [-s] <command> ...
+mbedflash: error: too few arguments
 ```
 
 #### Running mbedflash to list supported devices
 
 ```batch
-C:\>mbedflash -l
+C:\>mbedflash list
 ["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]
 ```
 
 #### Running mbedflash to list supported flashers
 
 ```batch
-C:\>mbedflash --flashers
+C:\>mbedflash flashers
 ["Mbed", "Atprogram"]
 ```
 
 #### Flashing a single device
 
 ```batch
-C:\>mbedflash -i c:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
 
-C:\Temp>
+C:\>
 ```
 
 #### Flashing with prefix
 
 ```batch
-C:\>mbedflash -i Temp\helloworld_k64f.bin --tid 02400 -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 02400 -t K64F
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000033514e45003f500585d4000ae981000097969900
@@ -163,7 +161,7 @@ C:\>
 #### Flashing all devices by platform
 
 ```batch
-C:\>mbedflash -i Temp\helloworld_k64f.bin --tid all -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid all -t K64F
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000033514e45003f500585d4000ae981000097969900
@@ -174,22 +172,26 @@ C:\>
 #### Flashing a single device with verbose output
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F -vvv
+C:\>mbedflash -vvv flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F
 [DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
-[DEBUG](mbed-flasher): atprogram location: C:\Program Files (x86)\Atmel\Studio\7.0\atbackend\atprogram.exe
-[DEBUG](mbed-flasher): Connected atprogrammer supported devices: []
-[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
-[DEBUG](mbed-flasher): Flashing: 0240000028884e450019700f6bf0000f8021000097969900
+[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port':
+u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+Going to flash following devices:
+0240000033514e45000b500585d40029e981000097969900
+[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port':
+u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+[DEBUG](mbed-flasher): Flashing: 0240000033514e45000b500585d40029e981000097969900
 [INFO](mbed-flasher): sendBreak to device to reboot
 [INFO](mbed-flasher): reset completed
-[DEBUG](mbed-flasher): SHA1: abababababababababababababababababababab
-[DEBUG](mbed-flasher): copying file: path_to_file\myfile.bin to X:\image.bin
+[DEBUG](mbed-flasher): SHA1: dcbaa46d6500194a8a6d55c07bfa0ee0524c379c
+[DEBUG](mbed-flasher): copying file: c:\path_to_file\myfile.bin to D:\image.bin
 [DEBUG](mbed-flasher): copy finished
 [INFO](mbed-flasher): sendBreak to device to reboot
 [INFO](mbed-flasher): reset completed
 [DEBUG](mbed-flasher): verifying flash
 [DEBUG](mbed-flasher): ready
 [INFO](mbed-flasher): flash ready
+[DEBUG](mbed-flasher): dev#1 -> SUCCESS
 
 C:\>
 ```
@@ -197,11 +199,14 @@ C:\>
 #### Flashing a device using pyOCD
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000033514e45003f500585d4000ae981000097969900 -t K64F --pyocd
-DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
-DEBUG:mbed-flasher:flashing device: 0240000033514e45003f500585d4000ae981000097969900
-DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F pyocd
+Going to flash following devices:
+0240000033514e45000b500585d40029e981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000033514e45000b500585d40029e981000097969900
+DEBUG:mbed-flasher:flashing device: 0240000033514e45000b500585d40029e981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000033514e45000b500585d40029e981000097969900
 INFO:mbed-flasher:flash ready
+DEBUG:mbed-flasher:dev#1 -> SUCCESS
 
 C:\>
 ```
@@ -209,7 +214,7 @@ C:\>
 #### Flashing multiple devices using pyocd
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid all -t K64F --pyocd
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid all -t K64F pyocd
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000033514e45003f500585d4000ae981000097969900
@@ -230,12 +235,3 @@ DEBUG:mbed-flasher:dev#2 -> SUCCESS
 C:\>
 ```
 
-#### Flashing devices from given device mapping table
-
-```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid all -m "{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}"
-Going to flash following devices:
-0240000033514e45003f500585d4000ae981000097969900
-
-C:\>
-```
