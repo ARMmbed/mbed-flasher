@@ -20,6 +20,12 @@ from os.path import isfile
 import platform
 import types
 
+EXIT_CODE_NO_PLATFORM_GIVEN = 35
+EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
+EXIT_CODE_FILE_DOES_NOT_EXIST = 45
+EXIT_CODE_KEYBOARD_INTERRUPT = 50
+EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE = 55
+EXIT_CODE_SYSTEM_INTERRUPT = 60
 
 class Flash(object):
     """ Flash object, which manage flashing single device
@@ -100,7 +106,7 @@ class Flash(object):
                     if item['platform_name'] != found_platform:
                         self.logger.error('Multiple devices and platforms found, '
                                           'please specify preferred platform with -t <platform>.')
-                        return -9
+                        return EXIT_CODE_NO_PLATFORM_GIVEN
 
         if isinstance(target_ids_or_prefix, types.ListType):
             for tid in target_ids_or_prefix:
@@ -133,7 +139,7 @@ class Flash(object):
         device_count = len(device_mapping_table)
         if device_count == 0:
             self.logger.error('no devices to flash')
-            return -3
+            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
         self.logger.debug(device_mapping_table)
 
         print 'Going to flash following devices:'
@@ -185,7 +191,7 @@ class Flash(object):
 
         if not isfile(build):
             self.logger.error("Given file does not exist")
-            return -5
+            return EXIT_CODE_FILE_DOES_NOT_EXIST
         if isinstance(target_id, types.ListType):
             return self.flash_multiple(build, platform_name, method, target_id)
         else:
@@ -211,7 +217,7 @@ class Flash(object):
                 target_mbed = self.__find_by_platform_name(platform_name, device_mapping_table)
         except KeyError as err:
             self.logger.error(err)
-            return -3
+            return EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE
 
         if not platform_name:
             platform_name = target_mbed['platform_name']
@@ -226,10 +232,10 @@ class Flash(object):
             retcode = flasher.flash(source=build, target=target_mbed, method=method)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
-            return -1
+            return EXIT_CODE_KEYBOARD_INTERRUPT
         except SystemExit:
             self.logger.error("Aborted by SystemExit event")
-            return -2
+            return EXIT_CODE_SYSTEM_INTERRUPT
 
         if retcode == 0:
             self.logger.info("flash ready")
