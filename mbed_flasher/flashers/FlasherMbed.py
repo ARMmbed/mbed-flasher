@@ -151,24 +151,28 @@ class FlasherMbed(object):
         else:
             return target
             
-    def flash(self, source, target, pyocd):
+    def flash(self, source, target, method):
         """copy file to the destination
         :param binary_data: binary data to be flashed
         :param target: target
         """
-        if pyocd:
+        if method == 'pyocd':
             self.logger.debug("pyOCD selected for flashing")
             try:
                 from pyOCD.board import MbedBoard
             except ImportError:
                 print 'pyOCD missing, install\n'
                 return -8
+        if method == 'edbg':
+            self.logger.debug("edbg is not supported for Mbed devices")
+            return -13
+        
         mount_point = target['mount_point']+'/'
         binary_type = target['properties']['binary_type']
         destination = abspath(join(mount_point, 'image'+binary_type))
         
         if isinstance(source, six.string_types):
-            if pyocd:
+            if method == 'pyocd':
                 try:
                     with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
                         ocd_target = board.target

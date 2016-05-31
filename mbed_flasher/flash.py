@@ -18,6 +18,7 @@ Jussi Vatjus-Anttila <jussi.vatjus-anttila@arm.com>
 import logging
 from os.path import isfile
 import platform
+import types
 
 
 class Flash(object):
@@ -86,10 +87,10 @@ class Flash(object):
                 return target
         raise KeyError("platform_name: %s not found" % platform_name)
 
-    def flash_multiple(self, build, platform_name, pyocd=False, target_prefix=''):
+    def flash_multiple(self, build, platform_name, method='simple', target_ids_or_prefix=''):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
-        
+
         if not platform_name:
             found_platform = ''
             for item in device_mapping_table:
@@ -100,52 +101,61 @@ class Flash(object):
                         self.logger.error('Multiple devices and platforms found, '
                                           'please specify preferred platform with -t <platform>.')
                         return -9
-        
-        if target_prefix:
-            if len(target_prefix) >= 1:
+
+        if isinstance(target_ids_or_prefix, types.ListType):
+            for tid in target_ids_or_prefix:
                 for item in device_mapping_table:
                     if platform_name:
                         if item['platform_name'] != platform_name:
                             # skipping boards that do not match with specified platform
                             continue
-                    if item['target_id'].startswith(str(target_prefix)):
+                    if item['target_id'] == tid:
                         aux_device_mapping_table.append(item)
         else:
-            for item in device_mapping_table:
-                if platform_name:
-                    if item['platform_name'] == platform_name:
-                        aux_device_mapping_table.append(item)
-                    
+            if target_ids_or_prefix:
+                if len(target_ids_or_prefix) >= 1:
+                    for item in device_mapping_table:
+                        if platform_name:
+                            if item['platform_name'] != platform_name:
+                                # skipping boards that do not match with specified platform
+                                continue
+                        if item['target_id'].startswith(str(target_ids_or_prefix)):
+                            aux_device_mapping_table.append(item)
+            else:
+                for item in device_mapping_table:
+                    if platform_name:
+                        if item['platform_name'] == platform_name:
+                            aux_device_mapping_table.append(item)
+
         if len(aux_device_mapping_table) > 0:
             device_mapping_table = aux_device_mapping_table
-            
+
         device_count = len(device_mapping_table)
         if device_count == 0:
             self.logger.error('no devices to flash')
             return -3
         self.logger.debug(device_mapping_table)
-        
+
         print 'Going to flash following devices:'
         for item in device_mapping_table:
             print item['target_id']
         retcodes = 0
-        if pyocd and platform.system() != 'Windows':
+        if method == 'pyocd' and platform.system() != 'Windows':
             # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
             i = 0
             for device in device_mapping_table:
-                ret = self.flash(build, device['target_id'], None, device_mapping_table, pyocd)
+                ret = self.flash(build, device['target_id'], None, device_mapping_table, method)
                 if ret == 0:
                     self.logger.debug("dev#%i -> SUCCESS" % i)
                 else:
                     self.logger.warning("dev#%i -> FAIL :(" % i)
                 retcodes += ret
                 i += 1
-            
         else:
             passes = []
             retcodes = 0
             for target in device_mapping_table:
-                retcode = self.flash(build, target['target_id'], None, device_mapping_table, pyocd)
+                retcode = self.flash(build, target['target_id'], None, device_mapping_table, method)
                 retcodes += retcode
                 if retcode == 0:
                     passes.append(True)
@@ -161,13 +171,13 @@ class Flash(object):
 
         return retcodes
 
-    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, pyocd=False):
+    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, method='simple'):
         """Flash (mbed) device
         :param build:  Build -object or string (file-path)
         :param target_id: target_id
         :param platform_name: platform_name, to flash multiple devices of same type
         :param device_mapping_table: individual devices mapping table
-        :param pyocd: flag to use pyOCD for flashing
+        :param method: method for flashing i.e. simple, pyocd or edbg
         """
 
         if target_id is None and platform_name is None:
@@ -176,12 +186,14 @@ class Flash(object):
         if not isfile(build):
             self.logger.error("Given file does not exist")
             return -5
+        if isinstance(target_id, types.ListType):
+            return self.flash_multiple(build, platform_name, method, target_id)
+        else:
+            if target_id.lower() == 'all':
+                return self.flash_multiple(build, platform_name, method)
+            elif len(target_id) < 48:
+                return self.flash_multiple(build, platform_name, method, target_id)
 
-        if target_id.lower() == 'all':
-            return self.flash_multiple(build, platform_name, pyocd)
-        elif len(target_id) < 48:
-            return self.flash_multiple(build, platform_name, pyocd, target_id)
-        
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
                 device_mapping_table = [device_mapping_table]
@@ -189,9 +201,9 @@ class Flash(object):
                 raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
             device_mapping_table = self.get_available_device_mapping()
-        
+
         self.logger.debug(device_mapping_table)
-        
+
         try:
             if target_id:
                 target_mbed = self.__find_by_target_id(target_id, device_mapping_table)
@@ -211,7 +223,7 @@ class Flash(object):
 
         flasher = self.__get_flasher(platform_name)
         try:
-            retcode = flasher.flash(source=build, target=target_mbed, pyocd=pyocd)
+            retcode = flasher.flash(source=build, target=target_mbed, method=method)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
             return -1
