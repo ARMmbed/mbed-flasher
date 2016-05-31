@@ -159,7 +159,7 @@ class FlasherCLI:
         # Initialize flash command
         parser_flash = get_resource_subparser(subparsers, 'flash', func=self.subcmd_flash_handler, help='Flash given resource')
         parser_flash.add_argument('-i','--input', help='Binary input to be flashed.', default=None, metavar='INPUT')
-        parser_flash.add_argument('--tid', '--target_id', help='Target to be flashed, ALL will flash all connected devices with given platform-name. Giving a prefix will flash all devices which target_id start with the prefix', default=None, metavar='TARGET_ID', nargs='*')
+        parser_flash.add_argument('--tid', '--target_id', help='Target to be flashed, ALL will flash all connected devices with given platform-name, also multiple targets can be given. Giving a prefix will flash all devices which target_id start with the prefix', default=None, metavar='TARGET_ID', nargs='*')
         parser_flash.add_argument('-t', '--platform_name', help='Platform of the target device(s)', default=None)
         parser_flash.add_argument('method', help='<simple|pyocd|edbg>, used for flashing', metavar='method', choices=['simple','pyocd','edbg'], nargs='?')
         # Initialize reset command

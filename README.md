@@ -27,31 +27,52 @@ This tool has been tested to work with Windows 7 and Ubuntu(14.04 LTS) Linux.
 See usage documentation [here](doc/usage.md)
 
 ## Help
+Main help
+
 ```
 /> mbedflash --help
-usage: mbedflash [-h] [-v] [-s] [--version] [-i INPUT]
-                 [-m DEVICE_MAPPING_TABLE] [-l] [--flashers]
-                 [--pyocd] [--tid TARGET_ID] [-t PLATFORM_NAME] 
+usage: mbedflash [-h] [-v] [-s] <command> ...
+
+For specific command help, run: mbedflash <command> --help
 
 optional arguments:
-  -h, --help            Show this help message and exit.
-  -v, --verbose         Verbose level... repeat up to three times.
-  -s, --silent          Silent - only errors will be printed.
-  --version             Prints the package version and exits.
+  -h, --help     show this help message and exit
+  -v, --verbose  Verbose level... repeat up to three times.
+  -s, --silent   Silent - only errors will be printed.
+
+command:
+  <command>      command help
+    list         Prints a list of supported platforms.
+    flashers     Prints a list of supported flashers.
+    version      Display version information
+    flash        Flash given resource
+    reset        Reset given resource
+    erase        Erase given resource
+
+```
+
+flash help
+
+```
+/>mbedflash flash --help
+usage: mbedflash flash [-h] [-i INPUT] [--tid [TARGET_ID [TARGET_ID ...]]]
+                       [-t PLATFORM_NAME]
+                       [method]
+
+positional arguments:
+  method                <simple|pyocd|edbg>, used for flashing
+
+optional arguments:
+  -h, --help            show this help message and exit
   -i INPUT, --input INPUT
                         Binary input to be flashed.
-  -m DEVICE_MAPPING_TABLE, --mapping DEVICE_MAPPING_TABLE
-                        Device mapping table.
-  -l, --list            Prints a list of supported platforms.
-  --flashers            Prints s list of supported flashers.
-  --pyocd               Uses pyOCD for flashing.
-  --tid TARGET_ID, --target_id TARGET_ID
-                      Target to be flashed, ALL will flash all connected
-                      devices with given platform-name. Giving a prefix will
-                      flash all devices which target_id start with the
-                      prefix
+  --tid [TARGET_ID [TARGET_ID ...]], --target_id [TARGET_ID [TARGET_ID ...]]
+                        Target to be flashed, ALL will flash all connected
+                        devices with given platform-name, also multiple
+                        targets can be given. Giving a prefix will flash all
+                        devices which target_id start with the prefix
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
-                        Platform/target name to be flashed.
+                        Platform of the target device(s)
 
 ```
 
