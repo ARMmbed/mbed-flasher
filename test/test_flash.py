@@ -46,21 +46,21 @@ class FlashTestCase(unittest.TestCase):
         flasher = Flash()
         ret = flasher.flash(build='file.bin', target_id=True, platform_name=False, device_mapping_table=False,
                             method='simple')
-        self.assertEqual(ret, -5)
+        self.assertEqual(ret, 45)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_target_id_all(self):
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name=False,
                             device_mapping_table=False, method='simple')
-        self.assertEqual(ret, -3)
+        self.assertEqual(ret, 40)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_one_target_id(self):
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='0240000029164e45002f0012706e0006f301000097969900',
                             platform_name=False, device_mapping_table=False, method='simple')
-        self.assertEqual(ret, -3)
+        self.assertEqual(ret, 40)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_run_with_file_with_one_target_id_wrong_platform(self):
