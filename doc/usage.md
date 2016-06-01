@@ -13,15 +13,29 @@
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
-    * [Running mbedflash without input](#running-mbedflash-without-input)
-    * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
-    * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
-    * [Flashing a single device](#flashing-a-single-device-1)
-    * [Flashing with prefix](#flashing-with-prefix)
-    * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
-    * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
-    * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
-    * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
+    * [Listing commands](#listing commands)
+        * [Running mbedflash without input](#running-mbedflash-without-input)
+        * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
+        * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
+    * [Flash](#flash)
+        * [Flashing a single device](#flashing-a-single-device-1)
+        * [Flashing with prefix](#flashing-with-prefix)
+        * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
+        * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
+        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
+        * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
+    * [Erase](#erase)
+        * [Erasing a single device](#erasing-a-single-device)
+        * [Erasing a single device using pyocd](#erasing-a-single-device-using-pyocd)
+        * [Erasing a single device using pyocd verbose output](#erasing-a-single-device-using-pyocd-verbose-output)
+        * [Erasing with prefix](#erasing-with-prefix)
+        * [Erasing all devices](#erasing-all-devices)
+    * [Reset](#reset)
+        * [Resetting a single device](#resetting-a-single-device)
+        * [Resetting a single device verbose output](#Resetting-a-single-device-verbose-output)
+        * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd)
+        * [Resetting with prefix verbose output](#resetting-with-prefix-verbose-output)
+        * [Resetting all devices verbose output](#resetting-all-devices-verbose-output)
     
 ## Python API
 
@@ -118,6 +132,8 @@ INFO:mbed-flasher:flash ready
 
 ## Command Line Interface
 
+### Listing commands
+
 #### Running mbedflash without input
 
 ```batch
@@ -138,6 +154,8 @@ C:\>mbedflash list
 C:\>mbedflash flashers
 ["Mbed", "Atprogram"]
 ```
+
+### Flash
 
 #### Flashing a single device
 
@@ -231,6 +249,133 @@ DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae9810000979
 INFO:mbed-flasher:flash ready
 DEBUG:mbed-flasher:dev#1 -> SUCCESS
 DEBUG:mbed-flasher:dev#2 -> SUCCESS
+
+C:\>
+```
+
+### Erase
+
+#### Erasing a single device
+
+This functionality is not supported at the moment
+
+```
+c:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900
+Not supported yet
+```
+
+#### Erasing a single device using pyocd
+
+```
+C:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing a single device using pyocd verbose output
+
+```
+C:\>mbedflash -vvv erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting erase for given target_id ['0240000028884e450051700f6bf000128021000097969900']
+[INFO](mbed-flasher): method used for reset: pyocd
+[INFO](mbed-flasher): erasing device
+INFO:mbed-flasher:erasing device
+[INFO](mbed-flasher): erase completed
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing with prefix
+
+```
+C:\>mbedflash erase --tid 024000002 pyocd
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing all devices
+
+```
+C:\>mbedflash erase --tid all pyocd
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+### Reset
+
+#### Resetting a single device
+
+```
+C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900
+
+C:\>
+````
+
+#### Resetting a single device verbose output
+
+```
+c:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900']
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+
+C:\>
+```
+
+#### Resetting a single device using pyocd
+
+```
+C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
+INFO:mbed-flasher:resetting device
+INFO:mbed-flasher:reset completed
+
+C:\>
+```
+
+#### Resetting with prefix verbose output
+
+```
+C:\>mbedflash -vvv reset --tid 024000002
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900']
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+
+C:\>
+```
+
+#### Resetting all devices verbose output
+
+```
+C:\>mbedflash -vvv reset --tid all
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id all
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
 
 C:\>
 ```
