@@ -76,6 +76,38 @@ optional arguments:
 
 ```
 
+erase help
+
+```
+c:\>mbedflash erase --help
+usage: mbedflash erase [-h] [--tid TARGET_ID] [method]
+
+positional arguments:
+  method                <simple|pyocd|edbg>, used for erase
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --tid TARGET_ID, --target_id TARGET_ID
+                        Target to be erased or all
+
+```
+
+reset help
+
+```
+c:\>mbedflash reset --help
+usage: mbedflash reset [-h] [--tid TARGET_ID] [method]
+
+positional arguments:
+  method                <simple|pyocd|edbg>, used for reset
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --tid TARGET_ID, --target_id TARGET_ID
+                        Target to be reset or all
+
+```
+
 ## Running unit tests
 Required pre-installed packages: coverage, mock
 ```
