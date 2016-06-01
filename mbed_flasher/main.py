@@ -28,6 +28,7 @@ import logging.handlers
 import os
 import json
 import time
+import types
 
 from os.path import isfile
 from flash import Flash
@@ -164,11 +165,11 @@ class FlasherCLI:
         parser_flash.add_argument('method', help='<simple|pyocd|edbg>, used for flashing', metavar='method', choices=['simple','pyocd','edbg'], nargs='?')
         # Initialize reset command
         parser_reset = get_resource_subparser(subparsers, 'reset', func=self.subcmd_reset_handler, help='Reset given resource')
-        parser_reset.add_argument('--tid', '--target_id', help='Target to be resetted', default=None, metavar='TARGET_ID')
+        parser_reset.add_argument('--tid', '--target_id', help='Target to be reset or all', default=None, metavar='TARGET_ID')
         parser_reset.add_argument('method', help='<simple|pyocd|edbg>, used for reset', metavar='method', choices=['simple','pyocd','edbg'], nargs='?')
         # Initialize erase command
         parser_erase = get_resource_subparser(subparsers, 'erase', func=self.subcmd_erase_handler, help='Erase given resource')
-        parser_erase.add_argument('--tid', '--target_id', help='Target to be erased', default=None, metavar='TARGET_ID')
+        parser_erase.add_argument('--tid', '--target_id', help='Target to be erased or all', default=None, metavar='TARGET_ID')
         parser_erase.add_argument('method', help='<simple|pyocd|edbg>, used for erase', metavar='method', choices=['simple','pyocd','edbg'], nargs='?')
         '''
         parser.add_argument('-m', '--mapping',
@@ -229,10 +230,17 @@ class FlasherCLI:
                 target_ids_to_flash = []
                 available_target_ids = []
                 if len(available) > 0:
-                    for item in args.tid:
+                    if isinstance(args.tid, types.ListType):
+                        for item in args.tid:
+                            for device in available:
+                                available_target_ids.append(device['target_id'])
+                                if device['target_id'] == item or device['target_id'].startswith(item):
+                                    if not device['target_id'] in target_ids_to_flash:
+                                        target_ids_to_flash.append(device['target_id'])
+                    else:
                         for device in available:
                             available_target_ids.append(device['target_id'])
-                            if device['target_id'] == item or device['target_id'].startswith(item):
+                            if device['target_id'] == args.tid or device['target_id'].startswith(args.tid):
                                 if not device['target_id'] in target_ids_to_flash:
                                     target_ids_to_flash.append(device['target_id'])
                     if len(target_ids_to_flash) == 0:
@@ -256,14 +264,30 @@ class FlasherCLI:
         
     def subcmd_reset_handler(self, args):
         resetter = Reset()
-        print(args)
-        retcode = resetter.reset(target_id=args.tid, method=args.method)
+        if args.tid:
+            ids = self.parse_id_to_devices(args.tid)
+            if isinstance(ids, types.IntType):
+                retcode = ids
+            else:
+                retcode = resetter.reset(target_id=ids, method=args.method)
+        else:
+            print("Target_id is missing")
+            return EXIT_CODE_NO_TARGET_ID
+            
         return retcode
         
     def subcmd_erase_handler(self, args):
         eraser = Erase()
-        print(args)
-        retcode = eraser.erase(target_id=args.tid, method=args.method)
+        if args.tid:
+            ids = self.parse_id_to_devices(args.tid)
+            if isinstance(ids, types.IntType):
+                retcode = ids
+            else:
+                retcode = eraser.erase(target_id=ids, method=args.method)
+        else:
+            print("Target_id is missing")
+            return EXIT_CODE_NO_TARGET_ID
+            
         return retcode
         
     def subcmd_version_handler(self, args):
@@ -286,6 +310,31 @@ class FlasherCLI:
         flasher = Flash()
         print(json.dumps(flasher.get_supported_flashers()))
         return EXIT_CODE_SUCCESS
+        
+    def parse_id_to_devices(self, tid):
+        flasher = Flash()
+        if not 'all' in tid:
+            available = flasher.get_available_device_mapping()
+            target_ids = []
+            available_target_ids = []
+            if len(available) > 0:
+                for device in available:
+                    available_target_ids.append(device['target_id'])
+                    if device['target_id'] == tid or device['target_id'].startswith(tid):
+                        if not device['target_id'] in target_ids:
+                            target_ids.append(device['target_id'])
+                if len(target_ids) == 0:
+                    print("Could not find given target_id from attached devices")
+                    print("Available target_ids:")
+                    print(available_target_ids)
+                    return EXIT_CODE_COULD_NOT_MAP_DEVICE
+                else:
+                    return target_ids
+            else:
+                    print("Could not find any connected device")
+                    return EXIT_CODE_DEVICES_MISSING
+        else:
+            return tid
 
 def mbedflash_main():
     """

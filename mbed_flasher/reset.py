@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Author:
-Jussi Vatjus-Anttila <jussi.vatjus-anttila@arm.com>
+Veli-Matti Lahtela <veli-matti.lahtela@arm.com>
 """
 
 import logging
@@ -90,10 +90,12 @@ class Reset(object):
                     if target == device['target_id']:
                         if device not in targets_to_reset:
                             targets_to_reset.append(device)
-        else:                
-            if len(target_id) <= 48:
+        else:
+            if target_id == 'all':
+               targets_to_reset = available_devices
+            elif len(target_id) <= 48:
                 for device in available_devices:
-                    if target_id == device['target_id'] or device['target_id'].startswith(target):
+                    if target_id == device['target_id'] or device['target_id'].startswith(target_id):
                         if device not in targets_to_reset:
                             targets_to_reset.append(device)
         
