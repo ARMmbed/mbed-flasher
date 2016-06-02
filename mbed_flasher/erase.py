@@ -105,7 +105,7 @@ class Erase(object):
             self.logger.info("erase completed")
             return EXIT_CODE_SUCCESS
         else:
-            print "Attached device does not support erasing through DAPLINK"
+            print "Selected device does not support erasing through DAPLINK"
             return EXIT_CODE_IMPLEMENTATION_MISSING
 
     def erase(self, target_id=None, method=None):
