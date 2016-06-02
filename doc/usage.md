@@ -3,67 +3,68 @@
 ## Table of Contents
 * [Python API](#python-api)
     * [Flash API](#flash-api)
-        * [Flash Setup](#flash-setup)
+        * [Flash setup](#flash-setup)
         * [Querying available flashers](#querying-available-flashers)
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
         * [Flashing a single device](#flashing-a-single-device)
-        * [Flashing devices with prefix](#flashing-devices-with-prefix)
+        * [Flashing devices with prefix](#flashing-devices-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
     * [Erase API](#erase-api)
-        * [Erase Setup](#erase-setup)
+        * [Erase setup](#erase-setup)
         * [Querying attached devices](#querying-attached-devices-1)
-        * [Erase a single device](#erase-a-single-device)
-        * [Erase a single device using pyocd](#erase-a-single-device-using-pyocd)
-        * [Erase devices with prefix](#erase-devices-with-prefix)
-        * [Erase all devices using pyocd](#erase-all-devices-using-pyocd)
+        * [Erasing a single device](#erasing-a-single-device)
+        * [Erasing a single device using pyOCD](#erasing-a-single-device-using-pyocd)
+        * [Erasing devices with a prefix](#erasing-devices-with-a-prefix)
+        * [Erasing all devices using pyOCD](#erasing-all-devices-using-pyocd)
     * [Reset API](#reset-api)
-        * [Reset Setup](#reset-setup)
+        * [Reset setup](#reset-setup)
         * [Querying attached devices](#querying-attached-devices-2)
-        * [Reset a single device](#reset-a-single-device)
-        * [Reset a single device using pyocd](#reset-a-single-device-using-pyocd)
-        * [Reset devices with prefix](#reset-devices-with-prefix)
-        * [Reset all devices using pyocd](#reset-all-devices-using-pyocd)
+        * [Resetting a single device](#resetting-a-single-device)
+        * [Resetting a single device using pyOCD](#resetting-a-single-device-using-pyocd)
+        * [Resetting devices with a prefix](#resetting-devices-with-a-prefix)
+        * [Resetting all devices using pyOCD](#reset-all-devices-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
     * [Listing commands](#listing commands)
-        * [Running mbedflash without input](#running-mbedflash-without-input)
-        * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
-        * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
-    * [Flash](#flash)
-        * [Flashing a single device](#flashing-a-single-device-1)
-        * [Flashing with prefix](#flashing-with-prefix)
-        * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
+        * [Running mbed-flasher without input](#running-mbed-flasher-without-input)
+        * [Running mbed-flasher to list supported devices](#running-mbed-flasher-to-list-supported-devices)
+        * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
+    * [Flashing](#flashing)
+        * [Flashing a single device](#flashing-a-single-device)
+        * [Flashing with a prefix](#flashing-with-a-prefix)
+        * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
-        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
+        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
         * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
-    * [Erase](#erase)
+    * [Erasing](#erasing)
         * [Erasing a single device](#erasing-a-single-device)
         * [Erasing a single device using pyocd](#erasing-a-single-device-using-pyocd)
         * [Erasing a single device using pyocd verbose output](#erasing-a-single-device-using-pyocd-verbose-output)
         * [Erasing with prefix using pyocd](#erasing-with-prefix-using-pyocd)
         * [Erasing all devices using pyocd](#erasing-all-devices-using-pyocd)
-    * [Reset](#reset)
+    * [Resetting](#resetting)
         * [Resetting a single device](#resetting-a-single-device)
-        * [Resetting a single device verbose output](#Resetting-a-single-device-verbose-output)
+        * [Resetting a single device verbose output](#Resetting-a-single-device-with-verbose-output)
         * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd)
-        * [Resetting with prefix verbose output](#resetting-with-prefix-verbose-output)
-        * [Resetting all devices verbose output](#resetting-all-devices-verbose-output)
+        * [Resetting with a prefix with verbose output](#resetting-with-a-prefix-with-verbose-output)
+        * [Resetting all devices with verbose output](#resetting-all-devices-with-verbose-output)
     
 ## Python API
 
 ### Flash API
 
-Typically we would use mbed-flasher as follows:
+Typically, mbed-flasher is used for:
 
-1. Find out what devices are available
-2. Select the devices we would like to flash
-3. Flash the selected devices
+* Detecting available devices.
+* Selecting the devices to flash.
+* Flashing the selected devices.
 
-#### Flash Setup
+#### Flash setup
 
-Start by importing the mbed-flasher module:
+To import the mbed-flasher module:
+
 ```python
 >>> from mbed_flasher.flash import Flash
 >>> flasher = Flash()
@@ -89,7 +90,7 @@ u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp
 }
 ```
 
-#### Querying attached devices:
+#### Querying attached devices
 
 ```python
 >>> for item in flasher.FLASHERS:
@@ -106,7 +107,7 @@ u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp
 0
 ```
 
-#### Flashing devices with prefix
+#### Flashing devices with a prefix
 
 ```python
 >>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="02400000288", platform_name="K64F")
@@ -128,7 +129,7 @@ Going to flash following devices:
 
 #### Flashing a device using pyOCD
 
-Warning, not working reliably.
+<span class="warnings">**Warning:** Currently, not working reliably.</span>
 
 ```python
 >>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F", method='pyocd')
@@ -146,17 +147,18 @@ INFO:mbed-flasher:flash ready
 
 ### Erase API
 
-Typical use case:
+Typical use cases:
 
-1. Find out what devices are available
-2. Select the devices we would like to erase
-3. Erase the selected devices
+* Detecting available devices.
+* Selecting the devices to erase.
+* Erasing the selected devices.
 
-Erasing a device is supported using pyocd or simple erasing. Simple erasing uses DAPLINK erasing and requires the device to be in automation mode and is experimental.
+To erase a device you can use pyOCD or simple erasing. Simple erasing is still experimental. It uses DAPLINK erasing and requires the device to be in automation mode.
 
-#### Erase Setup
+#### Erase setup
 
-Start by importing the mbed-flasher module:
+To import the mbed-flasher module:
+
 ```python
 >>> from mbed_flasher.erase import Erase
 >>> eraser = Erase()
@@ -170,7 +172,7 @@ Start by importing the mbed-flasher module:
 >>>
 ```
 
-#### Erase a single device
+#### Erasing a single device
 
 ```python
 >>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='simple')
@@ -178,7 +180,7 @@ Selected device does not support erasing through DAPLINK
 0
 ```
 
-Automation mode enabled:
+**Automation mode enabled:**
 
 ```python
 >>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='simple')
@@ -186,7 +188,7 @@ WARNING:mbed-flasher:Experimental feature, might not do anything!
 0
 ```
 
-#### Erase a single device using pyocd
+#### Erasing a single device using pyOCD
 
 ```python
 >>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='pyocd')
@@ -194,7 +196,7 @@ WARNING:mbed-flasher:Experimental feature, might not do anything!
 >>>
 ```
 
-#### Erase devices with prefix
+#### Erasing devices with a prefix
 
 ```python
 >>> eraser.erase(target_id='024000003', method='simple')
@@ -203,9 +205,9 @@ WARNING:mbed-flasher:Experimental feature, might not do anything!
 >>>
 ```
 
-#### Erase all devices using pyocd
+#### Erasing all devices using pyOCD
 
-Warning, not working reliably.
+<span class="warnings">**Warning:** Currently, not working reliably.</span>
 
 ```python
 >>> eraser.erase(target_id='all', method='pyocd')
@@ -215,17 +217,17 @@ Warning, not working reliably.
 
 ### Reset API
 
-Typical use case:
+Typical use cases:
 
-1. Find out what devices are available
-2. Select the devices we would like to reset
-3. Reset the selected devices
+* Detecting available devices.
+* Selecting the devices to reset.
+* Resetting the selected devices.
 
-Resetting a device is supported using pyocd or simple reset. simple reset uses serial reset.
+To reset a device you can use pyOCD or simple reset. The simple reset uses serial reset.
 
-#### Reset Setup
+#### Reset setup
 
-Start by importing the mbed-flasher module:
+To import the mbed-flasher module:
 
 ```python
 >>> from mbed_flasher.reset import Reset
@@ -242,7 +244,7 @@ b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64
 >>>
 ```
 
-#### Reset a single device
+#### Resetting a single device
 
 ```python
 >>> resetter.reset(target_id='0240000028884e450051700f6bf000128021000097969900', method='simple')
@@ -250,7 +252,7 @@ b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64
 >>>
 ```
 
-#### Reset a single device using pyocd
+#### Resetting a single device using pyOCD
 
 ```python
 >>> resetter.reset(target_id='0240000028884e450051700f6bf000128021000097969900', method='pyocd')
@@ -258,7 +260,7 @@ b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64
 >>>
 ```
 
-#### Reset devices with prefix
+#### Resetting devices with a prefix
 
 ```python
 >>> resetter.reset(target_id='024000002', method='simple')
@@ -266,7 +268,7 @@ b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64
 >>>
 ```
 
-#### Reset all devices using pyocd
+#### Resetting all devices using pyOCD
 
 ```python
 >>> resetter.reset(target_id='all', method='pyocd')
@@ -278,28 +280,28 @@ b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64
 
 ### Listing commands
 
-#### Running mbedflash without input
+#### Running mbed-flasher without input
 
 ```batch
 usage: mbedflash [-h] [-v] [-s] <command> ...
 mbedflash: error: too few arguments
 ```
 
-#### Running mbedflash to list supported devices
+#### Running mbed-flasher to list supported devices
 
 ```batch
 C:\>mbedflash list
 ["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]
 ```
 
-#### Running mbedflash to list supported flashers
+#### Running mbed-flasher to list supported flashers
 
 ```batch
 C:\>mbedflash flashers
 ["Mbed", "Atprogram"]
 ```
 
-### Flash
+### Flashing
 
 #### Flashing a single device
 
@@ -309,7 +311,7 @@ C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f
 C:\>
 ```
 
-#### Flashing with prefix
+#### Flashing with a prefix
 
 ```batch
 C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 02400 -t K64F
@@ -373,7 +375,7 @@ DEBUG:mbed-flasher:dev#1 -> SUCCESS
 C:\>
 ```
 
-#### Flashing multiple devices using pyocd
+#### Flashing multiple devices using pyOCD
 
 ```batch
 C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid all -t K64F pyocd
@@ -397,11 +399,11 @@ DEBUG:mbed-flasher:dev#2 -> SUCCESS
 C:\>
 ```
 
-### Erase
+### Erasing
 
 #### Erasing a single device
 
-This functionality experimental, automation mode has to be activated for DAPLINK for it to work
+<span class="notes">**Note:** This functionality experimental. You need to activate the automation mode to make the DAPLINK work.</span>
 
 ```batch
 C:\>mbedflash -vvv erase --tid 0240000033514e45000b500585d40029e981000097969900
@@ -417,7 +419,7 @@ C:\>mbedflash -vvv erase --tid 0240000033514e45000b500585d40029e981000097969900
 C:\>
 ```
 
-or
+Alternatively:
 
 ```batch
 c:\>mbedflash erase --tid 0240000033514e45000b500585d40029e981000097969900
@@ -426,7 +428,7 @@ Attached device does not support erasing through DAPLINK
 c:\>
 ```
 
-#### Erasing a single device using pyocd
+#### Erasing a single device using pyOCD
 
 ```batch
 C:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
@@ -438,7 +440,7 @@ INFO:mbed-flasher:erase completed
 C:\>
 ```
 
-#### Erasing a single device using pyocd verbose output
+#### Erasing a single device using pyOCD with verbose output
 
 ```batch
 C:\>mbedflash -vvv erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
@@ -453,7 +455,7 @@ INFO:mbed-flasher:erase completed
 C:\>
 ```
 
-#### Erasing with prefix using pyocd
+#### Erasing with a prefix using pyOCD
 
 ```batch
 C:\>mbedflash erase --tid 024000002 pyocd
@@ -465,7 +467,7 @@ INFO:mbed-flasher:erase completed
 C:\>
 ```
 
-#### Erasing all devices using pyocd
+#### Erasing all devices using pyOCD
 
 ```batch
 C:\>mbedflash erase --tid all pyocd
@@ -481,7 +483,7 @@ INFO:mbed-flasher:erase completed
 C:\>
 ```
 
-### Reset
+### Resetting
 
 #### Resetting a single device
 
@@ -491,7 +493,7 @@ C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900
 C:\>
 ````
 
-#### Resetting a single device verbose output
+#### Resetting a single device with verbose output
 
 ```batch
 c:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900
@@ -504,7 +506,7 @@ c:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900
 C:\>
 ```
 
-#### Resetting a single device using pyocd
+#### Resetting a single device using pyOCD
 
 ```batch
 C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
@@ -514,7 +516,7 @@ INFO:mbed-flasher:reset completed
 C:\>
 ```
 
-#### Resetting with prefix verbose output
+#### Resetting with a prefix with verbose output
 
 ```batch
 C:\>mbedflash -vvv reset --tid 024000002
@@ -527,7 +529,7 @@ C:\>mbedflash -vvv reset --tid 024000002
 C:\>
 ```
 
-#### Resetting all devices verbose output
+#### Resetting all devices with verbose output
 
 ```batch
 C:\>mbedflash -vvv reset --tid all
