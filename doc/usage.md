@@ -13,12 +13,14 @@
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
     * [Erase API](#erase-api)
         * [Erase Setup](#erase-setup)
+        * [Querying attached devices](#querying-attached-devices-1)
         * [Erase a single device](#erase-a-single-device)
         * [Erase a single device using pyocd](#erase-a-single-device-using-pyocd)
         * [Erase devices with prefix](#erase-devices-with-prefix)
         * [Erase all devices using pyocd](#erase-all-devices-using-pyocd)
     * [Reset API](#reset-api)
         * [Reset Setup](#reset-setup)
+        * [Querying attached devices](#querying-attached-devices-2)
         * [Reset a single device](#reset-a-single-device)
         * [Reset a single device using pyocd](#reset-a-single-device-using-pyocd)
         * [Reset devices with prefix](#reset-devices-with-prefix)
@@ -150,12 +152,65 @@ Typical use case:
 2. Select the devices we would like to erase
 3. Erase the selected devices
 
+Erasing a device is supported using pyocd or simple erasing. Simple erasing uses DAPLINK erasing and requires the device to be in automation mode and is experimental.
+
 #### Erase Setup
 
 Start by importing the mbed-flasher module:
 ```python
 >>> from mbed_flasher.erase import Erase
 >>> eraser = Erase()
+```
+
+#### Querying attached devices
+
+```python
+>>> eraser.get_available_device_mapping()
+[{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port': u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+>>>
+```
+
+#### Erase a single device
+
+```python
+>>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='simple')
+Selected device does not support erasing through DAPLINK
+0
+```
+
+Automation mode enabled:
+
+```python
+>>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='simple')
+WARNING:mbed-flasher:Experimental feature, might not do anything!
+0
+```
+
+#### Erase a single device using pyocd
+
+```python
+>>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='pyocd')
+0
+>>>
+```
+
+#### Erase devices with prefix
+
+```python
+>>> eraser.erase(target_id='024000003', method='simple')
+WARNING:mbed-flasher:Experimental feature, might not do anything!
+0
+>>>
+```
+
+#### Erase all devices using pyocd
+
+Warning, not working reliably.
+
+```python
+>>> eraser.erase(target_id='all', method='pyocd')
+0
+>>>
 ```
 
 ### Reset API
@@ -166,12 +221,57 @@ Typical use case:
 2. Select the devices we would like to reset
 3. Reset the selected devices
 
+Resetting a device is supported using pyocd or simple reset. simple reset uses serial reset.
+
 #### Reset Setup
 
 Start by importing the mbed-flasher module:
+
 ```python
 >>> from mbed_flasher.reset import Reset
 >>> resetter = Reset()
+```
+
+#### Querying attached devices
+
+```python
+>>> resetter.get_available_device_mapping()
+[{'target_id_mbed_htm': '0240000028884e450051700f6bf000128021000097969900', 'mount_point': 'K:', 'target_id': '0240000028884e450051700f6bf000128021000097969900', 'serial_port': u'COM49', 'target_id_us
+b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64F'}, {'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '02400
+00033514e45000b500585d40029e981000097969900', 'serial_port': u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+>>>
+```
+
+#### Reset a single device
+
+```python
+>>> resetter.reset(target_id='0240000028884e450051700f6bf000128021000097969900', method='simple')
+0
+>>>
+```
+
+#### Reset a single device using pyocd
+
+```python
+>>> resetter.reset(target_id='0240000028884e450051700f6bf000128021000097969900', method='pyocd')
+0
+>>>
+```
+
+#### Reset devices with prefix
+
+```python
+>>> resetter.reset(target_id='024000002', method='simple')
+0
+>>>
+```
+
+#### Reset all devices using pyocd
+
+```python
+>>> resetter.reset(target_id='all', method='pyocd')
+0
+>>>
 ```
 
 ## Command Line Interface
