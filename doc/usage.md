@@ -2,8 +2,8 @@
 
 ## Table of Contents
 * [Python API](#python-api)
-    * [Basic usage](#basic-usage)
-        * [Setup](#setup)
+    * [Flash API](#flash-api)
+        * [Flash Setup](#flash-setup)
         * [Querying available flashers](#querying-available-flashers)
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
@@ -11,6 +11,18 @@
         * [Flashing devices with prefix](#flashing-devices-with-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
+    * [Erase API](#erase-api)
+        * [Erase Setup](#erase-setup)
+        * [Erase a single device](#erase-a-single-device)
+        * [Erase a single device using pyocd](#erase-a-single-device-using-pyocd)
+        * [Erase devices with prefix](#erase-devices-with-prefix)
+        * [Erase all devices using pyocd](#erase-all-devices-using-pyocd)
+    * [Reset API](#reset-api)
+        * [Reset Setup](#reset-setup)
+        * [Reset a single device](#reset-a-single-device)
+        * [Reset a single device using pyocd](#reset-a-single-device-using-pyocd)
+        * [Reset devices with prefix](#reset-devices-with-prefix)
+        * [Reset all devices using pyocd](#reset-all-devices-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
     * [Listing commands](#listing commands)
@@ -39,7 +51,7 @@
     
 ## Python API
 
-### Basic usage
+### Flash API
 
 Typically we would use mbed-flasher as follows:
 
@@ -47,7 +59,7 @@ Typically we would use mbed-flasher as follows:
 2. Select the devices we would like to flash
 3. Flash the selected devices
 
-#### Setup
+#### Flash Setup
 
 Start by importing the mbed-flasher module:
 ```python
@@ -128,6 +140,38 @@ DEBUG:mbed-flasher:flashing device: 0240000028884e450019700f6bf0000f802100009796
 DEBUG:mbed-flasher:resetting device: 0240000028884e450019700f6bf0000f8021000097969900
 INFO:mbed-flasher:flash ready
 0
+```
+
+### Erase API
+
+Typical use case:
+
+1. Find out what devices are available
+2. Select the devices we would like to erase
+3. Erase the selected devices
+
+#### Erase Setup
+
+Start by importing the mbed-flasher module:
+```python
+>>> from mbed_flasher.erase import Erase
+>>> eraser = Erase()
+```
+
+### Reset API
+
+Typical use case:
+
+1. Find out what devices are available
+2. Select the devices we would like to reset
+3. Reset the selected devices
+
+#### Reset Setup
+
+Start by importing the mbed-flasher module:
+```python
+>>> from mbed_flasher.reset import Reset
+>>> resetter = Reset()
 ```
 
 ## Command Line Interface
