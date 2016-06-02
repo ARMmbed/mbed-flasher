@@ -5,8 +5,8 @@
 mbed-flasher is a simple Python-based tool for flashing single or multiple boards.
 It provides a simple Command Line Interface and Python API for flashing. 
 
-The purpose is to provide a clean and simple library that is easy to integrate to other tools
-and it can be easily developed further to support flashing in mbed OS and other platforms.
+The purpose is to provide a clean and simple library that is easy to integrate to other tools.
+It can be easily developed further to support flashing in mbed OS and other platforms.
 Developers can also use it as a standalone tool for flashing their development boards.
 
 
@@ -22,12 +22,13 @@ To install the flasher in development mode:
 
 ## Usage
 
-This tool has been tested to work with Windows 7 and Ubuntu(14.04 LTS) Linux.
+This tool has been tested and verified to work with Windows 7 and Ubuntu (14.04 LTS) Linux.
 
-See usage documentation [here](doc/usage.md)
+See the actual usage documentation [here](doc/usage.md).
 
 ## Help
-Main help
+
+**Main help**
 
 ```
 /> mbedflash --help
@@ -51,7 +52,7 @@ command:
 
 ```
 
-flash help
+**Flash help**
 
 ```
 />mbedflash flash --help
@@ -76,7 +77,7 @@ optional arguments:
 
 ```
 
-erase help
+**Erase help**
 
 ```
 c:\>mbedflash erase --help
@@ -92,7 +93,7 @@ optional arguments:
 
 ```
 
-reset help
+**Reset help**
 
 ```
 c:\>mbedflash reset --help
@@ -109,15 +110,20 @@ optional arguments:
 ```
 
 ## Running unit tests
+
 Required pre-installed packages: coverage, mock
+
 ```
 sudo pip install coverage mock
 ```
+
 To execute the tests:
 ```
 coverage run -m unittest discover -s test
 ```
+
 To generate a coverage report:
+
 ```
 coverage html
 ```
