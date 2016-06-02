@@ -29,7 +29,7 @@ EXIT_CODE_SERIAL_RESET_FAILED = 13
 
 
 class Reset(object):
-    """ Flash object, which manage flashing single device
+    """ Reset object, which manages reset for given devices
     """
     FLASHERS = []
     def __init__(self):
@@ -70,7 +70,7 @@ class Reset(object):
             if result:
                 self.logger.info("reset completed")
             else:
-                self.logger.info("reset failed")
+                self.logger.error("reset failed")
                 return EXIT_CODE_SERIAL_RESET_FAILED
         port.close()
         

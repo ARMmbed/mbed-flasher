@@ -17,15 +17,23 @@ Veli-Matti Lahtela <veli-matti.lahtela@arm.com>
 
 import logging
 import types
+from time import sleep
+from os.path import join, isfile
 
+EXIT_CODE_SUCCESS = 0
+EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
+EXIT_CODE_SERIAL_RESET_FAILED = 13
 EXIT_CODE_COULD_NOT_MAP_TO_DEVICE = 21
 EXIT_CODE_PYOCD_MISSING = 23
 EXIT_CODE_PYOCD_ERASE_FAILED = 27
 EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE = 29
 EXIT_CODE_IMPLEMENTATION_MISSING = 31
+SLEEP_TIME_FOR_REMOUNT = 5
+EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED = 33
+
 
 class Erase(object):
-    """ Flash object, which manage flashing single device
+    """ Erase object, which manages erasing for given devices
     """
 
     def __init__(self):
@@ -43,10 +51,62 @@ class Erase(object):
     def __get_flashers():
         from flashers import AvailableFlashers
         return AvailableFlashers
+        
+    def reset_board(self, serial_port):
+        from flashers.enhancedserial import EnhancedSerial
+        from serial.serialutil import SerialException
+        try:
+            port = EnhancedSerial(serial_port)
+        except SerialException as e:
+            self.logger.info("reset could not be sent")
+            self.logger.error(e)
+            if e.message.find('could not open port') != -1:
+                print 'Reset could not be given. Close your Serial connection to device.'
+            return EXIT_CODE_RESET_FAILED_PORT_OPEN
+        port.baudrate = 115200
+        port.timeout = 1
+        port.xonxoff = False
+        port.rtscts = False
+        port.flushInput()
+        port.flushOutput()
+
+        if port:
+            self.logger.info("sendBreak to device to reboot")
+            result = port.safe_sendBreak()
+            if result:
+                self.logger.info("reset completed")
+            else:
+                self.logger.error("reset failed")
+                return EXIT_CODE_SERIAL_RESET_FAILED
+        port.close()
+        return EXIT_CODE_SUCCESS
     
-    def erase_board(self, mount_point):
-        print "Not supported yet"
-        return EXIT_CODE_IMPLEMENTATION_MISSING
+    def erase_board(self, mount_point, serial_port):
+        automation_activated = False
+        if isfile(join(mount_point, 'DETAILS.TXT')):
+            with open(join(mount_point, 'DETAILS.TXT'), 'rb') as f:
+                for lines in f:
+                    if lines.find("Automation allowed: 1") != -1:
+                        automation_activated = True
+                    else:
+                        continue
+        if automation_activated:
+            self.logger.warn("Experimental feature, might not do anything!")
+            self.logger.info("erasing device")
+            with open(join(mount_point, 'ERASE.ACT'), 'wb') as new_file:
+                pass
+            sleep(SLEEP_TIME_FOR_REMOUNT)
+            success = self.reset_board(serial_port)
+            if isfile(join(mount_point, 'ERASE.ACT')):
+                success = EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED
+            if success != 0:
+                self.logger.error("erase failed")
+                return success
+            self.logger.info("erase completed")
+            return EXIT_CODE_SUCCESS
+        else:
+            print "Attached device does not support erasing through DAPLINK"
+            return EXIT_CODE_IMPLEMENTATION_MISSING
 
     def erase(self, target_id=None, method=None):
         """Erase (mbed) device
@@ -76,8 +136,8 @@ class Erase(object):
         if len(targets_to_erase) > 0:
             for item in targets_to_erase:
                 if item['platform_name'] == 'K64F':
-                    if method == 'simple' and 'mount_point' in item:
-                        self.erase_board(item['mount_point'])
+                    if method == 'simple' and 'mount_point' in item and 'serial_port' in item:
+                        self.erase_board(item['mount_point'], item['serial_port'])
                     elif method == 'pyocd':
                         try:
                             from pyOCD.board import MbedBoard
@@ -107,5 +167,5 @@ class Erase(object):
             print "Could not map given target_id(s) to available devices"
             return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
         
-        retcode = 0
+        retcode = EXIT_CODE_SUCCESS
         return retcode
