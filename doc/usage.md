@@ -73,21 +73,15 @@ To import the mbed-flasher module:
 #### Querying available flashers
 
 ```python
->>> flasher.FLASHERS
-[<class 'mbed_flasher.flashers.FlasherMbed.FlasherMbed'>, <class 'mbed_flasher.flashers.FlasherAtmelAt.FlasherAtmelAt'>]
+>>> flasher.get_supported_flashers()
+['Mbed', 'Atprogram']
 ```
 
 #### Querying supported targets
 
 ```python
->>> flasher.SUPPORTED_TARGETS
-{
-u'NRF51822': {u'properties': {u'binary_type': u'-combined.hex', u'copy_method': u'cp', u'program_cycle_s': 4, u'reset_method': u'default'}}, 
-u'K64F': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'default', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'frdm-k64f-gcc'}, {u'mbed_toolchain': u'ARM', u'yotta_target': u'frdm-k64f-armcc'}]}, 
-'SAM4E': {'properties': {'binary_type': '.bin', 'copy_method': 'atprogram', 'program_cycle_s': 0, 'reset_method': 'default'}, 'yotta_targets': []}, 
-u'NRF51_DK': {u'properties': {u'binary_type': u'-combined.hex', u'copy_method': u'shell', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'nrf51dk-gcc'}]}, 
-u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp', u'program_cycle_s': 4, u'reset_method': u'default'}, u'yotta_targets': [{u'mbed_toolchain': u'GCC_ARM', u'yotta_target': u'st-nucleo-f401re-gcc'}]}
-}
+>>> flasher.get_supported_targets()
+[u'NRF51822', u'K64F', 'SAM4E', u'NRF51_DK', u'NUCLEO_F401RE']
 ```
 
 #### Querying attached devices
@@ -98,6 +92,15 @@ u'NUCLEO_F401RE': {u'properties': {u'binary_type': u'.bin', u'copy_method': u'cp
 ...
 [{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
 [{'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_port': None}]
+```
+
+or get everything in one list:
+
+```python
+>>> flasher.get_available_device_mapping()
+[{'target_id_mbed_htm': '0240000033514e45003f500585d4000ae981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45003f500585d4000ae981000097969900', 'serial_port': u'COM79', 'target_id_us
+b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}, {'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_p
+ort': None}]
 ```
 
 #### Flashing a single device
