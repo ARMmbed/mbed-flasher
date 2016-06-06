@@ -18,6 +18,7 @@ limitations under the License.
 
 import logging
 import unittest
+import mbed_lstools
 import mock
 
 from mbed_flasher.main import FlasherCLI
@@ -29,6 +30,8 @@ flasher_version = '0.3.1'
 class MainTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
+
+    mbeds = mbed_lstools.create()
 
     def setUp(self):
         self.logging_patcher = mock.patch("mbed_flasher.main.logging")
@@ -98,6 +101,13 @@ class MainTestCase(unittest.TestCase):
         fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K64F"])
         self.assertEqual(fcli.execute(), 15)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
+
+    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_wrong_tid(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "--tid", "555", "-t", "K64F"])
+        self.assertEqual(fcli.execute(), 20)
+        self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
 if __name__ == '__main__':
     unittest.main()
