@@ -54,7 +54,7 @@ class EraseTestCase(unittest.TestCase):
     def test_erase_with_all_no_devices(self, mock_stdout):
         eraser = Erase()
         ret = eraser.erase(target_id='all', method='simple')
-        self.assertEqual(ret, 3)
+        self.assertEqual(ret, 21)
         if mock_stdout:
             self.assertEqual(mock_stdout.getvalue(), 'Could not map given target_id(s) to available devices\n')
 
