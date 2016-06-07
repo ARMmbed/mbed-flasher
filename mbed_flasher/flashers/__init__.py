@@ -7,6 +7,7 @@ AvailableFlashers = [
     FlasherMbed
 ]
 
+'''
 if platform.system() == 'Windows':
     for ospath in os.environ['PATH'].split(os.pathsep):
         if ospath.find('Atmel') != -1:
@@ -22,3 +23,4 @@ if platform.system() == 'Windows':
                     for x in files:
                         if x.find("atprogram.exe") != -1:
                             AvailableFlashers.append(FlasherAtmelAt)
+'''
