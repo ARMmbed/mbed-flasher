@@ -127,7 +127,7 @@ class MainTestCase(unittest.TestCase):
     def test_reset_wrong_tid_with_device(self, mock_stdout):
         fcli = FlasherCLI(["reset", "--tid", "555"])
         self.assertEqual(fcli.execute(), 25)
-        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')(,\'[0-9a-fA-F]+\')*\]", "Regex match failed")
+        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')(,\s\'[0-9a-fA-F]+\')*\]", "Regex match failed")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_erase_tid_missing(self, mock_stdout):
@@ -147,7 +147,7 @@ class MainTestCase(unittest.TestCase):
     def test_erase_wrong_tid_with_device(self, mock_stdout):
         fcli = FlasherCLI(["erase", "--tid", "555"])
         self.assertEqual(fcli.execute(), 25)
-        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')(,\'[0-9a-fA-F]+\')*\]", "Regex match failed")
+        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')(,\s\'[0-9a-fA-F]+\')*\]", "Regex match failed")
 
 if __name__ == '__main__':
     unittest.main()
