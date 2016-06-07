@@ -74,14 +74,14 @@ To import the mbed-flasher module:
 
 ```python
 >>> flasher.get_supported_flashers()
-['Mbed', 'Atprogram']
+['Mbed']
 ```
 
 #### Querying supported targets
 
 ```python
 >>> flasher.get_supported_targets()
-[u'NRF51822', u'K64F', 'SAM4E', u'NRF51_DK', u'NUCLEO_F401RE']
+[u'NRF51822', u'K64F', u'NRF51_DK', u'NUCLEO_F401RE']
 ```
 
 #### Querying attached devices
@@ -91,7 +91,6 @@ To import the mbed-flasher module:
 ...     print item.get_available_devices()
 ...
 [{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
-[{'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_port': None}]
 ```
 
 or get everything in one list:
@@ -99,8 +98,7 @@ or get everything in one list:
 ```python
 >>> flasher.get_available_device_mapping()
 [{'target_id_mbed_htm': '0240000033514e45003f500585d4000ae981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45003f500585d4000ae981000097969900', 'serial_port': u'COM79', 'target_id_us
-b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}, {'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_p
-ort': None}]
+b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}]
 ```
 
 #### Flashing a single device
@@ -294,14 +292,14 @@ mbedflash: error: too few arguments
 
 ```batch
 C:\>mbedflash list
-["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]
+["NRF51822", "K64F", "NRF51_DK", "NUCLEO_F401RE"]
 ```
 
 #### Running mbed-flasher to list supported flashers
 
 ```batch
 C:\>mbedflash flashers
-["Mbed", "Atprogram"]
+["Mbed"]
 ```
 
 ### Flashing
@@ -340,7 +338,7 @@ C:\>
 
 ```batch
 C:\>mbedflash -vvv flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port':
 u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
 Going to flash following devices:
@@ -410,7 +408,7 @@ C:\>
 
 ```batch
 C:\>mbedflash -vvv erase --tid 0240000033514e45000b500585d40029e981000097969900
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [INFO](mbed-flasher): Starting erase for given target_id ['0240000033514e45000b500585d40029e981000097969900']
 [INFO](mbed-flasher): method used for reset: simple
 [WARNING](mbed-flasher): Experimental feature, might not do anything!
@@ -447,7 +445,7 @@ C:\>
 
 ```batch
 C:\>mbedflash -vvv erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [INFO](mbed-flasher): Starting erase for given target_id ['0240000028884e450051700f6bf000128021000097969900']
 [INFO](mbed-flasher): method used for reset: pyocd
 [INFO](mbed-flasher): erasing device
@@ -500,7 +498,7 @@ C:\>
 
 ```batch
 c:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900']
 [INFO](mbed-flasher): Method for reset: simple
 [INFO](mbed-flasher): sendBreak to device to reboot
@@ -523,7 +521,7 @@ C:\>
 
 ```batch
 C:\>mbedflash -vvv reset --tid 024000002
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900']
 [INFO](mbed-flasher): Method for reset: simple
 [INFO](mbed-flasher): sendBreak to device to reboot
@@ -536,7 +534,7 @@ C:\>
 
 ```batch
 C:\>mbedflash -vvv reset --tid all
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [INFO](mbed-flasher): Starting reset for target_id all
 [INFO](mbed-flasher): Method for reset: simple
 [INFO](mbed-flasher): sendBreak to device to reboot
