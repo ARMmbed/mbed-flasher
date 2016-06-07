@@ -20,11 +20,12 @@ import logging
 import unittest
 import mbed_lstools
 import mock
-from mbed_flasher.reset import Reset
+import time
+from mbed_flasher.erase import Erase
 from StringIO import StringIO
 
 
-class ResetTestCase(unittest.TestCase):
+class EraseTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
     mbeds = mbed_lstools.create()
@@ -35,67 +36,70 @@ class ResetTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_reset_with_none(self):
-        resetter = Reset()
-        ret = resetter.reset(target_id=None, method='simple')
-        self.assertEqual(ret, 15)
+    def test_erase_with_none(self):
+        eraser = Erase()
+        ret = eraser.erase(target_id=None, method='simple')
+        self.assertEqual(ret, 34)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_wrong_target_id(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='555', method='simple')
-        self.assertEqual(ret, 3)
+    def test_erase_with_wrong_target_id(self, mock_stdout):
+        eraser = Erase()
+        ret = eraser.erase(target_id='555', method='simple')
+        self.assertEqual(ret, 21)
         if mock_stdout:
             self.assertEqual(mock_stdout.getvalue(), 'Could not map given target_id(s) to available devices\n')
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all_no_devices(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='all', method='simple')
+    def test_erase_with_all_no_devices(self, mock_stdout):
+        eraser = Erase()
+        ret = eraser.erase(target_id='all', method='simple')
         self.assertEqual(ret, 3)
         if mock_stdout:
             self.assertEqual(mock_stdout.getvalue(), 'Could not map given target_id(s) to available devices\n')
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='all', method='simple')
+    def test_erase_with_all(self, mock_stdout):
+        eraser = Erase()
+        ret = eraser.erase(target_id='all', method='simple')
         self.assertEqual(ret, 0)
+        time.sleep(4)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_target_id(self, mock_stdout):
+    def test_erase_with_target_id(self, mock_stdout):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
-        resetter = Reset()
+        eraser = Erase()
         ret = None
         for item in devices:
             if item['target_id']:
-                ret = resetter.reset(target_id=item['target_id'], method='simple')
+                ret = eraser.erase(target_id=item['target_id'], method='simple')
                 break
         self.assertEqual(ret, 0)
+        time.sleep(4)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_target_id_list(self, mock_stdout):
+    def test_erase_with_target_id_list(self, mock_stdout):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
-        resetter = Reset()
+        eraser = Erase()
         ret = None
         for item in devices:
             if item['target_id']:
-                ret = resetter.reset(target_id=[item['target_id']], method='simple')
+                ret = eraser.erase(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, 0)
+        time.sleep(4)
     '''
     #For some reason a bunch of tracebacks on usb.core langid problems.
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all_pyocd(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='all', method='pyocd')
+    def test_erase_with_all_pyocd(self, mock_stdout):
+        eraser = Erase()
+        ret = eraser.erase(target_id='all', method='pyocd')
         self.assertEqual(ret, 0)
     '''
 
