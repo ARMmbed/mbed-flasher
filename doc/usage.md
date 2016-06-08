@@ -2,41 +2,74 @@
 
 ## Table of Contents
 * [Python API](#python-api)
-    * [Basic usage](#basic-usage)
-        * [Setup](#setup)
+    * [Flash API](#flash-api)
+        * [Flash setup](#flash-setup)
         * [Querying available flashers](#querying-available-flashers)
+        * [Getting a specific flasher](#getting-a-specific-flasher)
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
         * [Flashing a single device](#flashing-a-single-device)
-        * [Flashing devices with prefix](#flashing-devices-with-prefix)
+        * [Flashing devices from a list](#flashing-devices-from-a-list)
+        * [Flashing devices with prefix](#flashing-devices-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
+    * [Erase API](#erase-api)
+        * [Erase setup](#erase-setup)
+        * [Querying attached devices](#querying-attached-devices-1)
+        * [Erasing a single device](#erasing-a-single-device)
+        * [Erasing a single device using pyOCD](#erasing-a-single-device-using-pyocd)
+        * [Erasing devices with a prefix](#erasing-devices-with-a-prefix)
+        * [Erasing all devices using pyOCD](#erasing-all-devices-using-pyocd)
+    * [Reset API](#reset-api)
+        * [Reset setup](#reset-setup)
+        * [Querying attached devices](#querying-attached-devices-2)
+        * [Resetting a single device](#resetting-a-single-device)
+        * [Resetting a single device using pyOCD](#resetting-a-single-device-using-pyocd)
+        * [Resetting devices with a prefix](#resetting-devices-with-a-prefix)
+        * [Resetting all devices using pyOCD](#resetting-all-devices-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
-    * [Running mbedflash without input](#running-mbedflash-without-input)
-    * [Running mbedflash to list supported devices](#running-mbedflash-to-list-supported-devices)
-    * [Running mbedflash to list supported flashers](#running-mbedflash-to-list-supported-flashers)
-    * [Flashing a single device](#flashing-a-single-device-1)
-    * [Flashing with prefix](#flashing-with-prefix)
-    * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
-    * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
-    * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
-    * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
-    * [Flashing devices from given device mapping table](#flashing-devices-from-given-device-mapping-table)
+    * [Listing commands](#listing-commands)
+        * [Running mbed-flasher without input](#running-mbed-flasher-without-input)
+        * [Running mbed-flasher to list supported devices](#running-mbed-flasher-to-list-supported-devices)
+        * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
+    * [Flashing](#flashing)
+        * [Flashing a single device](#flashing-a-single-device-1)
+        * [Flashing more than one device](#flashing-more-than-one-device)
+        * [Flashing with a prefix](#flashing-with-a-prefix)
+        * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
+        * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
+        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
+        * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
+    * [Erasing](#erasing)
+        * [Erasing a single device](#erasing-a-single-device-1)
+        * [Erasing a single device using pyocd](#erasing-a-single-device-using-pyocd-1)
+        * [Erasing a single device using pyocd with verbose output](#erasing-a-single-device-using-pyocd-with-verbose-output)
+        * [Erasing multiple devices using pyocd](#erasing-multiple-devices-using-pyocd)
+        * [Erasing with a prefix using pyocd](#erasing-with-a-prefix-using-pyocd)
+        * [Erasing all devices using pyocd](#erasing-all-devices-using-pyocd-1)
+    * [Resetting](#resetting)
+        * [Resetting a single device](#resetting-a-single-device-1)
+        * [Resetting a single device with verbose output](#resetting-a-single-device-with-verbose-output)
+        * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd-1)
+        * [Resetting multiple devices with verbose output](#resetting-multiple-devices-with-verbose-output)
+        * [Resetting with a prefix with verbose output](#resetting-with-a-prefix-with-verbose-output)
+        * [Resetting all devices with verbose output](#resetting-all-devices-with-verbose-output)
     
 ## Python API
 
-### Basic usage
+### Flash API
 
-Typically we would use mbed-flasher as follows:
+Typically, mbed-flasher is used for:
 
-1. Find out what devices are available
-2. Select the devices we would like to flash
-3. Flash the selected devices
+* Detecting available devices.
+* Selecting the devices to flash.
+* Flashing the selected devices.
 
-#### Setup
+#### Flash setup
 
-Start by importing the mbed-flasher module:
+To import the mbed-flasher module:
+
 ```python
 >>> from mbed_flasher.flash import Flash
 >>> flasher = Flash()
@@ -46,24 +79,30 @@ Start by importing the mbed-flasher module:
 
 ```python
 >>> flasher.get_supported_flashers()
-['Mbed', 'Atprogram']
+['mbed']
+```
+
+#### Getting a specific flasher
+
+```python
+>>> flasher.get_flasher(flasher='mbed')
+<class 'mbed_flasher.flashers.FlasherMbed.FlasherMbed'>
 ```
 
 #### Querying supported targets
 
 ```python
 >>> flasher.get_supported_targets()
-[u'NRF51822', u'K64F', 'SAM4E', u'NRF51_DK', u'NUCLEO_F401RE']
+[u'NRF51822', u'K64F', u'NRF51_DK', u'NUCLEO_F401RE']
 ```
 
-#### Querying attached devices:
+#### Querying attached devices
 
 ```python
 >>> for item in flasher.FLASHERS:
 ...     print item.get_available_devices()
 ...
 [{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
-[{'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_port': None}]
 ```
 
 or get everything in one list:
@@ -71,8 +110,7 @@ or get everything in one list:
 ```python
 >>> flasher.get_available_device_mapping()
 [{'target_id_mbed_htm': '0240000033514e45003f500585d4000ae981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45003f500585d4000ae981000097969900', 'serial_port': u'COM79', 'target_id_us
-b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}, {'platform_name': 'SAM4E', 'baud_rate': 460800, 'mount_point': None, 'target_id': 'ATML2081030200003217', 'serial_p
-ort': None}]
+b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64F'}]
 ```
 
 #### Flashing a single device
@@ -82,7 +120,18 @@ ort': None}]
 0
 ```
 
-#### Flashing devices with prefix
+#### Flashing devices from a list
+
+```python
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id=["0240000028884e450051700f6bf000128021000097969900","0240000033514e45000b500585d40029e981000097969900"], platform_name="K64F")
+Going to flash following devices:
+0240000028884e450051700f6bf000128021000097969900
+0240000033514e45000b500585d40029e981000097969900
+0
+>>>
+```
+
+#### Flashing devices with a prefix
 
 ```python
 >>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="02400000288", platform_name="K64F")
@@ -104,10 +153,10 @@ Going to flash following devices:
 
 #### Flashing a device using pyOCD
 
-Warning, not working reliably.
+<span class="warnings">**Warning:** Currently, not working reliably.</span>
 
 ```python
->>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F", pyocd=True)
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F", method='pyocd')
 DEBUG:mbed-flasher:atprogram location: C:\Program Files (x86)\Atmel\Studio\7.0\atbackend\atprogram.exe
 DEBUG:mbed-flasher:Connected atprogrammer supported devices: []
 DEBUG:mbed-flasher:[{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
@@ -120,42 +169,187 @@ INFO:mbed-flasher:flash ready
 0
 ```
 
+### Erase API
+
+Typical use cases:
+
+* Detecting available devices.
+* Selecting the devices to erase.
+* Erasing the selected devices.
+
+To erase a device you can use pyOCD or simple erasing. Simple erasing is still experimental. It uses [DAPLINK](https://github.com/mbedmicro/DAPLink/blob/master/docs/ENABLE_AUTOMATION.md) erasing and requires the device to be in automation mode.
+
+#### Erase setup
+
+To import the mbed-flasher module:
+
+```python
+>>> from mbed_flasher.erase import Erase
+>>> eraser = Erase()
+```
+
+#### Querying attached devices
+
+```python
+>>> eraser.get_available_device_mapping()
+[{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port': u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+>>>
+```
+
+#### Erasing a single device
+
+```python
+>>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='simple')
+Selected device does not support erasing through DAPLINK
+0
+```
+
+**Automation mode enabled:**
+
+```python
+>>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='simple')
+WARNING:mbed-flasher:Experimental feature, might not do anything!
+0
+```
+
+#### Erasing a single device using pyOCD
+
+```python
+>>> eraser.erase(target_id='0240000033514e45000b500585d40029e981000097969900', method='pyocd')
+0
+>>>
+```
+
+#### Erasing devices with a prefix
+
+```python
+>>> eraser.erase(target_id='024000003', method='simple')
+WARNING:mbed-flasher:Experimental feature, might not do anything!
+0
+>>>
+```
+
+#### Erasing all devices using pyOCD
+
+<span class="warnings">**Warning:** Currently, not working reliably.</span>
+
+```python
+>>> eraser.erase(target_id='all', method='pyocd')
+0
+>>>
+```
+
+### Reset API
+
+Typical use cases:
+
+* Detecting available devices.
+* Selecting the devices to reset.
+* Resetting the selected devices.
+
+To reset a device you can use pyOCD or simple reset. The simple reset uses serial reset.
+
+#### Reset setup
+
+To import the mbed-flasher module:
+
+```python
+>>> from mbed_flasher.reset import Reset
+>>> resetter = Reset()
+```
+
+#### Querying attached devices
+
+```python
+>>> resetter.get_available_device_mapping()
+[{'target_id_mbed_htm': '0240000028884e450051700f6bf000128021000097969900', 'mount_point': 'K:', 'target_id': '0240000028884e450051700f6bf000128021000097969900', 'serial_port': u'COM49', 'target_id_us
+b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64F'}, {'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '02400
+00033514e45000b500585d40029e981000097969900', 'serial_port': u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+>>>
+```
+
+#### Resetting a single device
+
+```python
+>>> resetter.reset(target_id='0240000028884e450051700f6bf000128021000097969900', method='simple')
+0
+>>>
+```
+
+#### Resetting a single device using pyOCD
+
+```python
+>>> resetter.reset(target_id='0240000028884e450051700f6bf000128021000097969900', method='pyocd')
+0
+>>>
+```
+
+#### Resetting devices with a prefix
+
+```python
+>>> resetter.reset(target_id='024000002', method='simple')
+0
+>>>
+```
+
+#### Resetting all devices using pyOCD
+
+```python
+>>> resetter.reset(target_id='all', method='pyocd')
+0
+>>>
+```
+
 ## Command Line Interface
 
-#### Running mbedflash without input
+### Listing commands
+
+#### Running mbed-flasher without input
 
 ```batch
-C:\>mbedflash
-No input, nothing to do.
-Try mbedflash --help
+usage: mbedflash [-h] [-v] [-s] <command> ...
+mbedflash: error: too few arguments
 ```
 
-#### Running mbedflash to list supported devices
+#### Running mbed-flasher to list supported devices
 
 ```batch
-C:\>mbedflash -l
-["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]
+C:\>mbedflash list
+["NRF51822", "K64F", "NRF51_DK", "NUCLEO_F401RE"]
 ```
 
-#### Running mbedflash to list supported flashers
+#### Running mbed-flasher to list supported flashers
 
 ```batch
-C:\>mbedflash --flashers
-["Mbed", "Atprogram"]
+C:\>mbedflash flashers
+["Mbed"]
 ```
+
+### Flashing
 
 #### Flashing a single device
 
 ```batch
-C:\>mbedflash -i c:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
 
-C:\Temp>
+C:\>
 ```
 
-#### Flashing with prefix
+#### Flashing more than one device
 
 ```batch
-C:\>mbedflash -i Temp\helloworld_k64f.bin --tid 02400 -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F
+Going to flash following devices:
+0240000028884e450051700f6bf000128021000097969900
+0240000033514e45000b500585d40029e981000097969900
+
+C:\>
+```
+
+#### Flashing with a prefix
+
+```batch
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 02400 -t K64F
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000033514e45003f500585d4000ae981000097969900
@@ -166,7 +360,7 @@ C:\>
 #### Flashing all devices by platform
 
 ```batch
-C:\>mbedflash -i Temp\helloworld_k64f.bin --tid all -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid all -t K64F
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000033514e45003f500585d4000ae981000097969900
@@ -177,22 +371,26 @@ C:\>
 #### Flashing a single device with verbose output
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F -vvv
-[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, SAM4E, NRF51_DK, NUCLEO_F401RE
-[DEBUG](mbed-flasher): atprogram location: C:\Program Files (x86)\Atmel\Studio\7.0\atbackend\atprogram.exe
-[DEBUG](mbed-flasher): Connected atprogrammer supported devices: []
-[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}]
-[DEBUG](mbed-flasher): Flashing: 0240000028884e450019700f6bf0000f8021000097969900
+C:\>mbedflash -vvv flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port':
+u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+Going to flash following devices:
+0240000033514e45000b500585d40029e981000097969900
+[DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port':
+u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
+[DEBUG](mbed-flasher): Flashing: 0240000033514e45000b500585d40029e981000097969900
 [INFO](mbed-flasher): sendBreak to device to reboot
 [INFO](mbed-flasher): reset completed
-[DEBUG](mbed-flasher): SHA1: abababababababababababababababababababab
-[DEBUG](mbed-flasher): copying file: path_to_file\myfile.bin to X:\image.bin
+[DEBUG](mbed-flasher): SHA1: dcbaa46d6500194a8a6d55c07bfa0ee0524c379c
+[DEBUG](mbed-flasher): copying file: c:\path_to_file\myfile.bin to D:\image.bin
 [DEBUG](mbed-flasher): copy finished
 [INFO](mbed-flasher): sendBreak to device to reboot
 [INFO](mbed-flasher): reset completed
 [DEBUG](mbed-flasher): verifying flash
 [DEBUG](mbed-flasher): ready
 [INFO](mbed-flasher): flash ready
+[DEBUG](mbed-flasher): dev#1 -> SUCCESS
 
 C:\>
 ```
@@ -200,19 +398,22 @@ C:\>
 #### Flashing a device using pyOCD
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid 0240000033514e45003f500585d4000ae981000097969900 -t K64F --pyocd
-DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
-DEBUG:mbed-flasher:flashing device: 0240000033514e45003f500585d4000ae981000097969900
-DEBUG:mbed-flasher:resetting device: 0240000033514e45003f500585d4000ae981000097969900
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F pyocd
+Going to flash following devices:
+0240000033514e45000b500585d40029e981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000033514e45000b500585d40029e981000097969900
+DEBUG:mbed-flasher:flashing device: 0240000033514e45000b500585d40029e981000097969900
+DEBUG:mbed-flasher:resetting device: 0240000033514e45000b500585d40029e981000097969900
 INFO:mbed-flasher:flash ready
+DEBUG:mbed-flasher:dev#1 -> SUCCESS
 
 C:\>
 ```
 
-#### Flashing multiple devices using pyocd
+#### Flashing multiple devices using pyOCD
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid all -t K64F --pyocd
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid all -t K64F pyocd
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000033514e45003f500585d4000ae981000097969900
@@ -233,12 +434,175 @@ DEBUG:mbed-flasher:dev#2 -> SUCCESS
 C:\>
 ```
 
-#### Flashing devices from given device mapping table
+### Erasing
+
+#### Erasing a single device
+
+<span class="notes">**Note:** This functionality experimental. You need to activate the automation mode to make the [DAPLINK](https://github.com/mbedmicro/DAPLink/blob/master/docs/ENABLE_AUTOMATION.md) work.</span>
 
 ```batch
-C:\>mbedflash -i C:\path_to_file\myfile.bin --tid all -m "{'target_id_mbed_htm': '0240000028884e450019700f6bf0000f8021000097969900', 'mount_point': 'X:', 'target_id': '0240000028884e450019700f6bf0000f8021000097969900', 'serial_port': u'COM36', 'target_id_usb_id': '0240000028884e450019700f6bf0000f8021000097969900', 'platform_name': 'K64F'}"
-Going to flash following devices:
-0240000033514e45003f500585d4000ae981000097969900
+C:\>mbedflash -vvv erase --tid 0240000033514e45000b500585d40029e981000097969900
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting erase for given target_id ['0240000033514e45000b500585d40029e981000097969900']
+[INFO](mbed-flasher): method used for reset: simple
+[WARNING](mbed-flasher): Experimental feature, might not do anything!
+[INFO](mbed-flasher): erasing device
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[INFO](mbed-flasher): erase completed
 
 C:\>
 ```
+
+Alternatively:
+
+```batch
+c:\>mbedflash erase --tid 0240000033514e45000b500585d40029e981000097969900
+Attached device does not support erasing through DAPLINK
+
+c:\>
+```
+
+#### Erasing a single device using pyOCD
+
+```batch
+C:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing a single device using pyOCD with verbose output
+
+```batch
+C:\>mbedflash -vvv erase --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting erase for given target_id ['0240000028884e450051700f6bf000128021000097969900']
+[INFO](mbed-flasher): method used for reset: pyocd
+[INFO](mbed-flasher): erasing device
+INFO:mbed-flasher:erasing device
+[INFO](mbed-flasher): erase completed
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing multiple devices using pyocd
+
+```batch
+C:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900 pyocd
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing with a prefix using pyOCD
+
+```batch
+C:\>mbedflash erase --tid 024000002 pyocd
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+#### Erasing all devices using pyOCD
+
+```batch
+C:\>mbedflash erase --tid all pyocd
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+WARNING:root:K64F in secure state: will try to unlock via mass erase
+WARNING:root:K64F secure state: unlocked successfully
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
+### Resetting
+
+#### Resetting a single device
+
+```batch
+C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900
+
+C:\>
+````
+
+#### Resetting a single device with verbose output
+
+```batch
+c:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900']
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+
+C:\>
+```
+
+#### Resetting a single device using pyOCD
+
+```batch
+C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
+INFO:mbed-flasher:resetting device
+INFO:mbed-flasher:reset completed
+
+C:\>
+```
+
+#### Resetting multiple devices with verbose output
+
+```batch
+C:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900', '0240000033514e45000b500585d40029e981000097969900']
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+
+C:\>
+```
+
+#### Resetting with a prefix with verbose output
+
+```batch
+C:\>mbedflash -vvv reset --tid 024000002
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900']
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+
+C:\>
+```
+
+#### Resetting all devices with verbose output
+
+```batch
+C:\>mbedflash -vvv reset --tid all
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id all
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+
+C:\>
+```
+

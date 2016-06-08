@@ -98,20 +98,20 @@ class FlashVerifyTestCase(unittest.TestCase):
                     serial_port = target['serial_port']
                     if target_id and serial_port:
                         ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, pyocd=False)
+                                            device_mapping_table=False, method='simple')
                         self.assertEqual(ret, 0)
                         time.sleep(5)
                         self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
                         second_binary = find_second_binary()
                         self.assertIsNotNone(second_binary, 'Second binary not found')
                         ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, pyocd=False)
+                                            device_mapping_table=False, method='simple')
                         self.assertEqual(ret, 0)
                         time.sleep(5)
                         if not verify_output_per_device(serial_port, 'help', 'echo'):
                             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
                         ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, pyocd=False)
+                                            device_mapping_table=False, method='simple')
                         self.assertEqual(ret, 0)
                         time.sleep(5)
                         self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
