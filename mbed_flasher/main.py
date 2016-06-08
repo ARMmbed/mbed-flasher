@@ -30,7 +30,7 @@ import json
 import time
 import types
 
-from os.path import isfile
+from os.path import isdir, isfile, join
 from flash import Flash
 from erase import Erase
 from reset import Reset
@@ -81,6 +81,9 @@ class FlasherCLI:
     def __init__(self, args=None):
         self.logger = logging.getLogger('mbed-flasher')
         self.logger.handlers = []
+        self.logs_folder = join(os.getcwd(), 'logs')
+        if not isdir(self.logs_folder):
+            os.mkdir(self.logs_folder)
         log_file = 'logs/%s_mbed-flasher.txt' % time.strftime("%Y%m%d-%H%M%S")
         self.log_file_handler = logging.handlers.RotatingFileHandler(log_file)
         self.log_file_handler.setFormatter(
