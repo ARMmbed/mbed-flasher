@@ -49,7 +49,7 @@
         * [Erasing all devices using pyocd](#erasing-all-devices-using-pyocd-1)
     * [Resetting](#resetting)
         * [Resetting a single device](#resetting-a-single-device-1)
-        * [Resetting a single device with verbose output](#Resetting-a-single-device-with-verbose-output)
+        * [Resetting a single device with verbose output](#resetting-a-single-device-with-verbose-output)
         * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd-1)
         * [Resetting multiple devices with verbose output](#resetting-multiple-devices-with-verbose-output)
         * [Resetting with a prefix with verbose output](#resetting-with-a-prefix-with-verbose-output)
