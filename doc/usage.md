@@ -8,6 +8,7 @@
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
         * [Flashing a single device](#flashing-a-single-device)
+        * [Flashing more than one device](#flashing-more-than-one-device)
         * [Flashing devices with prefix](#flashing-devices-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
@@ -33,7 +34,7 @@
         * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
     * [Flashing](#flashing)
         * [Flashing a single device](#flashing-a-single-device-1)
-        * [Flashing more than one device](#flashing-more-than-one-device)
+        * [Flashing more than one device](#flashing-more-than-one-device-1)
         * [Flashing with a prefix](#flashing-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
@@ -107,6 +108,17 @@ b_id': '0240000033514e45003f500585d4000ae981000097969900', 'platform_name': 'K64
 ```python
 >>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F")
 0
+```
+
+#### Flashing more than one device
+
+```python
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id=["0240000028884e450051700f6bf000128021000097969900","0240000033514e45000b500585d40029e981000097969900"], platform_name="K64F")
+Going to flash following devices:
+0240000028884e450051700f6bf000128021000097969900
+0240000033514e45000b500585d40029e981000097969900
+0
+>>>
 ```
 
 #### Flashing devices with a prefix
