@@ -32,7 +32,7 @@
         * [Running mbed-flasher to list supported devices](#running-mbed-flasher-to-list-supported-devices)
         * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
     * [Flashing](#flashing)
-        * [Flashing a single device](#flashing-a-single-device)
+        * [Flashing a single device](#flashing-a-single-device-1)
         * [Flashing with a prefix](#flashing-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
