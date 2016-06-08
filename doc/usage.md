@@ -169,7 +169,7 @@ Typical use cases:
 * Selecting the devices to erase.
 * Erasing the selected devices.
 
-To erase a device you can use pyOCD or simple erasing. Simple erasing is still experimental. It uses DAPLINK erasing and requires the device to be in automation mode.
+To erase a device you can use pyOCD or simple erasing. Simple erasing is still experimental. It uses [DAPLINK](https://github.com/mbedmicro/DAPLink/blob/master/docs/ENABLE_AUTOMATION.md) erasing and requires the device to be in automation mode.
 
 #### Erase setup
 

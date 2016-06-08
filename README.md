@@ -56,8 +56,7 @@ command:
 
 ```
 />mbedflash flash --help
-usage: mbedflash flash [-h] [-i INPUT] [--tid [TARGET_ID [TARGET_ID ...]]]
-                       [-t PLATFORM_NAME]
+usage: mbedflash flash [-h] [-i INPUT] [--tid TARGET_ID] [-t PLATFORM_NAME]
                        [method]
 
 positional arguments:
@@ -67,11 +66,11 @@ optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
                         Binary input to be flashed.
-  --tid [TARGET_ID [TARGET_ID ...]], --target_id [TARGET_ID [TARGET_ID ...]]
+  --tid TARGET_ID, --target_id TARGET_ID
                         Target to be flashed, ALL will flash all connected
                         devices with given platform-name, also multiple
-                        targets can be given. Giving a prefix will flash all
-                        devices which target_id start with the prefix
+                        targets can be given. Short target_id matches boards
+                        by prefix
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
                         Platform of the target device(s)
 
@@ -89,7 +88,8 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be erased or all
+                        Target to be erased or ALL, also multiple targets can
+                        be given. Short target_id matches boards by prefix
 
 ```
 
@@ -105,7 +105,8 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be reset or all
+                        Target to be reset or ALL, also multiple targets can
+                        be given. Short target_id matches boards by prefix
 
 ```
 
