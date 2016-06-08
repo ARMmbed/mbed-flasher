@@ -26,6 +26,7 @@ EXIT_CODE_FILE_DOES_NOT_EXIST = 45
 EXIT_CODE_KEYBOARD_INTERRUPT = 50
 EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE = 55
 EXIT_CODE_SYSTEM_INTERRUPT = 60
+EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST = 65
 
 class Flash(object):
     """ Flash object, which manage flashing single device
@@ -59,6 +60,15 @@ class Flash(object):
     def __get_flashers():
         from flashers import AvailableFlashers
         return AvailableFlashers
+
+    @staticmethod
+    def get_flasher(flasher=None):
+        from flashers import AvailableFlashers
+        for Flasher in AvailableFlashers:
+            if Flasher.name.lower() == flasher.lower():
+                return Flasher
+        else:
+            return EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST
 
     def get_available_device_mapping(self):
         available_devices = []

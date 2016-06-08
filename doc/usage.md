@@ -5,6 +5,7 @@
     * [Flash API](#flash-api)
         * [Flash setup](#flash-setup)
         * [Querying available flashers](#querying-available-flashers)
+        * [Getting a specific flasher](#getting-a-specific-flasher)
         * [Querying supported targets](#querying-supported-targets)
         * [Querying attached devices](#querying-attached-devices)
         * [Flashing a single device](#flashing-a-single-device)
@@ -78,7 +79,14 @@ To import the mbed-flasher module:
 
 ```python
 >>> flasher.get_supported_flashers()
-['Mbed']
+['mbed']
+```
+
+#### Getting a specific flasher
+
+```python
+>>> flasher.get_flasher(flasher='mbed')
+<class 'mbed_flasher.flashers.FlasherMbed.FlasherMbed'>
 ```
 
 #### Querying supported targets

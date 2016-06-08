@@ -31,7 +31,7 @@ import hashlib
 
 
 class FlasherMbed(object):
-    name = "Mbed"
+    name = "mbed"
 
     def __init__(self):
         self.logger = logging.getLogger('mbed-flasher')

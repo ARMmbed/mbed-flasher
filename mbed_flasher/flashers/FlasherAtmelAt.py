@@ -27,7 +27,7 @@ import tempfile
 
 
 class FlasherAtmelAt(object):
-    name = "Atprogram"
+    name = "atmel"
     exe = None
     supported_targets = ["SAM4E"]
     logger = logging
