@@ -319,6 +319,7 @@ class FlasherCLI:
         if isinstance(tid, types.ListType):
             for item in tid:
                 for device in available:
+                    available_target_ids.append(device['target_id'])
                     if device['target_id'] == item or device['target_id'].startswith(item):
                         if not device['target_id'] in target_ids:
                             target_ids.append(device['target_id'])
