@@ -25,10 +25,10 @@
         * [Resetting a single device](#resetting-a-single-device)
         * [Resetting a single device using pyOCD](#resetting-a-single-device-using-pyocd)
         * [Resetting devices with a prefix](#resetting-devices-with-a-prefix)
-        * [Resetting all devices using pyOCD](#reset-all-devices-using-pyocd)
+        * [Resetting all devices using pyOCD](#resetting-all-devices-using-pyocd)
         
 * [Command Line Interface](#command-line-interface)
-    * [Listing commands](#listing commands)
+    * [Listing commands](#listing-commands)
         * [Running mbed-flasher without input](#running-mbed-flasher-without-input)
         * [Running mbed-flasher to list supported devices](#running-mbed-flasher-to-list-supported-devices)
         * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
@@ -38,18 +38,18 @@
         * [Flashing with a prefix](#flashing-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
-        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
+        * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
         * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
     * [Erasing](#erasing)
         * [Erasing a single device](#erasing-a-single-device-1)
         * [Erasing a single device using pyocd](#erasing-a-single-device-using-pyocd-1)
-        * [Erasing a single device using pyocd verbose output](#erasing-a-single-device-using-pyocd-verbose-output)
+        * [Erasing a single device using pyocd with verbose output](#erasing-a-single-device-using-pyocd-with-verbose-output)
         * [Erasing multiple devices using pyocd](#erasing-multiple-devices-using-pyocd)
-        * [Erasing with prefix using pyocd](#erasing-with-prefix-using-pyocd)
+        * [Erasing with a prefix using pyocd](#erasing-with-a-prefix-using-pyocd)
         * [Erasing all devices using pyocd](#erasing-all-devices-using-pyocd-1)
     * [Resetting](#resetting)
         * [Resetting a single device](#resetting-a-single-device-1)
-        * [Resetting a single device verbose output](#Resetting-a-single-device-with-verbose-output)
+        * [Resetting a single device with verbose output](#Resetting-a-single-device-with-verbose-output)
         * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd-1)
         * [Resetting multiple devices with verbose output](#resetting-multiple-devices-with-verbose-output)
         * [Resetting with a prefix with verbose output](#resetting-with-a-prefix-with-verbose-output)
@@ -430,7 +430,7 @@ C:\>
 
 #### Erasing a single device
 
-<span class="notes">**Note:** This functionality experimental. You need to activate the automation mode to make the DAPLINK work.</span>
+<span class="notes">**Note:** This functionality experimental. You need to activate the automation mode to make the [DAPLINK](https://github.com/mbedmicro/DAPLink/blob/master/docs/ENABLE_AUTOMATION.md) work.</span>
 
 ```batch
 C:\>mbedflash -vvv erase --tid 0240000033514e45000b500585d40029e981000097969900
