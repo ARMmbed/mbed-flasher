@@ -20,7 +20,6 @@ from os.path import isfile
 import platform
 import types
 
-K64F_TARGET_ID_LENGTH = 48
 EXIT_CODE_NO_PLATFORM_GIVEN = 35
 EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
 EXIT_CODE_FILE_DOES_NOT_EXIST = 45
@@ -186,6 +185,8 @@ class Flash(object):
         :param device_mapping_table: individual devices mapping table
         :param method: method for flashing i.e. simple, pyocd or edbg
         """
+        
+        K64F_TARGET_ID_LENGTH = 48
 
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
