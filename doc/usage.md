@@ -36,7 +36,7 @@
         * [Flashing a single device](#flashing-a-single-device-1)
         * [Flashing more than one device](#flashing-more-than-one-device)
         * [Flashing with a prefix](#flashing-with-a-prefix)
-        * [Flashing all devices by platform](#flashing-all-devices-by-platform)
+        * [Flashing all devices by platform](#flashing-all-devices-by-platform-1)
         * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd-1)
         * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
