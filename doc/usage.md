@@ -41,15 +41,17 @@
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
         * [Flashing multiple devices using pyocd](#flashing-multiple-devices-using-pyocd)
     * [Erasing](#erasing)
-        * [Erasing a single device](#erasing-a-single-device)
-        * [Erasing a single device using pyocd](#erasing-a-single-device-using-pyocd)
+        * [Erasing a single device](#erasing-a-single-device-1)
+        * [Erasing a single device using pyocd](#erasing-a-single-device-using-pyocd-1)
         * [Erasing a single device using pyocd verbose output](#erasing-a-single-device-using-pyocd-verbose-output)
+        * [Erasing multiple devices using pyocd](#erasing-multiple-devices-using-pyocd)
         * [Erasing with prefix using pyocd](#erasing-with-prefix-using-pyocd)
-        * [Erasing all devices using pyocd](#erasing-all-devices-using-pyocd)
+        * [Erasing all devices using pyocd](#erasing-all-devices-using-pyocd-1)
     * [Resetting](#resetting)
-        * [Resetting a single device](#resetting-a-single-device)
+        * [Resetting a single device](#resetting-a-single-device-1)
         * [Resetting a single device verbose output](#Resetting-a-single-device-with-verbose-output)
-        * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd)
+        * [Resetting a single device using pyocd](#resetting-a-single-device-using-pyocd-1)
+        * [Resetting multiple devices with verbose output](#resetting-multiple-devices-with-verbose-output)
         * [Resetting with a prefix with verbose output](#resetting-with-a-prefix-with-verbose-output)
         * [Resetting all devices with verbose output](#resetting-all-devices-with-verbose-output)
     
@@ -328,7 +330,7 @@ C:\>
 #### Flashing more than one device
 
 ```batch
-C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450051700f6bf000128021000097969900 0240000033514e45000b500585d40029e981000097969900 -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F
 Going to flash following devices:
 0240000028884e450051700f6bf000128021000097969900
 0240000033514e45000b500585d40029e981000097969900
@@ -480,6 +482,18 @@ INFO:mbed-flasher:erase completed
 C:\>
 ```
 
+#### Erasing multiple devices using pyocd
+
+```batch
+C:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900 pyocd
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+INFO:mbed-flasher:erasing device
+INFO:mbed-flasher:erase completed
+
+C:\>
+```
+
 #### Erasing with a prefix using pyOCD
 
 ```batch
@@ -537,6 +551,21 @@ C:\>
 C:\>mbedflash reset --tid 0240000028884e450051700f6bf000128021000097969900 pyocd
 INFO:mbed-flasher:resetting device
 INFO:mbed-flasher:reset completed
+
+C:\>
+```
+
+#### Resetting multiple devices with verbose output
+
+```batch
+C:\>mbedflash -vvv reset --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900
+[DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
+[INFO](mbed-flasher): Starting reset for target_id ['0240000028884e450051700f6bf000128021000097969900', '0240000033514e45000b500585d40029e981000097969900']
+[INFO](mbed-flasher): Method for reset: simple
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
+[INFO](mbed-flasher): sendBreak to device to reboot
+[INFO](mbed-flasher): reset completed
 
 C:\>
 ```
