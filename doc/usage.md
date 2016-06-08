@@ -33,6 +33,7 @@
         * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
     * [Flashing](#flashing)
         * [Flashing a single device](#flashing-a-single-device-1)
+        * [Flashing more than one device](#flashing-more-than-one-device)
         * [Flashing with a prefix](#flashing-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
         * [Flashing a single device with verbose output](#flashing-a-single-device-with-verbose-output)
@@ -308,6 +309,17 @@ C:\>mbedflash flashers
 
 ```batch
 C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
+
+C:\>
+```
+
+#### Flashing more than one device
+
+```batch
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450051700f6bf000128021000097969900 0240000033514e45000b500585d40029e981000097969900 -t K64F
+Going to flash following devices:
+0240000028884e450051700f6bf000128021000097969900
+0240000033514e45000b500585d40029e981000097969900
 
 C:\>
 ```
