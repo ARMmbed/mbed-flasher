@@ -490,7 +490,7 @@ INFO:mbed-flasher:erase completed
 C:\>
 ```
 
-#### Erasing multiple devices using pyocd
+#### Erasing multiple devices using pyOCD
 
 ```batch
 C:\>mbedflash erase --tid 0240000028884e450051700f6bf000128021000097969900 --tid 0240000033514e45000b500585d40029e981000097969900 pyocd
