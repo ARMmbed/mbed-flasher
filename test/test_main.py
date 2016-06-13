@@ -85,12 +85,6 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(mock_stdout.getvalue(), 'File is missing\n')
 
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_platform_not_given(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", None])
-        self.assertEqual(fcli.execute(), 10)
-        self.assertEqual(mock_stdout.getvalue(), 'Platform is missing\n')
-
-    @mock.patch('sys.stdout', new_callable=StringIO)
     def test_wrong_platform(self, mock_stdout):
         fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K65G"])
         self.assertEqual(fcli.execute(), 10)
