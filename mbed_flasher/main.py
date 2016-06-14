@@ -42,6 +42,7 @@ EXIT_CODE_NO_TARGET_ID = 15
 EXIT_CODE_DEVICES_MISSING = 20
 EXIT_CODE_COULD_NOT_MAP_DEVICE = 25
 EXIT_CODE_COULD_NOT_MAP_ALL_DEVICE = 30
+EXIT_CODE_PLATFORM_REQUIRED = 40
 
 def get_subparser(subparsers, name, func, **kwargs):
     """
@@ -227,9 +228,7 @@ class FlasherCLI:
                 print("Not supported platform: %s" % args.platform_name)
                 print("Supported platforms: %s" % flasher.get_supported_targets())
                 return EXIT_CODE_NOT_SUPPORTED_PLATFORM
-        else:
-            print("Platform is missing")
-            return EXIT_CODE_NOT_SUPPORTED_PLATFORM
+        available_platforms = []
         if args.tid:
             if not 'all' in args.tid:
                 if len(available) > 0:
@@ -239,12 +238,18 @@ class FlasherCLI:
                                 available_target_ids.append(device['target_id'])
                                 if device['target_id'] == item or device['target_id'].startswith(item):
                                     if not device['target_id'] in target_ids_to_flash:
+                                        if 'platform_name' in device:
+                                            if not device['platform_name'] in available_platforms:
+                                                available_platforms.append(device['platform_name'])
                                         target_ids_to_flash.append(device['target_id'])
                     else:
                         for device in available:
                             available_target_ids.append(device['target_id'])
                             if device['target_id'] == args.tid or device['target_id'].startswith(args.tid):
                                 if not device['target_id'] in target_ids_to_flash:
+                                    if 'platform_name' in device:
+                                        if not device['platform_name'] in available_platforms:
+                                            available_platforms.append(device['platform_name'])
                                     target_ids_to_flash.append(device['target_id'])
                     if len(target_ids_to_flash) == 0:
                         print("Could not find given target_id from attached devices")
@@ -252,8 +257,16 @@ class FlasherCLI:
                         print(available_target_ids)
                         return EXIT_CODE_COULD_NOT_MAP_DEVICE
                     else:
-                        #print(target_ids_to_flash)
-                        retcode = flasher.flash(build=args.input, target_id=target_ids_to_flash, platform_name=args.platform_name, method=args.method)
+                        if len(available_platforms) > 1:
+                            if not args.platform_name:
+                                print("More than one platform detected for given target_id")
+                                print("Please specify the platform with -t <PLATFORM_NAME>")
+                                print("Found platforms:")
+                                print(available_platforms)
+                                return EXIT_CODE_PLATFORM_REQUIRED
+                        else:
+                            #print(target_ids_to_flash)
+                            retcode = flasher.flash(build=args.input, target_id=target_ids_to_flash, platform_name=available_platforms[0], method=args.method)
                 else:
                     print("Could not find any connected device")
                     return EXIT_CODE_DEVICES_MISSING
