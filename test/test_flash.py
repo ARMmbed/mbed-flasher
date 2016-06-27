@@ -57,30 +57,31 @@ class FlashTestCase(unittest.TestCase):
     def test_run_file_does_not_exist(self):
         flasher = Flash()
         with self.assertRaises(SyntaxError) as cm:
-            flasher.flash(build='file.bin', target_id=None, platform_name=None, device_mapping_table=False, pyocd=False)
-        self.assertIn("target_id or target_name is required", cm.exception, )
+            flasher.flash(build='file.bin', target_id=None, platform_name=None, device_mapping_table=False, method='simple')
+        self.assertIn("target_id or platform_name is required", cm.exception, )
 
     def test_run_target_id_and_platform_missing(self):
         flasher = Flash()
         ret = flasher.flash(build='file.bin', target_id=True, platform_name=False, device_mapping_table=False,
-                            pyocd=False)
-        self.assertEqual(ret, -5)
+                            method='simple')
+        self.assertEqual(ret, 45)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @unittest.skipIf(Atmel.get_available_devices() != [], "Atmel hardware attached")
     def test_run_with_file_with_target_id_all(self):
         flasher = Flash()
-        ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name='K64F',
-                            device_mapping_table=False, pyocd=False)
-        self.assertEqual(ret, -3)
+        ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name=False,
+                            device_mapping_table=False, method='simple')
+        self.assertEqual(ret, 40)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_one_target_id(self):
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='0240000029164e45002f0012706e0006f301000097969900',
-                            platform_name='K64F', device_mapping_table=False, pyocd=False)
-        self.assertEqual(ret, -3)
+                            platform_name=False, device_mapping_table=False, method='simple')
+        self.assertEqual(ret, 55)
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no supported hardware attached")
     def test_run_with_file_with_one_target_id_wrong_platform(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
@@ -94,10 +95,10 @@ class FlashTestCase(unittest.TestCase):
             flasher = Flash()
             with self.assertRaises(NotImplementedError) as cm:
                 flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K65G',
-                              device_mapping_table=False, pyocd=False)
+                              device_mapping_table=False, method='simple')
             self.assertIn("Platform 'K65G' is not supported by mbed-flasher", cm.exception, )
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no supported hardware attached")
     def test_hw_flash(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
@@ -110,27 +111,27 @@ class FlashTestCase(unittest.TestCase):
         if target_id:
             flasher = Flash()
             ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name=False,
-                                device_mapping_table=False, pyocd=False)
+                                device_mapping_table=False, method='simple')
             self.assertEqual(ret, 0)
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no supported hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_with_file_with_all(self, mock_stdout):
         time.sleep(4)
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name='K64F',
-                            device_mapping_table=False, pyocd=False)
+                            device_mapping_table=False, method='simple')
         self.assertEqual(ret, 0)
         if mock_stdout:
             pass
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no supported hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_with_file_with_prefix(self, mock_stdout):
         time.sleep(4)
         flasher = Flash()
-        ret = flasher.flash(build='test/helloworld.bin', target_id='0', platform_name='K64F',
-                            device_mapping_table=False, pyocd=False)
+        ret = flasher.flash(build='test/helloworld.bin', target_id='0', platform_name='K64F', device_mapping_table=False,
+                            method='simple')
         self.assertEqual(ret, 0)
         if mock_stdout:
             pass
@@ -150,21 +151,21 @@ class FlashTestCase(unittest.TestCase):
             flasher = Flash()
             with self.assertRaises(SyntaxError) as cm:
                 flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='SAM4E',
-                              device_mapping_table=False, pyocd=False)
-            self.assertIn("Platform 'K64F' is not supported by Flasher Atprogram, please change the selected flasher",
+                              device_mapping_table=False, method='simple')
+            self.assertIn("Platform 'K64F' is not supported by Flasher atmel, please change the selected flasher",
                           cm.exception, )
 
     def test_broken_mapping_table_dict(self):
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='0240000029164e45002f0012706e0006f301000097969900',
-                            platform_name='K64F', device_mapping_table={'target_id': 'not_found'}, pyocd=False)
-        self.assertEqual(ret, -3)
+                            platform_name='K64F', device_mapping_table={'target_id': 'not_found'}, method='simple')
+        self.assertEqual(ret, 55)
     
     def test_broken_mapping_table_int(self):
         flasher = Flash()
         with self.assertRaises(SystemError) as cm:
             flasher.flash(build='test/helloworld.bin', target_id='0240000029164e45002f0012706e0006f301000097969900',
-                          platform_name='K64F', device_mapping_table=11, pyocd=False)
+                          platform_name='K64F', device_mapping_table=11, method='simple')
         self.assertIn("device_mapping_table wasn't list or dictionary", cm.exception, )
 
     @unittest.skipIf(not check_two_different_boards(), "Either one Atmel board and one Mbed board or"
@@ -173,20 +174,19 @@ class FlashTestCase(unittest.TestCase):
         time.sleep(4)
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name=False,
-                            device_mapping_table=False, pyocd=False)
-        self.assertEqual(ret, -9)
-
+                            device_mapping_table=False, method='simple')
+        self.assertEqual(ret, 35)
+    
     @unittest.skipIf(Atmel.get_available_devices() == [], "no Atmel hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_atmel_flash(self, mock_stdout):
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name='SAM4E',
-                            device_mapping_table=False, pyocd=False)
+                            device_mapping_table=False, method='edbg')
         # real atprogram.exe will produce retcode 16
         self.assertEqual(ret, 0)
         if mock_stdout:
             pass
-
 
 if __name__ == '__main__':
     unittest.main()

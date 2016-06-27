@@ -28,7 +28,7 @@ import platform
 
 
 class FlasherAtmelAt(object):
-    name = "Atprogram"
+    name = "atmel"
     exe = None
     supported_targets = ["SAM4E"]
     logger = logging
@@ -76,9 +76,9 @@ class FlasherAtmelAt(object):
         FlasherAtmelAt.logger.debug("atprogram location: %s", FlasherAtmelAt.exe)
     
     @staticmethod
-    def set_edbg_exe(exe):
+    def set_edbg_exe(exe, force_edbg=False):
         FlasherAtmelAt.logger = logging.getLogger('mbed-flasher')
-        if exe is None:
+        if exe is None or force_edbg:
             if platform.system() == 'Windows':
                 FlasherAtmelAt.exe = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'bin', 'edbg', 'edbg.exe'))
             elif platform.system() == 'Linux':
@@ -130,19 +130,29 @@ class FlasherAtmelAt(object):
         return connected_devices
 
     # actual flash procedure
-    def flash(self, source, target, pyocd=None):
+    def flash(self, source, target, method):
         """flash device
-        :param sn: device serial number to be flashed
-        :param binary: binary file to be flash
+        :param target: device serial number to be flashed
+        :param source: binary file to be flash
+        :param method: method used for flashing
         :return: 0 when flashing success
         """
-        if str(self.exe).find('atprogram.exe') != -1:
-            cmd = [self.exe, "-t", "edbg", "-i", "SWD", "-d", "atsam4e16e", "-s", target['target_id'], "-v", "-cl", "10mhz", "program", "--verify", "-f", source]
-        else:
+        if method == 'simple':
+            if str(self.exe).find('atprogram.exe') != -1:
+                cmd = [self.exe, "-t", "edbg", "-i", "SWD", "-d", "atsam4e16e", "-s", target['target_id'], "-v", "-cl", "10mhz", "program", "--verify", "-f", source]
+            else:
+                print "atprogram.exe not found, try with edbg"
+                return 66
+        elif method == 'edbg':
+            FlasherAtmelAt.set_edbg_exe(FlasherAtmelAt.exe, True)
             if platform.system() == 'Windows':
                 cmd = [self.exe, "-bpv", "-t", "atmel_cm4", "-s", target['target_id'],"-f", source]
             else:
                 cmd = ['sudo', self.exe, "-bpv", "-t", "atmel_cm4", "-s", target['target_id'],"-f", source]
+        else:
+            print "unsupported flashing method"
+            return 67
+            
         FlasherAtmelAt.logger.debug(cmd)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()

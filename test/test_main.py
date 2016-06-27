@@ -18,11 +18,13 @@ limitations under the License.
 
 import logging
 import unittest
+import mbed_lstools
 import mock
-from mbed_flasher.main import cmd_parser_setup
-from mbed_flasher.main import mbedflash_main
+
+from mbed_flasher.main import FlasherCLI
 from StringIO import StringIO
 from mbed_flasher.flashers import AvailableFlashers
+import mbed_flasher.flashers.FlasherAtmelAt as Atmel
 
 flasher_version = '0.3.1'
 
@@ -31,15 +33,20 @@ class MainTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
 
+    mbeds = mbed_lstools.create()
+
     def setUp(self):
-        logging.disable(logging.CRITICAL)
+        self.logging_patcher = mock.patch("mbed_flasher.main.logging")
+        mock_logging = self.logging_patcher.start()
+        mock_logging.getLogger = mock.MagicMock(return_value=mock.Mock(spec=logging.Logger))
+        mock_logging.disable(logging.CRITICAL)
 
     def tearDown(self):
         pass
 
     def test_parser_invalid(self):
         with self.assertRaises(SystemExit) as cm:
-            cmd_parser_setup()
+            FlasherCLI()
         self.assertEqual(cm.exception.code, 2)
 
     # def test_parser_valid(self):
@@ -49,178 +56,133 @@ class MainTestCase(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main(self, mock_stdout):
         with self.assertRaises(SystemExit) as cm:
-            mbedflash_main()
+            FlasherCLI([])
         self.assertEqual(cm.exception.code, 2)
         if mock_stdout:
             pass
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main_version(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = True
-            input = "file:"
-            verbose = 0
-            silent = True
-
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
-        self.assertEqual(mock_stdout.getvalue(), flasher_version+"\n")
-        self.assertEqual(cm.exception.code, 0)
+        fcli = FlasherCLI(["version"])
+        self.assertEqual(fcli.execute(), 0)
+        self.assertEqual(mock_stdout.getvalue(), flasher_version+'\n')
+        #self.assertRegexpMatches(mock_stdout.getvalue(), r"^\d+\.\d+\.\d+$")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main_verboses(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = True
-            verbose = 0
-            silent = False
-
-        for i in range(-1, 5):
-            Args.verbose = i
-            with self.assertRaises(SystemExit) as cm:
-                mbedflash_main(cmd_args=Args)
-                self.assertEqual(mock_stdout.getvalue(), flasher_version+"\n")
-                self.assertEqual(cm.exception.code, 0)
-
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_main_not_installed(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = True
-            input = ""
-            verbose = 0
-            silent = True
-
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args, module_name='mbed-flash')
-        self.assertEqual(mock_stdout.getvalue(), "not-installed\n")
-        self.assertEqual(cm.exception.code, 0)
+        fcli = FlasherCLI(["-v", "version"])
+        self.assertEqual(fcli.execute(), 0)
+        self.assertRegexpMatches(mock_stdout.getvalue(), r"^(\s*\S+\s+\S+\n)+$")
         
     @unittest.skipIf(len(AvailableFlashers) > 1, "Both flashers supported in system")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_list_with_one_flasher(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            verbose = 0
-            list = True
-            flashers = False
-            silent = False
-
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
+    def test_list_one_flasher(self, mock_stdout):
+        fcli = FlasherCLI(["list"])
+        self.assertEqual(fcli.execute(), 5)
         self.assertEqual(mock_stdout.getvalue(), '["NRF51822", "K64F", "NRF51_DK", "NUCLEO_F401RE"]\n')
-        self.assertEqual(cm.exception.code, 0)
         
     @unittest.skipIf(len(AvailableFlashers) < 2, "Only one flasher supported in system")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_list_with_multiple_flasher(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            verbose = 0
-            list = True
-            flashers = False
-            silent = False
-
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
+    def test_list_two_flashers(self, mock_stdout):
+        fcli = FlasherCLI(["list"])
+        self.assertEqual(fcli.execute(), 0)
         self.assertEqual(mock_stdout.getvalue(), '["NRF51822", "K64F", "SAM4E", "NRF51_DK", "NUCLEO_F401RE"]\n')
-        self.assertEqual(cm.exception.code, 0)
-    
+        
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flash_file_does_not_exist(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", "None" ])
+        self.assertEqual(fcli.execute(), 5)
+        self.assertEqual(mock_stdout.getvalue(), 'Could not find given file: None\n')
+        
     @unittest.skipIf(len(AvailableFlashers) > 1, "Both flashers supported in system")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_one_flasher(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            verbose = False
-            list = False
-            flashers = True
-            silent = False
-            
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
-        self.assertEqual(mock_stdout.getvalue(), '["Mbed"]\n')
-        self.assertEqual(cm.exception.code, 0)
+    def test_flasher_one(self, mock_stdout):
+        fcli = FlasherCLI(["flashers"])
+        self.assertEqual(fcli.execute(), 0)
+        self.assertEqual(mock_stdout.getvalue(), '["mbed"]\n')    
     
     @unittest.skipIf(len(AvailableFlashers) < 2, "Only one flasher supported in system")
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_multiple_flashers(self, mock_stdout):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            verbose = False
-            list = False
-            flashers = True
-            silent = False
-            
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
-        self.assertEqual(mock_stdout.getvalue(), '["Mbed", "Atprogram"]\n')
-        self.assertEqual(cm.exception.code, 0)
+    def test_flashers_multiple(self, mock_stdout):
+        fcli = FlasherCLI(["flashers"])
+        self.assertEqual(fcli.execute(), 0)
+        self.assertEqual(mock_stdout.getvalue(), '["mbed", "atmel"]\n')
 
-    def test_incorrect_file_target_platform(self):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            input = None
-            target_id = None
-            verbose = False
-            list = False
-            flashers = False
-            silent = False
-            platform_name = False
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flash_file_not_given(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", None])
+        self.assertEqual(fcli.execute(), 5)
+        self.assertEqual(mock_stdout.getvalue(), 'File is missing\n')
 
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
-        self.assertEqual(cm.exception.code, "No input, nothing to do.\nTry mbedflash --help")
+    @unittest.skipIf(len(AvailableFlashers) > 1, "Both flashers supported in system")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flash_wrong_platform_one_flasher(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K65G"])
+        self.assertEqual(fcli.execute(), 10)
+        self.assertEqual(mock_stdout.getvalue(), "Not supported platform: K65G\nSupported platforms: [u'NRF51822', u'K64F', u'NRF51_DK', u'NUCLEO_F401RE']\n")
+    
+    @unittest.skipIf(len(AvailableFlashers) < 2, "Only one flasher supported in system")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flash_wrong_platform_two_flashers(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K65G"])
+        self.assertEqual(fcli.execute(), 10)
+        self.assertEqual(mock_stdout.getvalue(), "Not supported platform: K65G\nSupported platforms: [u'NRF51822', u'K64F', 'SAM4E', u'NRF51_DK', u'NUCLEO_F401RE']\n")
+    
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flash_tid_missing(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K64F"])
+        self.assertEqual(fcli.execute(), 15)
+        self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
-    def test_incorrect_file(self):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            input = None
-            target_id = '01234567890'
-            verbose = False
-            list = False
-            flashers = False
-            silent = False
-            platform_name = False
+    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @unittest.skipIf(Atmel.get_available_devices() != [], "Atmel hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_flash_wrong_tid(self, mock_stdout):
+        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "--tid", "555", "-t", "K64F"])
+        self.assertEqual(fcli.execute(), 20)
+        self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
-        self.assertEqual(cm.exception.code, "Missing file to flash, provide a file with -i <file>")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_reset_tid_missing(self, mock_stdout):
+        fcli = FlasherCLI(["reset"])
+        self.assertEqual(fcli.execute(), 15)
+        self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
-    def test_incorrect_target(self):
-        class Args:
-            def __init__(self):
-                pass
-            version = False
-            input = True
-            target_id = False
-            verbose = False
-            list = False
-            flashers = False
-            silent = False
-            platform_name = False
+    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @unittest.skipIf(Atmel.get_available_devices() != [], "Atmel hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_reset_wrong_tid(self, mock_stdout):
+        fcli = FlasherCLI(["reset", "--tid", "555"])
+        self.assertEqual(fcli.execute(), 25)
+        self.assertEqual(mock_stdout.getvalue(), "Could not find given target_id from attached devices\nAvailable target_ids:\n[]\n")
 
-        with self.assertRaises(SystemExit) as cm:
-            mbedflash_main(cmd_args=Args)
-        self.assertEqual(cm.exception.code,
-                         "Missing TargetID to flash.\nProvide a TargetID with --tid <TID> or "
-                         "--tid ALL to flash all connected devices corresponding to provided platform")
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no supported hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_reset_wrong_tid_with_device(self, mock_stdout):
+        fcli = FlasherCLI(["reset", "--tid", "555"])
+        self.assertEqual(fcli.execute(), 25)
+        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-tA-T]+\')(,\s\'[0-9a-tA-T]+\')*\]", "Regex match failed")
 
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_erase_tid_missing(self, mock_stdout):
+        fcli = FlasherCLI(["erase"])
+        self.assertEqual(fcli.execute(), 15)
+        self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
+
+    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @unittest.skipIf(Atmel.get_available_devices() != [], "Atmel hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_erase_wrong_tid(self, mock_stdout):
+        fcli = FlasherCLI(["erase", "--tid", "555"])
+        self.assertEqual(fcli.execute(), 25)
+        self.assertEqual(mock_stdout.getvalue(), "Could not find given target_id from attached devices\nAvailable target_ids:\n[]\n")
+
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no supported hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_erase_wrong_tid_with_device(self, mock_stdout):
+        fcli = FlasherCLI(["erase", "--tid", "555"])
+        self.assertEqual(fcli.execute(), 25)
+        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-tA-T]+\')(,\s\'[0-9a-tA-T]+\')*\]", "Regex match failed")
 
 if __name__ == '__main__':
     unittest.main()

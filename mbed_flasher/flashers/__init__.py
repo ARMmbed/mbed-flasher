@@ -6,4 +6,5 @@ from FlasherAtmelAt import FlasherAtmelAt
 AvailableFlashers = [
     FlasherMbed,
     FlasherAtmelAt
-]
+    ]
+
