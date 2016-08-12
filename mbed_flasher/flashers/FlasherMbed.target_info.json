@@ -52,5 +52,13 @@
       "reset_method": "default",
       "program_cycle_s": 4
     }
+  },
+  "NRF51_MICROBIT": {
+  "properties": {
+      "binary_type": "-combined.hex",
+      "copy_method": "default",
+      "reset_method": "default",
+      "program_cycle_s": 4
+    }
   }
 }
