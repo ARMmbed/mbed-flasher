@@ -208,7 +208,7 @@ class Flash(object):
         else:
             if target_id.lower() == 'all':
                 return self.flash_multiple(build, platform_name, method)
-            elif len(target_id) < K64F_TARGET_ID_LENGTH:
+            elif len(target_id) < K64F_TARGET_ID_LENGTH and device_mapping_table is None:
                 return self.flash_multiple(build, platform_name, method, target_id)
 
         if device_mapping_table:
@@ -235,7 +235,6 @@ class Flash(object):
         if platform_name not in self.SUPPORTED_TARGETS:
             raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name)
 
-        target_mbed.update(self.SUPPORTED_TARGETS[platform_name])
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name)

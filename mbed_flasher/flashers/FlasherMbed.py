@@ -166,8 +166,8 @@ class FlasherMbed(object):
             return -13
         
         mount_point = target['mount_point']+'/'
-        binary_type = target['properties']['binary_type']
-        destination = abspath(join(mount_point, 'image'+binary_type))
+        (head, tail) = os.path.split(source)
+        destination = abspath(join(mount_point, tail))
         
         if isinstance(source, six.string_types):
             if method == 'pyocd':
