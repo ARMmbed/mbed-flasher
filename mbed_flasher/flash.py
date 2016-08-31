@@ -37,10 +37,10 @@ class Flash(object):
         self.logger = logging.getLogger('mbed-flasher')
         self.FLASHERS = self.__get_flashers()
         self.SUPPORTED_TARGETS = self.__update_supported_targets()
-        self.logger.debug("Supported targets: "+', '.join(self.SUPPORTED_TARGETS.keys()))
+        self.logger.debug("Supported targets: "+', '.join(self.SUPPORTED_TARGETS))
 
     def get_supported_targets(self):
-        return self.SUPPORTED_TARGETS.keys()
+        return self.SUPPORTED_TARGETS
 
     def get_supported_flashers(self):
         available_flashers = []
@@ -49,10 +49,10 @@ class Flash(object):
         return available_flashers
 
     def __update_supported_targets(self):
-        all_supported_targets = {}
+        all_supported_targets = []
         for Flasher in self.FLASHERS:
             supported_targets = Flasher.get_supported_targets()
-            all_supported_targets.update(supported_targets)
+            all_supported_targets.extend(supported_targets)
         return all_supported_targets
 
     @staticmethod
@@ -77,11 +77,11 @@ class Flash(object):
         return available_devices
 
     def __get_flasher(self, platform_name):
-        if not (platform_name in self.SUPPORTED_TARGETS.keys()):
+        if not (platform_name in self.SUPPORTED_TARGETS):
             raise NotImplementedError("Flashing %s is not supported" % platform_name)
 
         for Flasher in self.FLASHERS:
-            if platform_name in self.SUPPORTED_TARGETS.keys():
+            if platform_name in self.SUPPORTED_TARGETS:
                 return Flasher()
 
         raise Exception("oh nou")

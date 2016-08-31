@@ -28,7 +28,6 @@ from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
 
-
 class FlasherMbed(object):
     name = "mbed"
 
