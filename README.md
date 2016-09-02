@@ -24,6 +24,8 @@ To install the flasher in development mode:
 
 This tool has been tested and verified to work with Windows 7 and Ubuntu (14.04 LTS) Linux.
 
+Devices used in verification: NXP K64F, Nucleo F401RE, BBC micro:bit.
+
 See the actual usage documentation [here](doc/usage.md).
 
 ## Help
