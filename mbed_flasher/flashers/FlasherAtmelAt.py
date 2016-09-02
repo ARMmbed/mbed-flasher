@@ -33,17 +33,7 @@ class FlasherAtmelAt(object):
 
     @staticmethod
     def get_supported_targets():
-        return {
-            "SAM4E": {
-                "yotta_targets": [],
-                "properties": {
-                    "binary_type": ".bin",
-                    "copy_method": "atprogram",
-                    "reset_method": "default",
-                    "program_cycle_s": 0
-                }
-            }
-        }
+        return ["SAM4E"]
 
     @staticmethod
     def set_atprogram_exe(exe):
