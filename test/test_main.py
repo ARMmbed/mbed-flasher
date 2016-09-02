@@ -87,43 +87,7 @@ class MainTestCase(unittest.TestCase):
     def test_wrong_platform(self, mock_stdout):
         fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K65G"])
         self.assertEqual(fcli.execute(), 10)
-        self.assertIn(mock_stdout.getvalue(), "Not supported platform: K65G\nSupported platforms: "
-                                              "[u'LPC2368', u'UBLOX_C027', u'KL25Z', u'KL05Z', u'HEXIWEAR',"
-                                              " u'KL46Z', u'K20D50M', u'K22F', u'K64F', u'MTS_GAMBIT',"
-                                              " u'MTS_MDOT_F405RG', u'MTS_DRAGONFLY_F411RE',"
-                                              " u'MTS_MDOT_F411RE', u'MAXWSNENV', u'MAX32600MBED',"
-                                              " u'SPANSION_PLACEHOLDER', u'NUCLEO_F103RB',"
-                                              " u'NUCLEO_F302R8', u'NUCLEO_L152RE', u'NUCLEO_L053R8',"
-                                              " u'NUCLEO_F401RE', u'NUCLEO_F030R8', u'NUCLEO_F072RB',"
-                                              " u'NUCLEO_F334R8', u'NUCLEO_F411RE', u'NUCLEO_F410RB',"
-                                              " u'NUCLEO_F303RE', u'NUCLEO_F303ZE', u'NUCLEO_F091RC',"
-                                              " u'NUCLEO_F070RB', u'NUCLEO_L073RZ', u'NUCLEO_L476RG',"
-                                              " u'NUCLEO_L432KC', u'NUCLEO_F303K8', u'NUCLEO_F446RE',"
-                                              " u'NUCLEO_F446ZE', u'NUCLEO_L011K4', u'NUCLEO_F042K6',"
-                                              " u'DISCO_F469NI', u'NUCLEO_L031K6', u'NUCLEO_F031K6',"
-                                              " u'DISCO_F429ZI', u'NUCLEO_F429ZI', u'ST_PLACEHOLDER',"
-                                              " u'DISCO_L053C8', u'DISCO_F334C8', u'DISCO_F746NG',"
-                                              " u'NUCLEO_F746ZG', u'DISCO_F769NI', u'NUCLEO_F767ZI',"
-                                              " u'DISCO_L476VG', u'LPC824', u'NUCLEO_F207ZG', u'B96B_F446VE',"
-                                              " u'XPRO_SAMR21', u'XPRO_SAMW25', u'XPRO_SAML21', u'XPRO_SAMD21',"
-                                              " u'LPC1768', u'HRM1017', u'SSCI824', u'TY51822R3', u'LPC11U34',"
-                                              " u'LPC11U24', u'LPC812', u'LPC4088', u'LPC11U35_401', u'LPC4088_DM',"
-                                              " u'NRF51822', u'NRF51822_OTA', u'OC_MBUINO', u'RBLAB_NRF51822',"
-                                              " u'RBLAB_BLENANO', u'NRF51_DK', u'NRF52_DK', u'NRF51_DK_OTA',"
-                                              " u'LPC1114', u'NRF51_DONGLE', u'NRF51822_SBK', u'WALLBOT_BLE',"
-                                              " u'LPC11U68', u'NCS36510', u'UBLOX_C029', u'NUC472-NUTINY', u'NUMBED',"
-                                              " u'NUMAKER_PFM_NUC472', u'NUMAKER_PFM_M453', u'LPC1549', u'LPC4330_M4',"
-                                              " u'EFM32_G8XX_STK', u'EFM32HG_STK3400', u'EFM32WG_STK3800',"
-                                              " u'EFM32GG_STK3700', u'EFM32LG_STK3600', u'EFM32TG_STK3300',"
-                                              " u'EFM32ZG_STK3200', u'EFM32PG_STK3401', u'XBED_LPC1768',"
-                                              " u'WIZWIKI_W7500', u'WIZWIKI_W7500ECO', u'WIZWIKI_W7500P',"
-                                              " u'LPC11U35_Y5_MBUG', u'NRF51822_Y5_MBUG', u'MOTE_L152RC',"
-                                              " u'LPC4337', u'DELTA_DFCM_NNN40', u'ARM_MPS2', u'ARM_MPS2_M0',"
-                                              " u'ARM_BEETLE_SOC', u'ARM_MPS2_M0DS', u'ARM_MPS2_M1', u'ARM_MPS2_M3',"
-                                              " u'ARM_MPS2_M4', u'ARM_MPS2_M7', u'HOME_GATEWAY_6LOWPAN', u'RZ_A1H',"
-                                              " u'NZ32_SC151', u'TEENSY3_1', u'LPC1347', u'ARCH_PRO', u'LPC11U35_501',"
-                                              " u'XADOW_M0', u'ARCH_BLE', u'ARCH_GPRS', u'ARCH_MAX', u'SEEED_TINY_BLE',"
-                                              " u'NRF51_MICROBIT', u'VK_RZ_A1H', u'K20 BOOTLOADER', u'RIOT']\n")
+        self.assertIn("Not supported platform: K65G", mock_stdout.getvalue())
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_tid_missing(self, mock_stdout):
