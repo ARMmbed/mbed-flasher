@@ -40,7 +40,7 @@ class FlasherMbed(object):
         """Load target mapping information
         """
         mbeds = mbed_lstools.create()
-        return sorted(mbeds.manufacture_ids.values())
+        return sorted(set(mbeds.manufacture_ids.values()))
 
     @staticmethod
     def get_available_devices():
