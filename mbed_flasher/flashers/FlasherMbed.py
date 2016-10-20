@@ -27,6 +27,7 @@ from threading import Thread
 from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
+import mbed_lstools
 
 class FlasherMbed(object):
     name = "mbed"
@@ -38,16 +39,11 @@ class FlasherMbed(object):
     def get_supported_targets():
         """Load target mapping information
         """
-        import mbed_lstools
         mbeds = mbed_lstools.create()
-        list_of_mbeds = []
-        for item in sorted(mbeds.manufacture_ids.keys()):
-            list_of_mbeds.append(mbeds.manufacture_ids[item])
-        return list_of_mbeds
+        return sorted(mbeds.manufacture_ids.values())
 
     @staticmethod
     def get_available_devices():
-        import mbed_lstools
         mbeds = mbed_lstools.create()
         return mbeds.list_mbeds()
         
@@ -94,7 +90,6 @@ class FlasherMbed(object):
     def check_points_unchanged(self, target):
         new_target = {}
         if platform.system() == 'Windows':
-            import mbed_lstools
             mbeds = mbed_lstools.create()
             if target['serial_port'] != mbeds.get_mbed_com_port(target['target_id']):
                 new_target['serial_port'] = mbeds.get_mbed_com_port(target['target_id'])
