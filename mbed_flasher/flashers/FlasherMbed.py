@@ -38,8 +38,12 @@ class FlasherMbed(object):
     def get_supported_targets():
         """Load target mapping information
         """
-        libpath = dirname(abspath(sys.modules[__name__].__file__))
-        return json.loads(open(join(libpath, "FlasherMbed.target_info.json"), "rb").read())
+        import mbed_lstools
+        mbeds = mbed_lstools.create()
+        list_of_mbeds = []
+        for item in sorted(mbeds.manufacture_ids.keys()):
+            list_of_mbeds.append(mbeds.manufacture_ids[item])
+        return list_of_mbeds
 
     @staticmethod
     def get_available_devices():
