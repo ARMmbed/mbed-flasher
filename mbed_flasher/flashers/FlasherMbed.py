@@ -207,8 +207,13 @@ class FlasherMbed(object):
                         self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                         self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
                         new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
-                        os.write(new_file, aux_source)
-                        os.close(new_file)
+                        try:
+                            os.write(new_file, aux_source)
+                            os.close(new_file)
+                        except OSError as e:
+                            self.logger.error("Write failed due to OSError")
+                            self.logger.error(e)
+                            return -14
                     self.logger.debug("copy finished")
                     sleep(4)
                     
