@@ -19,7 +19,7 @@ import logging
 import sys
 import six
 from os.path import join, abspath, dirname, isfile
-from shutil import copy
+from shutil import copy2
 import os
 import platform
 from time import sleep
@@ -196,7 +196,8 @@ class FlasherMbed(object):
                             aux_source = f.read()
                             self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                         self.logger.debug("copying file: %s to %s" % (source, destination))
-                        copy(source, destination)
+                        os.system ("copy %s %s" % (source, destination))
+                        #copy2(source, destination)
                     else:
                         self.logger.debug('read source file')
                         with open(source, 'rb') as f:
