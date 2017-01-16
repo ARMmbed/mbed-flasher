@@ -191,7 +191,7 @@ class FlasherMbed(object):
                     if 'serial_port' in target:
                         self.reset_board(target['serial_port'])
                         sleep(0.1)
-                    if platform.system() == 'Windows' or platform.system() == 'Darwin':
+                    if platform.system() == 'Windows':
                         with open(source, 'rb') as f:
                             aux_source = f.read()
                             self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
@@ -207,7 +207,13 @@ class FlasherMbed(object):
                             return -7
                         self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                         self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
-                        new_file = os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
+
+                        def get_me_file():
+                            if platform.system() == 'Darwin':
+                                return os.open(destination, os.O_CREAT | os.O_TRUNC | os.O_RDWR | os.O_SYNC)
+                            else:
+                                return os.open(destination, os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
+                        new_file = get_me_file()
                         os.write(new_file, aux_source)
                         os.close(new_file)
                     self.logger.debug("copy finished")
