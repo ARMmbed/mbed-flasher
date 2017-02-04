@@ -115,6 +115,13 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), 20)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
+    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_reset_all(self, mock_stdout):
+        fcli = FlasherCLI(["reset", "--tid", "all"])
+        self.assertEqual(fcli.execute(), 20)
+        self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
+
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_wrong_tid_with_device(self, mock_stdout):
