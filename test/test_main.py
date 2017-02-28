@@ -69,7 +69,7 @@ class MainTestCase(unittest.TestCase):
     def test_main_verboses(self, mock_stdout):
         fcli = FlasherCLI(["-v", "version"])
         self.assertEqual(fcli.execute(), 0)
-        self.assertRegexpMatches(mock_stdout.getvalue(), r"^(\s*\S+\s+\S+\n)+$")
+        self.assertIsNot(len("\n".split(mock_stdout.getvalue())), 0)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_file_does_not_exist(self, mock_stdout):
@@ -112,6 +112,13 @@ class MainTestCase(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_wrong_tid(self, mock_stdout):
         fcli = FlasherCLI(["reset", "--tid", "555"])
+        self.assertEqual(fcli.execute(), 20)
+        self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
+
+    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_reset_all(self, mock_stdout):
+        fcli = FlasherCLI(["reset", "--tid", "all"])
         self.assertEqual(fcli.execute(), 20)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 

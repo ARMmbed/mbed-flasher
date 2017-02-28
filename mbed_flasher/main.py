@@ -328,40 +328,28 @@ class FlasherCLI:
         available = flasher.get_available_device_mapping()
         target_ids = []
         available_target_ids = []
-        if isinstance(tid, types.ListType):
+        if len(available) == 0:
+            print("Could not find any connected device")
+            return EXIT_CODE_DEVICES_MISSING
+        if 'all' in tid:
+            for a in available:
+                target_ids.append(a['target_id'])
+        else:
             for item in tid:
                 for device in available:
                     available_target_ids.append(device['target_id'])
                     if device['target_id'] == item or device['target_id'].startswith(item):
                         if not device['target_id'] in target_ids:
                             target_ids.append(device['target_id'])
-            if len(target_ids) == 0:
-                print("Could not find given target_id from attached devices")
-                print("Available target_ids:")
-                print(available_target_ids)
-                return EXIT_CODE_COULD_NOT_MAP_DEVICE
-            else:
-                return target_ids
+        if len(target_ids) == 0:
+            print("Could not find given target_id from attached devices")
+            print("Available target_ids:")
+            print(available_target_ids)
+            return EXIT_CODE_COULD_NOT_MAP_DEVICE
+        elif len(target_ids) == 1:
+            return target_ids[0]
         else:
-            if not 'all' in tid:
-                if len(available) > 0:
-                    for device in available:
-                        available_target_ids.append(device['target_id'])
-                        if device['target_id'] == tid or device['target_id'].startswith(tid):
-                            if not device['target_id'] in target_ids:
-                                target_ids.append(device['target_id'])
-                    if len(target_ids) == 0:
-                        print("Could not find given target_id from attached devices")
-                        print("Available target_ids:")
-                        print(available_target_ids)
-                        return EXIT_CODE_COULD_NOT_MAP_DEVICE
-                    else:
-                        return target_ids
-                else:
-                        print("Could not find any connected device")
-                        return EXIT_CODE_DEVICES_MISSING
-            else:
-                return tid
+            return target_ids
 
 def mbedflash_main():
     """
