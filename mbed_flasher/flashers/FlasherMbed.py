@@ -224,13 +224,12 @@ class FlasherMbed(object):
                     if isinstance(new_target, int):
                         return new_target
                     else:
-                        if platform.system() == 'Windows':
-                            t = Thread(target=self.runner, args=(target['mount_point'],))
-                            t.start()
-                            while True:
-                                if not t.is_alive():
-                                    break
-                            sleep(2)
+                        t = Thread(target=self.runner, args=(target['mount_point'],))
+                        t.start()
+                        while True:
+                            if not t.is_alive():
+                                break
+                        sleep(2)
                         if not no_reset:
                             if 'serial_port' in new_target:
                                 self.reset_board(new_target['serial_port'])

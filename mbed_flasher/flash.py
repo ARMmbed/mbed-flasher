@@ -194,9 +194,9 @@ class Flash(object):
         :param device_mapping_table: individual devices mapping table
         :param method: method for flashing i.e. simple, pyocd or edbg
         """
-        #build, platform_name, method='simple', target_ids_or_prefix='', no_reset
+
         K64F_TARGET_ID_LENGTH = 48
-        print no_reset
+
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
