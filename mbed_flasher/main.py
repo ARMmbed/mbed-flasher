@@ -162,6 +162,7 @@ class FlasherCLI:
         parser_flash.add_argument('-i','--input', help='Binary input to be flashed.', default=None, metavar='INPUT')
         parser_flash.add_argument('--tid', '--target_id', help='Target to be flashed, ALL will flash all connected devices with given platform-name, also multiple targets can be given. Short target_id matches boards by prefix', default=None, metavar='TARGET_ID', action='append')
         parser_flash.add_argument('-t', '--platform_name', help='Platform of the target device(s)', default=None)
+        parser_flash.add_argument('--no-reset', help='Do not reset device before or after flashing', default=None, dest='no_reset', action='store_true')
         parser_flash.add_argument('method', help='<simple|pyocd|edbg>, used for flashing', metavar='method', choices=['simple','pyocd','edbg'], nargs='?')
         # Initialize reset command
         parser_reset = get_resource_subparser(subparsers, 'reset', func=self.subcmd_reset_handler, help='Reset given resource')
@@ -262,12 +263,12 @@ class FlasherCLI:
                                 return EXIT_CODE_PLATFORM_REQUIRED
                         else:
                             #print(target_ids_to_flash)
-                            retcode = flasher.flash(build=args.input, target_id=target_ids_to_flash, platform_name=available_platforms[0], method=args.method)
+                            retcode = flasher.flash(build=args.input, target_id=target_ids_to_flash, platform_name=available_platforms[0], method=args.method, no_reset=args.no_reset)
                 else:
                     print("Could not find any connected device")
                     return EXIT_CODE_DEVICES_MISSING
             else:
-                retcode = flasher.flash(build=args.input, target_id='all', platform_name=args.platform_name, method=args.method)
+                retcode = flasher.flash(build=args.input, target_id='all', platform_name=args.platform_name, method=args.method, no_reset=args.no_reset)
         else:
             print("Target_id is missing")
             return EXIT_CODE_NO_TARGET_ID

@@ -148,7 +148,7 @@ class FlasherMbed(object):
         else:
             return target
             
-    def flash(self, source, target, method):
+    def flash(self, source, target, method, no_reset):
         """copy file to the destination
         :param binary_data: binary data to be flashed
         :param target: target
@@ -188,7 +188,7 @@ class FlasherMbed(object):
                     return -4
             else:
                 try:
-                    if 'serial_port' in target:
+                    if 'serial_port' in target and not no_reset:
                         self.reset_board(target['serial_port'])
                         sleep(0.1)
                     if platform.system() == 'Windows':
@@ -231,12 +231,12 @@ class FlasherMbed(object):
                                 if not t.is_alive():
                                     break
                             sleep(2)
-
-                        if 'serial_port' in new_target:
-                            self.reset_board(new_target['serial_port'])
-                        else:
-                            self.reset_board(target['serial_port'])
-                        sleep(0.4)
+                        if not no_reset:
+                            if 'serial_port' in new_target:
+                                self.reset_board(new_target['serial_port'])
+                            else:
+                                self.reset_board(target['serial_port'])
+                            sleep(0.4)
                             
                         # verify flashing went as planned
                         self.logger.debug("verifying flash")
