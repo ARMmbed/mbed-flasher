@@ -78,13 +78,14 @@ class FlasherMbed(object):
             sleep(0.2)
             i += 1
             if platform.system() == 'Windows':
-                out = os.popen('dir %s' % drive).read()
+                out = os.popen('dir %s' % drive[0]).read()
             else:
-                out = os.popen('ls %s 2> /dev/null' % drive).read()
+                out = os.popen('ls %s 2> /dev/null' % drive[0]).read()
             if out.find('MBED.HTM') != -1:
-                break
+                if out.find(drive[1]) == -1:
+                    break
             if i >= 25:
-                self.logger.debug("re-mount check timed out for %s" % drive)
+                self.logger.debug("re-mount check timed out for %s" % drive[0])
                 break
                 
     def check_points_unchanged(self, target):
@@ -224,7 +225,7 @@ class FlasherMbed(object):
                     if isinstance(new_target, int):
                         return new_target
                     else:
-                        t = Thread(target=self.runner, args=(target['mount_point'],))
+                        t = Thread(target=self.runner, args=([target['mount_point'],tail],))
                         t.start()
                         while True:
                             if not t.is_alive():
