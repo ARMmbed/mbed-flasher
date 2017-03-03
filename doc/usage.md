@@ -12,6 +12,7 @@
         * [Flashing devices from a list](#flashing-devices-from-a-list)
         * [Flashing devices with prefix](#flashing-devices-with-a-prefix)
         * [Flashing all devices by platform](#flashing-all-devices-by-platform)
+        * [Flashing all devices by platform without giving reset](#flashing-all-devices-by-platform-without-giving-reset)
         * [Flashing a device using pyOCD](#flashing-a-device-using-pyocd)
     * [Erase API](#erase-api)
         * [Erase setup](#erase-setup)
@@ -145,6 +146,16 @@ Going to flash following devices:
 
 ```python
 >>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="all", platform_name="K64F")
+Going to flash following devices:
+0240000028884e450019700f6bf0000f8021000097969900
+0240000028884e450031700f6bf000118021000097969900
+0
+```
+
+#### Flashing all devices by platform without giving reset
+
+```python
+flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="all", platform_name="K64F", no_reset=True)
 Going to flash following devices:
 0240000028884e450019700f6bf0000f8021000097969900
 0240000028884e450031700f6bf000118021000097969900

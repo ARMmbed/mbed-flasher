@@ -78,13 +78,14 @@ class FlasherMbed(object):
             sleep(0.2)
             i += 1
             if platform.system() == 'Windows':
-                out = os.popen('dir %s' % drive).read()
+                out = os.popen('dir %s' % drive[0]).read()
             else:
-                out = os.popen('ls %s 2> /dev/null' % drive).read()
+                out = os.popen('ls %s 2> /dev/null' % drive[0]).read()
             if out.find('MBED.HTM') != -1:
-                break
+                if out.find(drive[1]) == -1:
+                    break
             if i >= 25:
-                self.logger.debug("re-mount check timed out for %s" % drive)
+                self.logger.debug("re-mount check timed out for %s" % drive[0])
                 break
                 
     def check_points_unchanged(self, target):
@@ -148,7 +149,7 @@ class FlasherMbed(object):
         else:
             return target
             
-    def flash(self, source, target, method):
+    def flash(self, source, target, method, no_reset):
         """copy file to the destination
         :param binary_data: binary data to be flashed
         :param target: target
@@ -188,7 +189,7 @@ class FlasherMbed(object):
                     return -4
             else:
                 try:
-                    if 'serial_port' in target:
+                    if 'serial_port' in target and not no_reset:
                         self.reset_board(target['serial_port'])
                         sleep(0.1)
                     if platform.system() == 'Windows':
@@ -224,19 +225,18 @@ class FlasherMbed(object):
                     if isinstance(new_target, int):
                         return new_target
                     else:
-                        if platform.system() == 'Windows':
-                            t = Thread(target=self.runner, args=(target['mount_point'],))
-                            t.start()
-                            while True:
-                                if not t.is_alive():
-                                    break
-                            sleep(2)
-
-                        if 'serial_port' in new_target:
-                            self.reset_board(new_target['serial_port'])
-                        else:
-                            self.reset_board(target['serial_port'])
-                        sleep(0.4)
+                        t = Thread(target=self.runner, args=([target['mount_point'],tail],))
+                        t.start()
+                        while True:
+                            if not t.is_alive():
+                                break
+                        sleep(2)
+                        if not no_reset:
+                            if 'serial_port' in new_target:
+                                self.reset_board(new_target['serial_port'])
+                            else:
+                                self.reset_board(target['serial_port'])
+                            sleep(0.4)
                             
                         # verify flashing went as planned
                         self.logger.debug("verifying flash")

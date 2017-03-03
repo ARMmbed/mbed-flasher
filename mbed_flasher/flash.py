@@ -102,7 +102,7 @@ class Flash(object):
                 return target
         raise KeyError("platform_name: %s not found" % platform_name)
 
-    def flash_multiple(self, build, platform_name, method='simple', target_ids_or_prefix=''):
+    def flash_multiple(self, build, platform_name, method='simple', target_ids_or_prefix='', no_reset=None):
         device_mapping_table = self.get_available_device_mapping()
         aux_device_mapping_table = []
 
@@ -159,7 +159,7 @@ class Flash(object):
             # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
             i = 0
             for device in device_mapping_table:
-                ret = self.flash(build, device['target_id'], None, device_mapping_table, method)
+                ret = self.flash(build, device['target_id'], None, device_mapping_table, method, no_reset)
                 if ret == 0:
                     self.logger.debug("dev#%i -> SUCCESS" % i)
                 else:
@@ -170,7 +170,7 @@ class Flash(object):
             passes = []
             retcodes = 0
             for target in device_mapping_table:
-                retcode = self.flash(build, target['target_id'], None, device_mapping_table, method)
+                retcode = self.flash(build, target['target_id'], None, device_mapping_table, method, no_reset)
                 retcodes += retcode
                 if retcode == 0:
                     passes.append(True)
@@ -186,7 +186,7 @@ class Flash(object):
 
         return retcodes
 
-    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, method='simple'):
+    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, method='simple', no_reset=None):
         """Flash (mbed) device
         :param build:  Build -object or string (file-path)
         :param target_id: target_id
@@ -194,7 +194,7 @@ class Flash(object):
         :param device_mapping_table: individual devices mapping table
         :param method: method for flashing i.e. simple, pyocd or edbg
         """
-        
+
         K64F_TARGET_ID_LENGTH = 48
 
         if target_id is None and platform_name is None:
@@ -204,12 +204,12 @@ class Flash(object):
             self.logger.error("Given file does not exist")
             return EXIT_CODE_FILE_DOES_NOT_EXIST
         if isinstance(target_id, types.ListType):
-            return self.flash_multiple(build, platform_name, method, target_id)
+            return self.flash_multiple(build=build, platform_name=platform_name, method=method, target_ids_or_prefix=target_id, no_reset=no_reset)
         else:
             if target_id.lower() == 'all':
-                return self.flash_multiple(build, platform_name, method)
+                return self.flash_multiple(build=build, platform_name=platform_name, method=method, no_reset=no_reset)
             elif len(target_id) < K64F_TARGET_ID_LENGTH and device_mapping_table is None:
-                return self.flash_multiple(build, platform_name, method, target_id)
+                return self.flash_multiple(build=build, platform_name=platform_name, method=method, target_ids_or_prefix=target_id, no_reset=no_reset)
 
         if device_mapping_table:
             if isinstance(device_mapping_table, dict):
@@ -239,7 +239,7 @@ class Flash(object):
 
         flasher = self.__get_flasher(platform_name)
         try:
-            retcode = flasher.flash(source=build, target=target_mbed, method=method)
+            retcode = flasher.flash(source=build, target=target_mbed, method=method, no_reset=no_reset)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
             return EXIT_CODE_KEYBOARD_INTERRUPT

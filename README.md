@@ -59,6 +59,7 @@ command:
 ```
 />mbedflash flash --help
 usage: mbedflash flash [-h] [-i INPUT] [--tid TARGET_ID] [-t PLATFORM_NAME]
+                       [--no-reset]
                        [method]
 
 positional arguments:
@@ -75,6 +76,7 @@ optional arguments:
                         by prefix
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
                         Platform of the target device(s)
+  --no-reset            Do not reset device before or after flashing
 
 ```
 
