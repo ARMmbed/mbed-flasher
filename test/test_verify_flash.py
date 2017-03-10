@@ -91,30 +91,30 @@ class FlashVerifyTestCase(unittest.TestCase):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
         flasher = Flash()
+        target_id = None
+        serial_port = None
         for target in targets:
             if target['platform_name'] == 'K64F':
                 if 'serial_port' and 'target_id' in target:
                     target_id = target['target_id']
                     serial_port = target['serial_port']
-                    if target_id and serial_port:
-                        ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, method='simple')
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
-                        second_binary = find_second_binary()
-                        self.assertIsNotNone(second_binary, 'Second binary not found')
-                        ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, method='simple')
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        if not verify_output_per_device(serial_port, 'help', 'echo'):
-                            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-                        ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, method='simple')
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+                    break
+        if target_id and serial_port:
+            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
+                                device_mapping_table=False, method='simple')
+            self.assertEqual(ret, 0)
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+            second_binary = find_second_binary()
+            self.assertIsNotNone(second_binary, 'Second binary not found')
+            ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
+                                device_mapping_table=False, method='simple')
+            self.assertEqual(ret, 0)
+            if not verify_output_per_device(serial_port, 'help', 'echo'):
+                self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
+            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
+                                device_mapping_table=False, method='simple')
+            self.assertEqual(ret, 0)
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
     @unittest.skipIf(check_two_binaries_exist() == False, "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash_no_reset(self):
@@ -122,36 +122,35 @@ class FlashVerifyTestCase(unittest.TestCase):
         targets = mbeds.list_mbeds()
         flasher = Flash()
         resetter = Reset()
+        target_id = None
+        serial_port = None
         for target in targets:
             if target['platform_name'] == 'K64F':
                 if 'serial_port' and 'target_id' in target:
                     target_id = target['target_id']
                     serial_port = target['serial_port']
-                    if target_id and serial_port:
-                        second_binary = find_second_binary()
-                        self.assertIsNotNone(second_binary, 'Second binary not found')
-                        ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, method='simple')
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        if not verify_output_per_device(serial_port, 'help', 'echo'):
-                            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-                        
-                        ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, method='simple', no_reset=True)
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
-                        ret = resetter.reset(target_id=target_id, method='simple')
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        if not verify_output_per_device(serial_port, 'help', 'echo'):
-                            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-                        ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                            device_mapping_table=False, method='simple')
-                        self.assertEqual(ret, 0)
-                        time.sleep(5)
-                        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+                    break
+        if target_id and serial_port:
+            second_binary = find_second_binary()
+            self.assertIsNotNone(second_binary, 'Second binary not found')
+            ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
+                                device_mapping_table=False, method='simple')
+            self.assertEqual(ret, 0)
+            if not verify_output_per_device(serial_port, 'help', 'echo'):
+                self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
+
+            ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
+                                device_mapping_table=False, method='simple', no_reset=True)
+            self.assertEqual(ret, 0)
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+            ret = resetter.reset(target_id=target_id, method='simple')
+            self.assertEqual(ret, 0)
+            if not verify_output_per_device(serial_port, 'help', 'echo'):
+                self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
+            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
+                                device_mapping_table=False, method='simple')
+            self.assertEqual(ret, 0)
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
 if __name__ == '__main__':
     unittest.main()

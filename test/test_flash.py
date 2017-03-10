@@ -21,6 +21,9 @@ import mbed_lstools
 import time
 import mock
 from mbed_flasher.flash import Flash
+from mbed_flasher.flashers import FlasherMbed
+import os
+import platform
 from StringIO import StringIO
 
 
@@ -97,7 +100,6 @@ class FlashTestCase(unittest.TestCase):
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_with_file_with_all(self, mock_stdout):
-        time.sleep(4)
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='all', platform_name='K64F',
                             device_mapping_table=None, method='simple')
@@ -108,12 +110,70 @@ class FlashTestCase(unittest.TestCase):
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_with_file_with_prefix(self, mock_stdout):
-        time.sleep(4)
         flasher = Flash()
         ret = flasher.flash(build='test/helloworld.bin', target_id='0', platform_name=None, device_mapping_table=None,
                             method='simple')
         self.assertEqual(ret, 0)
         if mock_stdout:
             pass
+
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_run_fail_file(self, mock_stdout):
+        mbeds = mbed_lstools.create()
+        targets = mbeds.list_mbeds()
+        mount_point = None
+        target_to_test = None
+        for target in targets:
+            if target['platform_name'] == 'K64F':
+                if 'target_id' in target and 'mount_point' in target:
+                    target_to_test = target
+                    mount_point = target['mount_point']
+                    break
+        if target_to_test:
+            flasher = FlasherMbed()
+            flasher.FLASHING_VERIFICATION_TIMEOUT = 2
+            with open('test/failing.txt', 'w') as file:
+                    file.write("0000000000000000000000000000000000")
+            ret = flasher.flash(source='test/failing.txt', target=target_to_test, method='simple', no_reset=False)
+            self.assertEqual(ret, -15)
+            if platform.system() == 'Windows':
+                os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
+                os.system('del %s' % os.path.join(os.getcwd(), 'test/failing.txt'))
+            else:
+                os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
+                os.system('rm %s' % os.path.join(os.getcwd(),'test/failing.txt'))
+        if mock_stdout:
+            pass
+
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_run_fail_binary(self, mock_stdout):
+        mbeds = mbed_lstools.create()
+        targets = mbeds.list_mbeds()
+        target_id = None
+        mount_point = None
+        for target in targets:
+            if target['platform_name'] == 'K64F':
+                if 'target_id' in target and 'mount_point' in target:
+                    target_id = target['target_id']
+                    mount_point = target['mount_point']
+                    break
+        if target_id:
+            flasher = Flash()
+            with open('test/fail.bin', 'w') as file:
+                    file.write("0000000000000000000000000000000000")
+            ret = flasher.flash(build='test/fail.bin', target_id=target_id, platform_name='K64F',
+                                device_mapping_table=None, method='simple')
+            self.assertEqual(ret, -4)
+            if platform.system() == 'Windows':
+                os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
+                os.system('del %s' % os.path.join(os.getcwd(),'test/fail.bin'))
+            else:
+                os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
+                os.system('rm %s' % os.path.join(os.getcwd(),'test/fail.bin'))
+        if mock_stdout:
+            pass
+
 if __name__ == '__main__':
     unittest.main()

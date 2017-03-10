@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import json
 import logging
-import sys
 import six
-from os.path import join, abspath, dirname, isfile
-from shutil import copy2
+from os.path import join, abspath, isfile
 import os
 import platform
-from time import sleep
+from time import sleep, time
 from threading import Thread
 from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
 import mbed_lstools
 
+
 class FlasherMbed(object):
     name = "mbed"
+    FLASHING_VERIFICATION_TIMEOUT = 100
 
     def __init__(self):
         self.logger = logging.getLogger('mbed-flasher')
@@ -73,10 +72,9 @@ class FlasherMbed(object):
         port.close()
        
     def runner(self, drive):
-        i = 0
+        start_time = time()
         while True:
-            sleep(0.2)
-            i += 1
+            sleep(2)
             if platform.system() == 'Windows':
                 out = os.popen('dir %s' % drive[0]).read()
             else:
@@ -84,7 +82,7 @@ class FlasherMbed(object):
             if out.find('MBED.HTM') != -1:
                 if out.find(drive[1]) == -1:
                     break
-            if i >= 25:
+            if time() - start_time > self.FLASHING_VERIFICATION_TIMEOUT:
                 self.logger.debug("re-mount check timed out for %s" % drive[0])
                 break
                 
@@ -132,16 +130,19 @@ class FlasherMbed(object):
                     if for_break:
                         break
                 else:
-                    self.logger.error("vfat mount point for %s did not re-appear in the system in 10 seconds" % target['target_id'])
+                    self.logger.error("vfat mount point for %s did not re-appear in the system in 10 seconds" % 
+                                      target['target_id'])
                     return -12
         
         if new_target:
             if 'serial_port' in new_target:
-                self.logger.debug("serial port %s has changed to %s" % (target['serial_port'], new_target['serial_port']))
+                self.logger.debug("serial port %s has changed to %s" %
+                                  (target['serial_port'], new_target['serial_port']))
             else:
                 self.logger.debug("serial port %s has not changed" % target['serial_port'])
             if 'mount_point' in new_target:
-                self.logger.debug("mount point %s has changed to %s" % (target['mount_point'], new_target['mount_point']))
+                self.logger.debug("mount point %s has changed to %s" %
+                                  (target['mount_point'], new_target['mount_point']))
             else:
                 self.logger.debug("mount point %s has not changed" % target['mount_point'])
             new_target['target_id'] = target['target_id']
@@ -151,8 +152,10 @@ class FlasherMbed(object):
             
     def flash(self, source, target, method, no_reset):
         """copy file to the destination
-        :param binary_data: binary data to be flashed
-        :param target: target
+        :param source: binary to be flashed
+        :param target: target to be flashed
+        :param method: method to use when flashing
+        :param no_reset: do not reset flashed board at all
         """
         if method == 'pyocd':
             self.logger.debug("pyOCD selected for flashing")
@@ -197,8 +200,7 @@ class FlasherMbed(object):
                             aux_source = f.read()
                             self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                         self.logger.debug("copying file: %s to %s" % (source, destination))
-                        os.system ("copy %s %s" % (source, destination))
-                        #copy2(source, destination)
+                        os.system("copy %s %s" % (source, destination))
                     else:
                         self.logger.debug('read source file')
                         with open(source, 'rb') as f:
@@ -225,7 +227,7 @@ class FlasherMbed(object):
                     if isinstance(new_target, int):
                         return new_target
                     else:
-                        t = Thread(target=self.runner, args=([target['mount_point'],tail],))
+                        t = Thread(target=self.runner, args=([target['mount_point'], tail],))
                         t.start()
                         while True:
                             if not t.is_alive():
@@ -254,6 +256,10 @@ class FlasherMbed(object):
                                 fault = fault.read().strip()
                             self.logger.error("Flashing failed: %s. tid=%s" % (fault, target))
                             return -4
+                        if isfile(join(mount, tail)):
+                            self.logger.error("Flashing failed: File still present in mount point. tid info: %s" %
+                                              target)
+                            return -15
                         self.logger.debug("ready")
                         return 0
                 except IOError as err:
