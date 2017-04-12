@@ -63,7 +63,6 @@ class EraseTestCase(unittest.TestCase):
         eraser = Erase()
         ret = eraser.erase(target_id='all', method='simple')
         self.assertEqual(ret, 0)
-        time.sleep(4)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -77,7 +76,19 @@ class EraseTestCase(unittest.TestCase):
                 ret = eraser.erase(target_id=item['target_id'], method='simple')
                 break
         self.assertEqual(ret, 0)
-        time.sleep(4)
+
+    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_erase_with_target_id_no_reset(self, mock_stdout):
+        mbeds = mbed_lstools.create()
+        devices = mbeds.list_mbeds()
+        eraser = Erase()
+        ret = None
+        for item in devices:
+            if item['target_id']:
+                ret = eraser.erase(target_id=item['target_id'], method='simple', no_reset=True)
+                break
+        self.assertEqual(ret, 0)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -91,7 +102,6 @@ class EraseTestCase(unittest.TestCase):
                 ret = eraser.erase(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, 0)
-        time.sleep(4)
     '''
     #For some reason a bunch of tracebacks on usb.core langid problems.
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")

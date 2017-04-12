@@ -16,8 +16,11 @@ limitations under the License.
 
 import logging
 import types
-from time import sleep
+from time import sleep, time
 from os.path import join, isfile
+from threading import Thread, Event
+import platform
+from subprocess import PIPE, Popen
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
@@ -27,9 +30,9 @@ EXIT_CODE_PYOCD_MISSING = 23
 EXIT_CODE_PYOCD_ERASE_FAILED = 27
 EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE = 29
 EXIT_CODE_IMPLEMENTATION_MISSING = 31
-SLEEP_TIME_FOR_REMOUNT = 5
 EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED = 33
 EXIT_CODE_TARGET_ID_MISSING = 34
+ERASE_VERIFICATION_TIMEOUT = 30
 
 
 class Erase(object):
@@ -51,7 +54,7 @@ class Erase(object):
     def __get_flashers():
         from flashers import AvailableFlashers
         return AvailableFlashers
-        
+
     def reset_board(self, serial_port):
         from flashers.enhancedserial import EnhancedSerial
         from serial.serialutil import SerialException
@@ -69,7 +72,6 @@ class Erase(object):
         port.rtscts = False
         port.flushInput()
         port.flushOutput()
-
         if port:
             self.logger.info("sendBreak to device to reboot")
             result = port.safe_sendBreak()
@@ -80,8 +82,25 @@ class Erase(object):
                 return EXIT_CODE_SERIAL_RESET_FAILED
         port.close()
         return EXIT_CODE_SUCCESS
+
+    def runner(self, drive):
+        start_time = time()
+        while True:
+            sleep(0.3)
+            if platform.system() == 'Windows':
+                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                out = proc.stdout.read()
+            else:
+                proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                out = proc.stdout.read()
+            if out.find('.HTM') != -1:
+                if out.find(drive[1]) == -1:
+                    break
+            if time() - start_time > ERASE_VERIFICATION_TIMEOUT:
+                self.logger.debug("erase check timed out for %s" % drive[0])
+                break
     
-    def erase_board(self, mount_point, serial_port):
+    def erase_board(self, mount_point, serial_port, no_reset):
         automation_activated = False
         if isfile(join(mount_point, 'DETAILS.TXT')):
             with open(join(mount_point, 'DETAILS.TXT'), 'rb') as f:
@@ -95,20 +114,22 @@ class Erase(object):
             self.logger.info("erasing device")
             with open(join(mount_point, 'ERASE.ACT'), 'wb') as new_file:
                 pass
-            sleep(SLEEP_TIME_FOR_REMOUNT)
-            success = self.reset_board(serial_port)
-            if isfile(join(mount_point, 'ERASE.ACT')):
-                success = EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED
-            if success != 0:
-                self.logger.error("erase failed")
-                return success
+            t = Thread(target=self.runner, args=([mount_point, 'ERASE.ACT'],))
+            t.start()
+            while t.is_alive():
+                t.join(0.5)
+            if not no_reset:
+                success = self.reset_board(serial_port)
+                if success != 0:
+                    self.logger.error("erase failed")
+                    return success
             self.logger.info("erase completed")
             return EXIT_CODE_SUCCESS
         else:
             print "Selected device does not support erasing through DAPLINK"
             return EXIT_CODE_IMPLEMENTATION_MISSING
 
-    def erase(self, target_id=None, method=None):
+    def erase(self, target_id=None, no_reset=None, method=None):
         """Erase (mbed) device
         :param target_id: target_id
         :param method: method for erase i.e. simple, pyocd or edbg
@@ -138,7 +159,7 @@ class Erase(object):
                 for item in targets_to_erase:
                     if item['platform_name'] == 'K64F':
                         if method == 'simple' and 'mount_point' in item and 'serial_port' in item:
-                            self.erase_board(item['mount_point'], item['serial_port'])
+                            self.erase_board(item['mount_point'], item['serial_port'], no_reset)
                         elif method == 'pyocd':
                             try:
                                 from pyOCD.board import MbedBoard
@@ -152,7 +173,8 @@ class Erase(object):
                             flash = ocd_target.flash
                             try:
                                 flash.eraseAll()
-                                ocd_target.reset()
+                                if not no_reset:
+                                    ocd_target.reset()
                             except DAPAccessIntf.TransferFaultError as e:
                                 pass
                             self.logger.info("erase completed")

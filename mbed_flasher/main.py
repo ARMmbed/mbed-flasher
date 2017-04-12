@@ -171,6 +171,7 @@ class FlasherCLI:
         # Initialize erase command
         parser_erase = get_resource_subparser(subparsers, 'erase', func=self.subcmd_erase_handler, help='Erase given resource')
         parser_erase.add_argument('--tid', '--target_id', help='Target to be erased or ALL, also multiple targets can be given. Short target_id matches boards by prefix', default=None, metavar='TARGET_ID', action='append')
+        parser_erase.add_argument('--no-reset', help='Do not reset device after erase', default=None, dest='no_reset', action='store_true')
         parser_erase.add_argument('method', help='<simple|pyocd|edbg>, used for erase', metavar='method', choices=['simple','pyocd','edbg'], nargs='?')
         '''
         parser.add_argument('-m', '--mapping',
@@ -296,7 +297,7 @@ class FlasherCLI:
             if isinstance(ids, types.IntType):
                 retcode = ids
             else:
-                retcode = eraser.erase(target_id=ids, method=args.method)
+                retcode = eraser.erase(target_id=ids, no_reset=args.no_reset, method=args.method)
         else:
             print("Target_id is missing")
             return EXIT_CODE_NO_TARGET_ID
