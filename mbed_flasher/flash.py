@@ -37,7 +37,6 @@ class Flash(object):
         self.logger = logging.getLogger('mbed-flasher')
         self.FLASHERS = self.__get_flashers()
         self.SUPPORTED_TARGETS = self.__update_supported_targets()
-        self.logger.debug("Supported targets: "+', '.join(self.SUPPORTED_TARGETS))
 
     def get_supported_targets(self):
         return self.SUPPORTED_TARGETS
