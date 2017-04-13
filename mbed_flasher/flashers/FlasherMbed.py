@@ -25,6 +25,7 @@ from enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
 import mbed_lstools
+from subprocess import PIPE, Popen
 
 
 class FlasherMbed(object):
@@ -76,10 +77,12 @@ class FlasherMbed(object):
         while True:
             sleep(2)
             if platform.system() == 'Windows':
-                out = os.popen('dir %s' % drive[0]).read()
+                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
             else:
-                out = os.popen('ls %s 2> /dev/null' % drive[0]).read()
-            if out.find('MBED.HTM') != -1:
+                proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            out = proc.stdout.read()
+            proc.communicate()
+            if out.find('.HTM') != -1:
                 if out.find(drive[1]) == -1:
                     break
             if time() - start_time > self.FLASHING_VERIFICATION_TIMEOUT:
@@ -229,10 +232,8 @@ class FlasherMbed(object):
                     else:
                         t = Thread(target=self.runner, args=([target['mount_point'], tail],))
                         t.start()
-                        while True:
-                            if not t.is_alive():
-                                break
-                        sleep(2)
+                        while t.is_alive():
+                            t.join(2.5)
                         if not no_reset:
                             if 'serial_port' in new_target:
                                 self.reset_board(new_target['serial_port'])
