@@ -71,13 +71,23 @@ class FlasherMbed(object):
             else:
                 self.logger.info("reset failed")
         port.close()
+    
+    def auxiliary_drive_check(self, drive):
+        out = os.listdir(drive[0])
+        for item in out:
+            if item.find('.HTM') != -1:
+                break
+        else:
+            return False
+        if drive[1] not in out:
+            return True
        
     def runner(self, drive):
         start_time = time()
         while True:
             sleep(2)
             if platform.system() == 'Windows':
-                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
             else:
                 proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
             out = proc.stdout.read()
@@ -85,6 +95,10 @@ class FlasherMbed(object):
             if out.find('.HTM') != -1:
                 if out.find(drive[1]) == -1:
                     break
+            if platform.system() == 'Windows':
+                if not out:
+                    if self.auxiliary_drive_check(drive):
+                        break
             if time() - start_time > self.FLASHING_VERIFICATION_TIMEOUT:
                 self.logger.debug("re-mount check timed out for %s" % drive[0])
                 break
@@ -171,8 +185,8 @@ class FlasherMbed(object):
             self.logger.debug("edbg is not supported for Mbed devices")
             return -13
         
-        mount_point = target['mount_point']+'/'
-        (head, tail) = os.path.split(source)
+        mount_point = os.path.abspath(target['mount_point'])
+        (head, tail) = os.path.split(os.path.abspath(source))
         destination = abspath(join(mount_point, tail))
         
         if isinstance(source, six.string_types):
@@ -203,7 +217,7 @@ class FlasherMbed(object):
                             aux_source = f.read()
                             self.logger.debug("SHA1: %s" % hashlib.sha1(aux_source).hexdigest())
                         self.logger.debug("copying file: %s to %s" % (source, destination))
-                        os.system("copy %s %s" % (source, destination))
+                        os.system("copy %s %s" % (os.path.abspath(source), destination))
                     else:
                         self.logger.debug('read source file')
                         with open(source, 'rb') as f:
