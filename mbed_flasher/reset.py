@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import logging
 import types
 from flashers.enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
+from common import Logger
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_COULD_NOT_MAP_TO_DEVICE = 3
@@ -34,7 +34,8 @@ class Reset(object):
     """
     FLASHERS = []
     def __init__(self):
-        self.logger = logging.getLogger('mbed-flasher')
+        logger = Logger('mbed-flasher')
+        self.logger = logger.logger
         self.FLASHERS = self.__get_flashers()
 
     def get_available_device_mapping(self):

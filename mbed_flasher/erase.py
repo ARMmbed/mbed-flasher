@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import logging
 import types
 from time import sleep, time
 from os.path import join, isfile
 from threading import Thread, Event
 import platform
 from subprocess import PIPE, Popen
+from common import Logger
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
@@ -40,7 +40,8 @@ class Erase(object):
     """
 
     def __init__(self):
-        self.logger = logging.getLogger('mbed-flasher')
+        logger = Logger('mbed-flasher')
+        self.logger = logger.logger
         self.FLASHERS = self.__get_flashers()
 
     def get_available_device_mapping(self):

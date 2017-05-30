@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import logging
 from os.path import isfile
 import platform
 import types
+from common import Logger
 
 EXIT_CODE_NO_PLATFORM_GIVEN = 35
 EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
@@ -34,7 +34,8 @@ class Flash(object):
     SUPPORTED_TARGETS = {}
 
     def __init__(self):
-        self.logger = logging.getLogger('mbed-flasher')
+        logger = Logger('mbed-flasher')
+        self.logger = logger.logger
         self.FLASHERS = self.__get_flashers()
         self.SUPPORTED_TARGETS = self.__update_supported_targets()
 
