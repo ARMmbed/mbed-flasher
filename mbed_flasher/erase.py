@@ -20,7 +20,7 @@ from os.path import join, isfile
 from threading import Thread, Event
 import platform
 from subprocess import PIPE, Popen
-from common import Logger
+from mbed_flasher.common import Logger
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
@@ -53,11 +53,11 @@ class Erase(object):
 
     @staticmethod
     def __get_flashers():
-        from flashers import AvailableFlashers
+        from mbed_flasher.flashers import AvailableFlashers
         return AvailableFlashers
 
     def reset_board(self, serial_port):
-        from flashers.enhancedserial import EnhancedSerial
+        from mbed_flasher.flashers.enhancedserial import EnhancedSerial
         from serial.serialutil import SerialException
         try:
             port = EnhancedSerial(serial_port)
@@ -65,7 +65,7 @@ class Erase(object):
             self.logger.info("reset could not be sent")
             self.logger.error(e)
             if e.message.find('could not open port') != -1:
-                print 'Reset could not be given. Close your Serial connection to device.'
+                print('Reset could not be given. Close your Serial connection to device.')
             return EXIT_CODE_RESET_FAILED_PORT_OPEN
         port.baudrate = 115200
         port.timeout = 1
@@ -94,8 +94,8 @@ class Erase(object):
             else:
                 proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 out = proc.stdout.read()
-            if out.find('.HTM') != -1:
-                if out.find(drive[1]) == -1:
+            if out.find(b'.HTM') != -1:
+                if out.find(drive[1].encode()) == -1:
                     break
             if time() - start_time > ERASE_VERIFICATION_TIMEOUT:
                 self.logger.debug("erase check timed out for %s" % drive[0])
@@ -106,7 +106,7 @@ class Erase(object):
         if isfile(join(mount_point, 'DETAILS.TXT')):
             with open(join(mount_point, 'DETAILS.TXT'), 'rb') as f:
                 for lines in f:
-                    if lines.find("Automation allowed: 1") != -1:
+                    if lines.find(b"Automation allowed: 1") != -1:
                         automation_activated = True
                     else:
                         continue
@@ -127,7 +127,7 @@ class Erase(object):
             self.logger.info("erase completed")
             return EXIT_CODE_SUCCESS
         else:
-            print "Selected device does not support erasing through DAPLINK"
+            print("Selected device does not support erasing through DAPLINK")
             return EXIT_CODE_IMPLEMENTATION_MISSING
 
     def erase(self, target_id=None, no_reset=None, method=None):
@@ -141,7 +141,7 @@ class Erase(object):
         targets_to_erase = []
 
         if target_id is not None:
-            if isinstance(target_id, types.ListType):
+            if isinstance(target_id, list):
                 for target in target_id:
                     for device in available_devices:
                         if target == device['target_id']:
@@ -166,7 +166,7 @@ class Erase(object):
                                 from pyOCD.board import MbedBoard
                                 from pyOCD.pyDAPAccess import DAPAccessIntf
                             except ImportError:
-                                print 'pyOCD missing, install it\n'
+                                print('pyOCD missing, install it\n')
                                 return EXIT_CODE_PYOCD_MISSING
                             board = MbedBoard.chooseBoard(board_id=item["target_id"])
                             self.logger.info("erasing device")
@@ -180,15 +180,15 @@ class Erase(object):
                                 pass
                             self.logger.info("erase completed")
                         elif method == 'edbg':
-                            print "Not supported yet"
+                            print("Not supported yet")
                         else:
-                            print "Selected method %s not supported" % method
+                            print("Selected method %s not supported" % method)
                             return EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE
                     else:
-                        print "Only mbed devices supported"
+                        print("Only mbed devices supported")
                         return EXIT_CODE_IMPLEMENTATION_MISSING
             else:
-                print "Could not map given target_id(s) to available devices"
+                print("Could not map given target_id(s) to available devices")
                 return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
 
             return EXIT_CODE_SUCCESS

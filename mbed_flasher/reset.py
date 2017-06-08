@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import types
-from flashers.enhancedserial import EnhancedSerial
+from mbed_flasher.flashers.enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
-from common import Logger
+from mbed_flasher.common import Logger
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_COULD_NOT_MAP_TO_DEVICE = 3
@@ -47,7 +46,7 @@ class Reset(object):
 
     @staticmethod
     def __get_flashers():
-        from flashers import AvailableFlashers
+        from mbed_flasher.flashers import AvailableFlashers
         return AvailableFlashers
         
     def reset_board(self, serial_port):
@@ -57,7 +56,7 @@ class Reset(object):
             self.logger.info("reset could not be sent")
             self.logger.error(e)
             if e.message.find('could not open port') != -1:
-                print 'Reset could not be given. Close your Serial connection to device.'
+                print('Reset could not be given. Close your Serial connection to device.')
             return EXIT_CODE_RESET_FAILED_PORT_OPEN
         port.baudrate = 115200
         port.timeout = 1
@@ -87,7 +86,7 @@ class Reset(object):
         targets_to_reset = []
 
         if target_id is not None:
-            if isinstance(target_id, types.ListType):
+            if isinstance(target_id, list):
                 for target in target_id:
                     for device in available_devices:
                         if target == device['target_id']:
@@ -110,7 +109,7 @@ class Reset(object):
                         try:
                             from pyOCD.board import MbedBoard
                         except ImportError:
-                            print 'pyOCD missing, install it\n'
+                            print('pyOCD missing, install it\n')
                             return EXIT_CODE_PYOCD_MISSING
                         try:
                             with MbedBoard.chooseBoard(board_id=item["target_id"]) as board:
@@ -122,12 +121,12 @@ class Reset(object):
                             self.logger.error("reset failed: %s. tid=%s" % (e, item["target_id"]))
                             return EXIT_CODE_PYOCD_RESET_FAILED
                     elif method == 'edbg':
-                        print "Not supported yet"
+                        print("Not supported yet")
                     else:
-                        print "Selected method %s not supported" % method
+                        print("Selected method %s not supported" % method)
                         return EXIT_CODE_NONSUPPORTED_METHOD_FOR_RESET
             else:
-                print "Could not map given target_id(s) to available devices"
+                print("Could not map given target_id(s) to available devices")
                 return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
 
             return EXIT_CODE_SUCCESS

@@ -16,8 +16,7 @@ limitations under the License.
 
 from os.path import isfile
 import platform
-import types
-from common import Logger
+from mbed_flasher.common import Logger
 
 EXIT_CODE_NO_PLATFORM_GIVEN = 35
 EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
@@ -57,7 +56,7 @@ class Flash(object):
 
     @staticmethod
     def __get_flashers():
-        from flashers import AvailableFlashers
+        from mbed_flasher.flashers import AvailableFlashers
         return AvailableFlashers
 
     @staticmethod
@@ -117,7 +116,7 @@ class Flash(object):
                                           'please specify preferred platform with -t <platform>.')
                         return EXIT_CODE_NO_PLATFORM_GIVEN
 
-        if isinstance(target_ids_or_prefix, types.ListType):
+        if isinstance(target_ids_or_prefix, list):
             for tid in target_ids_or_prefix:
                 for item in device_mapping_table:
                     if platform_name:
@@ -151,9 +150,9 @@ class Flash(object):
             return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
         self.logger.debug(device_mapping_table)
 
-        print 'Going to flash following devices:'
+        print('Going to flash following devices:')
         for item in device_mapping_table:
-            print item['target_id']
+            print(item['target_id'])
         retcodes = 0
         if method == 'pyocd' and platform.system() != 'Windows':
             # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
@@ -203,7 +202,7 @@ class Flash(object):
         if not isfile(build):
             self.logger.error("Given file does not exist")
             return EXIT_CODE_FILE_DOES_NOT_EXIST
-        if isinstance(target_id, types.ListType):
+        if isinstance(target_id, list):
             return self.flash_multiple(build=build, platform_name=platform_name, method=method, target_ids_or_prefix=target_id, no_reset=no_reset)
         else:
             if target_id.lower() == 'all':

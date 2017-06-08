@@ -21,7 +21,7 @@ import os
 import platform
 from time import sleep, time
 from threading import Thread
-from enhancedserial import EnhancedSerial
+from mbed_flasher.flashers.enhancedserial import EnhancedSerial
 from serial.serialutil import SerialException
 import hashlib
 import mbed_lstools
@@ -54,7 +54,7 @@ class FlasherMbed(object):
             self.logger.info("reset could not be sent")
             self.logger.error(e)
             if e.message.find('could not open port') != -1:
-                print 'Reset could not be given. Close your Serial connection to device.'
+                print('Reset could not be given. Close your Serial connection to device.')
             return -6
         port.baudrate = 115200
         port.timeout = 1
@@ -92,8 +92,8 @@ class FlasherMbed(object):
                 proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
             out = proc.stdout.read()
             proc.communicate()
-            if out.find('.HTM') != -1:
-                if out.find(drive[1]) == -1:
+            if out.find(b'.HTM') != -1:
+                if out.find(drive[1].encode()) == -1:
                     break
             if platform.system() == 'Windows':
                 if not out:
@@ -179,7 +179,7 @@ class FlasherMbed(object):
             try:
                 from pyOCD.board import MbedBoard
             except ImportError:
-                print 'pyOCD missing, install\n'
+                print('pyOCD missing, install\n')
                 return -8
         if method == 'edbg':
             self.logger.debug("edbg is not supported for Mbed devices")

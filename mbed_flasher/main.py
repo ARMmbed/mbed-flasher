@@ -24,12 +24,11 @@ import logging.handlers
 import os
 import json
 import time
-import types
 
 from os.path import isdir, isfile, join
-from flash import Flash
-from erase import Erase
-from reset import Reset
+from mbed_flasher.flash import Flash
+from mbed_flasher.erase import Erase
+from mbed_flasher.reset import Reset
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_FILE_MISSING = 5
@@ -152,7 +151,8 @@ class FlasherCLI:
                             action="store_true",
                             help="Silent - only errors will be printed.")
 
-        subparsers = parser.add_subparsers(title='command', help='command help', metavar='<command>')
+        subparsers = parser.add_subparsers(title='command', dest='command', help='command help', metavar='<command>')
+        subparsers.required = True
         get_subparser(subparsers, 'list', func=self.subcmd_list_platforms, help='Prints a list of supported platforms.')
         get_subparser(subparsers, 'flashers', func=self.subcmd_list_flashers, help='Prints a list of supported flashers.')
         get_subparser(subparsers, 'version', func=self.subcmd_version_handler, help='Display version information')
@@ -230,7 +230,7 @@ class FlasherCLI:
         if args.tid:
             if not 'all' in args.tid:
                 if len(available) > 0:
-                    if isinstance(args.tid, types.ListType):
+                    if isinstance(args.tid, list):
                         for item in args.tid:
                             for device in available:
                                 available_target_ids.append(device['target_id'])
@@ -280,7 +280,7 @@ class FlasherCLI:
         resetter = Reset()
         if args.tid:
             ids = self.parse_id_to_devices(args.tid)
-            if isinstance(ids, types.IntType):
+            if isinstance(ids, int):
                 retcode = ids
             else:
                 retcode = resetter.reset(target_id=ids, method=args.method)
@@ -294,7 +294,7 @@ class FlasherCLI:
         eraser = Erase()
         if args.tid:
             ids = self.parse_id_to_devices(args.tid)
-            if isinstance(ids, types.IntType):
+            if isinstance(ids, int):
                 retcode = ids
             else:
                 retcode = eraser.erase(target_id=ids, no_reset=args.no_reset, method=args.method)
@@ -307,7 +307,7 @@ class FlasherCLI:
     def subcmd_version_handler(self, args):
         import pkg_resources  # part of setuptools
         versions = pkg_resources.require("mbed-flasher")
-        if self.args.verbose >= 1:
+        if self.args.verbose:
             for v in versions:
                 print(v)
         else:

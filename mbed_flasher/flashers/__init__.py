@@ -1,7 +1,7 @@
 import platform
 import os
-from FlasherMbed import FlasherMbed
-from FlasherAtmelAt import FlasherAtmelAt
+from mbed_flasher.flashers.FlasherMbed import FlasherMbed
+from mbed_flasher.flashers.FlasherAtmelAt import FlasherAtmelAt
 
 AvailableFlashers = [
     FlasherMbed

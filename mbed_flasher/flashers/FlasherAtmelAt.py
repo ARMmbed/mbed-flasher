@@ -48,7 +48,7 @@ class FlasherAtmelAt(object):
                     for x in files:
                         if x.find("atprogram.exe") != -1:
                             FlasherAtmelAt.exe = os.path.join(dirpath, x)
-                            print FlasherAtmelAt.exe
+                            print(FlasherAtmelAt.exe)
         if not FlasherAtmelAt.exe:
             for ospath in os.environ['PATH'].split(os.pathsep):
                 if ospath.find('Atmel') != -1:
