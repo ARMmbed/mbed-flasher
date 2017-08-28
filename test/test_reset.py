@@ -14,14 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint:disable=missing-docstring
 
 import logging
 import unittest
-import mbed_lstools
-import mock
-from mbed_flasher.reset import Reset
 from StringIO import StringIO
-
+import mock
+import mbed_lstools
+from mbed_flasher.reset import Reset
 
 class ResetTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
@@ -45,7 +45,8 @@ class ResetTestCase(unittest.TestCase):
         ret = resetter.reset(target_id='555', method='simple')
         self.assertEqual(ret, 3)
         if mock_stdout:
-            self.assertEqual(mock_stdout.getvalue(), 'Could not map given target_id(s) to available devices\n')
+            self.assertEqual(mock_stdout.getvalue(),
+                             'Could not map given target_id(s) to available devices\n')
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -54,18 +55,17 @@ class ResetTestCase(unittest.TestCase):
         ret = resetter.reset(target_id='all', method='simple')
         self.assertEqual(ret, 3)
         if mock_stdout:
-            self.assertEqual(mock_stdout.getvalue(), 'Could not map given target_id(s) to available devices\n')
+            self.assertEqual(mock_stdout.getvalue(),
+                             'Could not map given target_id(s) to available devices\n')
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all(self, mock_stdout):
+    def test_reset_with_all(self):
         resetter = Reset()
         ret = resetter.reset(target_id='all', method='simple')
         self.assertEqual(ret, 0)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_target_id(self, mock_stdout):
+    def test_reset_with_target_id(self):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
         resetter = Reset()
@@ -77,8 +77,7 @@ class ResetTestCase(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_target_id_list(self, mock_stdout):
+    def test_reset_with_target_id_list(self):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
         resetter = Reset()
@@ -88,15 +87,15 @@ class ResetTestCase(unittest.TestCase):
                 ret = resetter.reset(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, 0)
-    '''
+
     #For some reason a bunch of tracebacks on usb.core langid problems.
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all_pyocd(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='all', method='pyocd')
-        self.assertEqual(ret, 0)
-    '''
+    # @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    # @mock.patch('sys.stdout', new_callable=StringIO)
+    # def test_reset_with_all_pyocd(self, mock_stdout):
+    #     resetter = Reset()
+    #     ret = resetter.reset(target_id='all', method='pyocd')
+    #     self.assertEqual(ret, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

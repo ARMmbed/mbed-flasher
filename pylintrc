@@ -4,10 +4,7 @@ profile=no
 
 # Add <file or directory> to the black list. It should be a base name, not a
 # path. You may set this option multiple times.
-ignore=.svn
-ignore=.git
-ignore=build
-ignore=dist
+ignore=.svn, .git, build, dist
 
 persistent=yes
 cache-size=500

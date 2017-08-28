@@ -24,8 +24,12 @@ DESCRIPTION = "mbed-flasher"
 OWNER_NAMES = 'Jussi Vatjus-Anttila'
 OWNER_EMAILS = 'Jussi.Vatjus-Anttila@arm.com'
 
+
 # Utility function to cat in a file (used for the README)
 def read(fname):
+    """
+    read file by filename
+    """
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='mbed-flasher',
@@ -40,14 +44,14 @@ setup(name='mbed-flasher',
       packages=find_packages(),
       package_data={'': ['FlasherMbed.target_info.json']},
       license=LICENSE,
-      test_suite = 'test',
+      test_suite='test',
       tests_require=["mock"],
       entry_points={
-        "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
+          "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
       install_requires=[
-        "mbed-ls",
-        "six",
-        "pyserial",
-        "pyOCD"
+          "mbed-ls",
+          "six",
+          "pyserial",
+          "pyOCD"
       ])

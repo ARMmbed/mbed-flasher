@@ -14,16 +14,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint:disable=missing-docstring
 
 import logging
 import unittest
-import mbed_lstools
-import mock
-
-from mbed_flasher.main import FlasherCLI
 from StringIO import StringIO
+import mock
+import mbed_lstools
+from mbed_flasher.main import FlasherCLI
 
-flasher_version = '0.4.2'
+FLASHER_VERSION = '0.4.2'
 
 
 class MainTestCase(unittest.TestCase):
@@ -35,16 +35,19 @@ class MainTestCase(unittest.TestCase):
     def setUp(self):
         self.logging_patcher = mock.patch("mbed_flasher.main.logging")
         mock_logging = self.logging_patcher.start()
-        mock_logging.getLogger = mock.MagicMock(return_value=mock.Mock(spec=logging.Logger))
+        mock_logging.getLogger = \
+            mock.MagicMock(return_value=mock.Mock(spec=logging.Logger))
+        # Mock logging
+        # pylint: disable=no-member
         mock_logging.disable(logging.CRITICAL)
 
     def tearDown(self):
         pass
 
     def test_parser_invalid(self):
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(SystemExit) as context:
             FlasherCLI()
-        self.assertEqual(cm.exception.code, 2)
+        self.assertEqual(context.exception.code, 2)
 
     # def test_parser_valid(self):
     #    t = cmd_parser_setup()
@@ -52,9 +55,9 @@ class MainTestCase(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main(self, mock_stdout):
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(SystemExit) as context:
             FlasherCLI([])
-        self.assertEqual(cm.exception.code, 2)
+        self.assertEqual(context.exception.code, 2)
         if mock_stdout:
             pass
 
@@ -62,7 +65,7 @@ class MainTestCase(unittest.TestCase):
     def test_main_version(self, mock_stdout):
         fcli = FlasherCLI(["version"])
         self.assertEqual(fcli.execute(), 0)
-        self.assertEqual(mock_stdout.getvalue(), flasher_version+'\n')
+        self.assertEqual(mock_stdout.getvalue(), FLASHER_VERSION + '\n')
         #self.assertRegexpMatches(mock_stdout.getvalue(), r"^\d+\.\d+\.\d+$")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -73,7 +76,7 @@ class MainTestCase(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_file_does_not_exist(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "None" ])
+        fcli = FlasherCLI(["flash", "-i", "None"])
         self.assertEqual(fcli.execute(), 5)
         self.assertEqual(mock_stdout.getvalue(), 'Could not find given file: None\n')
 
@@ -98,7 +101,8 @@ class MainTestCase(unittest.TestCase):
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_wrong_tid(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "--tid", "555", "-t", "K64F"])
+        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin",
+                           "--tid", "555", "-t", "K64F"])
         self.assertEqual(fcli.execute(), 20)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
@@ -122,12 +126,18 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), 20)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
+    # test name is meaningful
+    # pylint: disable=invalid-name
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_wrong_tid_with_device(self, mock_stdout):
         fcli = FlasherCLI(["reset", "--tid", "555"])
         self.assertEqual(fcli.execute(), 25)
-        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')(,\s\'[0-9a-fA-F]+\')*\]", "Regex match failed")
+        self.assertRegexpMatches(mock_stdout.getvalue(),
+                                 r"Could not find given target_id from attached devices"
+                                 r"\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')"
+                                 r"(,\s\'[0-9a-fA-F]+\')*\]",
+                                 "Regex match failed")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_erase_tid_missing(self, mock_stdout):
@@ -147,7 +157,11 @@ class MainTestCase(unittest.TestCase):
     def test_erase_wrong_tid_with_device(self, mock_stdout):
         fcli = FlasherCLI(["erase", "--tid", "555"])
         self.assertEqual(fcli.execute(), 25)
-        self.assertRegexpMatches(mock_stdout.getvalue(), r"Could not find given target_id from attached devices\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')(,\s\'[0-9a-fA-F]+\')*\]", "Regex match failed")
+        self.assertRegexpMatches(mock_stdout.getvalue(),
+                                 r"Could not find given target_id from attached devices"
+                                 r"\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')"
+                                 r"(,\s\'[0-9a-fA-F]+\')*\]",
+                                 "Regex match failed")
 
 if __name__ == '__main__':
     unittest.main()

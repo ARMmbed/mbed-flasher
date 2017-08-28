@@ -14,15 +14,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint:disable=missing-docstring
 
 import logging
 import unittest
+import time
+import os
+import serial
 from mbed_flasher.flash import Flash
 from mbed_flasher.reset import Reset
 import mbed_lstools
-import serial
-import time
-import os
 
 
 def verify_output_per_device(serial_port, command, output):
@@ -44,40 +45,39 @@ def verify_output_per_device(serial_port, command, output):
         if out.find(output) != -1:
             ser.close()
             return True
-        else:
-            ser.close()
-            return False
+        ser.close()
+        return False
 
 
 def check_two_binaries_exist():
     count = 0
-    for root, dirs, files in os.walk('test/'):
+    for _, _, files in os.walk('test/'):
         for name in files:
             if str(name).endswith('.bin'):
                 count += 1
-    if count == 2:
-        return True
-    else:
-        return False
+
+    return bool(count == 2)
 
 
 def find_second_binary():
-    for root, dirs, files in os.walk('test/'):
+    for root, _, files in os.walk('test/'):
         for name in files:
             if str(name).endswith('.bin') and str(name).find('helloworld') == -1:
                 return str(os.path.join(root, name))
     return None
 
-
+# this is not a const
+# pylint: disable=invalid-name
 mbed = mbed_lstools.create()
 
 
 @unittest.skipIf(mbed.list_mbeds() == [], "no hardware attached")
 class FlashVerifyTestCase(unittest.TestCase):
-    """ Flash verification with Hardware, three step verification for all attached devices:
-        first flashes the helloworld binary to device and verifies that no response is seen
-        second flashes found second binary to device and verifies that response is seen
-        third flashes the helloworld binary to device and verifies that no response is seen
+    """
+    Flash verification with Hardware, three step verification for all attached devices:
+    first flashes the helloworld binary to device and verifies that no response is seen
+    second flashes found second binary to device and verifies that response is seen
+    third flashes the helloworld binary to device and verifies that no response is seen
     """
 
     def setUp(self):
@@ -86,7 +86,8 @@ class FlashVerifyTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @unittest.skipIf(check_two_binaries_exist() == False, "binaries missing or too many binaries in test-folder")
+    @unittest.skipIf(check_two_binaries_exist() is False,
+                     "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
@@ -100,23 +101,32 @@ class FlashVerifyTestCase(unittest.TestCase):
                     serial_port = target['serial_port']
                     break
         if target_id and serial_port:
-            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                device_mapping_table=False, method='simple')
+            ret = flasher.flash(build='test/helloworld.bin',
+                                target_id=target_id,
+                                platform_name='K64F',
+                                device_mapping_table=False,
+                                method='simple')
             self.assertEqual(ret, 0)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
             second_binary = find_second_binary()
             self.assertIsNotNone(second_binary, 'Second binary not found')
-            ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
+            ret = flasher.flash(build=second_binary,
+                                target_id=target_id, platform_name='K64F',
                                 device_mapping_table=False, method='simple')
             self.assertEqual(ret, 0)
             if not verify_output_per_device(serial_port, 'help', 'echo'):
-                self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                device_mapping_table=False, method='simple')
+                self.assertEqual(
+                    verify_output_per_device(serial_port, 'help', 'echo'), True)
+            ret = flasher.flash(build='test/helloworld.bin',
+                                target_id=target_id,
+                                platform_name='K64F',
+                                device_mapping_table=False,
+                                method='simple')
             self.assertEqual(ret, 0)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
-    @unittest.skipIf(check_two_binaries_exist() == False, "binaries missing or too many binaries in test-folder")
+    @unittest.skipIf(check_two_binaries_exist() is False,
+                     "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash_no_reset(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
@@ -133,22 +143,34 @@ class FlashVerifyTestCase(unittest.TestCase):
         if target_id and serial_port:
             second_binary = find_second_binary()
             self.assertIsNotNone(second_binary, 'Second binary not found')
-            ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
-                                device_mapping_table=False, method='simple')
+            ret = flasher.flash(build=second_binary,
+                                target_id=target_id,
+                                platform_name='K64F',
+                                device_mapping_table=False,
+                                method='simple')
             self.assertEqual(ret, 0)
             if not verify_output_per_device(serial_port, 'help', 'echo'):
-                self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
+                self.assertEqual(
+                    verify_output_per_device(serial_port, 'help', 'echo'), True)
 
-            ret = flasher.flash(build=second_binary, target_id=target_id, platform_name='K64F',
-                                device_mapping_table=False, method='simple', no_reset=True)
+            ret = flasher.flash(build=second_binary,
+                                target_id=target_id,
+                                platform_name='K64F',
+                                device_mapping_table=False,
+                                method='simple',
+                                no_reset=True)
             self.assertEqual(ret, 0)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
             ret = resetter.reset(target_id=target_id, method='simple')
             self.assertEqual(ret, 0)
             if not verify_output_per_device(serial_port, 'help', 'echo'):
-                self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build='test/helloworld.bin', target_id=target_id, platform_name='K64F',
-                                device_mapping_table=False, method='simple')
+                self.assertEqual(
+                    verify_output_per_device(serial_port, 'help', 'echo'), True)
+            ret = flasher.flash(build='test/helloworld.bin',
+                                target_id=target_id,
+                                platform_name='K64F',
+                                device_mapping_table=False,
+                                method='simple')
             self.assertEqual(ret, 0)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 

@@ -15,8 +15,8 @@ limitations under the License.
 """
 
 from os.path import isfile
-import platform
 from mbed_flasher.common import Logger
+from mbed_flasher.flashers import AvailableFlashers
 
 EXIT_CODE_NO_PLATFORM_GIVEN = 35
 EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
@@ -29,163 +29,184 @@ EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST = 65
 class Flash(object):
     """ Flash object, which manage flashing single device
     """
-    FLASHERS = []
-    SUPPORTED_TARGETS = {}
+    _flashers = []
+    supported_targets = {}
 
     def __init__(self):
         logger = Logger('mbed-flasher')
         self.logger = logger.logger
-        self.FLASHERS = self.__get_flashers()
-        self.SUPPORTED_TARGETS = self.__update_supported_targets()
+        self._flashers = self.__get_flashers()
+        self.supported_targets = self.__update_supported_targets()
 
     def get_supported_targets(self):
-        return self.SUPPORTED_TARGETS
+        """
+        :return: supported targets
+        """
+        return self.supported_targets
 
     def get_supported_flashers(self):
+        """
+        :return: supported flashers
+        """
         available_flashers = []
-        for Flasher in self.FLASHERS:
-            available_flashers.append(Flasher.name)
+        for flasher in self._flashers:
+            available_flashers.append(flasher.name)
         return available_flashers
 
     def __update_supported_targets(self):
+        """
+        :return: list of all supported targets
+        """
         all_supported_targets = []
-        for Flasher in self.FLASHERS:
-            supported_targets = Flasher.get_supported_targets()
+        for flasher in self._flashers:
+            supported_targets = flasher.get_supported_targets()
             all_supported_targets.extend(supported_targets)
         return all_supported_targets
 
     @staticmethod
     def __get_flashers():
-        from mbed_flasher.flashers import AvailableFlashers
+        """
+        :return: list of available flashers
+        """
         return AvailableFlashers
 
     @staticmethod
     def get_flasher(flasher=None):
-        from flashers import AvailableFlashers
-        for Flasher in AvailableFlashers:
-            if Flasher.name.lower() == flasher.lower():
-                return Flasher
-        else:
-            return EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST
+        """
+        :param flasher: None, if not given a flasher
+        :return: return available flasher if found, otherwise return exit code
+        """
+        for available_flasher in AvailableFlashers:
+            if available_flasher.name.lower() == flasher.lower():
+                return available_flasher
+
+        return EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST
 
     def get_available_device_mapping(self):
+        """
+        :return: list of available devices
+        """
         available_devices = []
-        for Flasher in self.FLASHERS:
-            devices = Flasher.get_available_devices()
+        for flasher in self._flashers:
+            devices = flasher.get_available_devices()
             available_devices.extend(devices)
         return available_devices
 
     def __get_flasher(self, platform_name):
-        if not (platform_name in self.SUPPORTED_TARGETS):
+        """
+        :param platform_name: platform name
+        :return:
+        """
+        if platform_name not in self.supported_targets:
             raise NotImplementedError("Flashing %s is not supported" % platform_name)
 
-        for Flasher in self.FLASHERS:
-            if platform_name in self.SUPPORTED_TARGETS:
-                return Flasher()
+        for flasher in self._flashers:
+            return flasher()
 
         raise Exception("oh nou")
 
     @staticmethod
-    def __find_by_target_id(target_id, ls):
+    def __find_by_target_id(target_id, target_list):
         """find target by id
         """
-        for target in ls:
+        for target in target_list:
             if target_id == target['target_id']:
                 return target
         raise KeyError("target_id: %s not found" % target_id)
 
     @staticmethod
-    def __find_by_platform_name(platform_name, ls):
-        for target in ls:
+    def __find_by_platform_name(platform_name, target_list):
+        """
+        :param platform_name: platform name
+        :param target_list: target list
+        :return: target
+        """
+        for target in target_list:
             if platform_name == target['platform_name']:
                 return target
         raise KeyError("platform_name: %s not found" % platform_name)
 
-    def flash_multiple(self, build, platform_name, method='simple', target_ids_or_prefix='', no_reset=None):
+    def _verify_platform_coherence(self, device_mapping_table):
+        """
+        Verify platform is same across devices.
+        :param device_mapping_table: list of devices to verify
+        :return: return code
+        """
+        found_platform = ''
+        for item in device_mapping_table:
+            if not found_platform:
+                found_platform = item['platform_name']
+            elif item['platform_name'] != found_platform:
+                self.logger.error('Multiple devices and platforms found,'
+                                  'please specify preferred platform with'
+                                  ' -t <platform>.')
+                return EXIT_CODE_NO_PLATFORM_GIVEN
+
+    def flash_multiple(self, build, platform_name,
+                       method='simple', target_ids_or_prefix='', no_reset=None):
+        """
+        :param build: build
+        :param platform_name: platform name
+        :param method: method
+        :param target_ids_or_prefix: target ids or prefix
+        :param no_reset: with/without reset
+        :return:
+        """
         device_mapping_table = self.get_available_device_mapping()
-        aux_device_mapping_table = []
 
         if not platform_name:
-            found_platform = ''
-            for item in device_mapping_table:
-                if not found_platform:
-                    found_platform = item['platform_name']
-                else:
-                    if item['platform_name'] != found_platform:
-                        self.logger.error('Multiple devices and platforms found, '
-                                          'please specify preferred platform with -t <platform>.')
-                        return EXIT_CODE_NO_PLATFORM_GIVEN
+            return_code = self._verify_platform_coherence(device_mapping_table)
+            if return_code:
+                return return_code
 
         if isinstance(target_ids_or_prefix, list):
-            for tid in target_ids_or_prefix:
-                for item in device_mapping_table:
-                    if platform_name:
-                        if item['platform_name'] != platform_name:
-                            # skipping boards that do not match with specified platform
-                            continue
-                    if item['target_id'] == tid:
-                        aux_device_mapping_table.append(item)
+            aux_device_mapping_table = Flash._map_by_target_id(
+                device_mapping_table=device_mapping_table,
+                platform_name=platform_name,
+                target_ids=target_ids_or_prefix)
+        elif target_ids_or_prefix:
+            aux_device_mapping_table = Flash._map_by_prefix(
+                device_mapping_table=device_mapping_table,
+                platform_name=platform_name,
+                prefix=target_ids_or_prefix)
         else:
-            if target_ids_or_prefix:
-                if len(target_ids_or_prefix) >= 1:
-                    for item in device_mapping_table:
-                        if platform_name:
-                            if item['platform_name'] != platform_name:
-                                # skipping boards that do not match with specified platform
-                                continue
-                        if item['target_id'].startswith(str(target_ids_or_prefix)):
-                            aux_device_mapping_table.append(item)
-            else:
-                for item in device_mapping_table:
-                    if platform_name:
-                        if item['platform_name'] == platform_name:
-                            aux_device_mapping_table.append(item)
+            aux_device_mapping_table = Flash._map_by_platform(
+                device_mapping_table=device_mapping_table,
+                platform_name=platform_name)
 
-        if len(aux_device_mapping_table) > 0:
+        if aux_device_mapping_table:
             device_mapping_table = aux_device_mapping_table
 
-        device_count = len(device_mapping_table)
-        if device_count == 0:
+        if not device_mapping_table:
             self.logger.error('no devices to flash')
             return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+
         self.logger.debug(device_mapping_table)
 
-        print('Going to flash following devices:')
+        self.logger.info('Going to flash following devices:')
         for item in device_mapping_table:
-            print(item['target_id'])
-        retcodes = 0
-        if method == 'pyocd' and platform.system() != 'Windows':
-            # pyOCD support for Linux based OSs is not so robust, flashing works sequentially not parallel
-            i = 0
-            for device in device_mapping_table:
-                ret = self.flash(build, device['target_id'], None, device_mapping_table, method, no_reset)
-                if ret == 0:
-                    self.logger.debug("dev#%i -> SUCCESS" % i)
-                else:
-                    self.logger.warning("dev#%i -> FAIL :(" % i)
-                retcodes += ret
-                i += 1
-        else:
-            passes = []
-            retcodes = 0
-            for target in device_mapping_table:
-                retcode = self.flash(build, target['target_id'], None, device_mapping_table, method, no_reset)
-                retcodes += retcode
-                if retcode == 0:
-                    passes.append(True)
-                else:
-                    passes.append(False)
-            i = 1
-            for ok in passes:
-                if ok:
-                    self.logger.debug("dev#%i -> SUCCESS" % i)
-                else:
-                    self.logger.warning("dev#%i -> FAIL :(" % i)
-                i += 1
+            self.logger.info(item['target_id'])
 
-        return retcodes
+        ret_codes = 0
+        i = 1
+        for device in device_mapping_table:
+            ret = self.flash(build=build,
+                             target_id=device['target_id'],
+                             platform_name=None,
+                             device_mapping_table=device_mapping_table,
+                             method=method,
+                             no_reset=no_reset)
+            if ret == 0:
+                self.logger.debug("dev#%i -> SUCCESS", i)
+            else:
+                self.logger.warning("dev#%i -> FAIL", i)
+            ret_codes += ret
+            i += 1
 
-    def flash(self, build, target_id=None, platform_name=None, device_mapping_table=None, method='simple', no_reset=None):
+        return ret_codes
+
+    def flash(self, build, target_id=None, platform_name=None,
+              device_mapping_table=None, method='simple', no_reset=None):
         """Flash (mbed) device
         :param build:  Build -object or string (file-path)
         :param target_id: target_id
@@ -194,7 +215,7 @@ class Flash(object):
         :param method: method for flashing i.e. simple, pyocd or edbg
         """
 
-        K64F_TARGET_ID_LENGTH = 48
+        k64f_target_id_length = 48
 
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
@@ -203,42 +224,46 @@ class Flash(object):
             self.logger.error("Given file does not exist")
             return EXIT_CODE_FILE_DOES_NOT_EXIST
         if isinstance(target_id, list):
-            return self.flash_multiple(build=build, platform_name=platform_name, method=method, target_ids_or_prefix=target_id, no_reset=no_reset)
+            return self.flash_multiple(build=build,
+                                       platform_name=platform_name,
+                                       method=method,
+                                       target_ids_or_prefix=target_id,
+                                       no_reset=no_reset)
         else:
             if target_id.lower() == 'all':
-                return self.flash_multiple(build=build, platform_name=platform_name, method=method, no_reset=no_reset)
-            elif len(target_id) < K64F_TARGET_ID_LENGTH and device_mapping_table is None:
-                return self.flash_multiple(build=build, platform_name=platform_name, method=method, target_ids_or_prefix=target_id, no_reset=no_reset)
+                return self.flash_multiple(build=build,
+                                           platform_name=platform_name,
+                                           method=method,
+                                           no_reset=no_reset)
+            elif len(target_id) < k64f_target_id_length and device_mapping_table is None:
+                return self.flash_multiple(build=build,
+                                           platform_name=platform_name,
+                                           method=method,
+                                           target_ids_or_prefix=target_id,
+                                           no_reset=no_reset)
 
-        if device_mapping_table:
-            if isinstance(device_mapping_table, dict):
-                device_mapping_table = [device_mapping_table]
-            elif not isinstance(device_mapping_table, list):
-                raise SystemError('device_mapping_table wasn\'t list or dictionary')
-        else:
-            device_mapping_table = self.get_available_device_mapping()
-
-        self.logger.debug(device_mapping_table)
+        device_mapping_table = self._refine__device_mapping_table(device_mapping_table)
 
         try:
             if target_id:
                 target_mbed = self.__find_by_target_id(target_id, device_mapping_table)
             else:
-                target_mbed = self.__find_by_platform_name(platform_name, device_mapping_table)
+                target_mbed = self.__find_by_platform_name(platform_name,
+                                                           device_mapping_table)
         except KeyError as err:
             self.logger.error(err)
             return EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE
 
-        if not platform_name:
-            platform_name = target_mbed['platform_name']
-        if platform_name not in self.SUPPORTED_TARGETS:
-            raise NotImplementedError("Platform '%s' is not supported by mbed-flasher" % platform_name)
+        platform_name = self._get_platform_name(platform_name, target_mbed)
 
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name)
         try:
-            retcode = flasher.flash(source=build, target=target_mbed, method=method, no_reset=no_reset)
+            retcode = flasher.flash(source=build,
+                                    target=target_mbed,
+                                    method=method,
+                                    no_reset=no_reset)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
             return EXIT_CODE_KEYBOARD_INTERRUPT
@@ -251,3 +276,96 @@ class Flash(object):
         else:
             self.logger.info("flash fails")
         return retcode
+
+    def _refine__device_mapping_table(self, device_mapping_table):
+        """
+        get device mapping table if it's None.
+        refine device_mapping table to be list
+        :param device_mapping_table: individual devices mapping table
+        """
+        if device_mapping_table:
+            if isinstance(device_mapping_table, dict):
+                device_mapping_table = [device_mapping_table]
+            elif not isinstance(device_mapping_table, list):
+                raise SystemError('device_mapping_table wasn\'t list or dictionary')
+        else:
+            device_mapping_table = self.get_available_device_mapping()
+
+        self.logger.debug(device_mapping_table)
+
+        return device_mapping_table
+
+    def _get_platform_name(self, platform_name, target_mbed):
+        """
+        get supported platform name
+        :param platform_name: None or list
+        :param target_mbed: target mbed
+        """
+        if not platform_name:
+            platform_name = target_mbed['platform_name']
+
+        if platform_name not in self.supported_targets:
+            raise NotImplementedError("Platform '%s' is not supported by mbed-flasher"
+                                      % platform_name)
+
+        return platform_name
+
+    @staticmethod
+    def _map_by_target_id(device_mapping_table, platform_name, target_ids):
+        """
+        Map available devices to required devices by target id
+        :param device_mapping_table: available devices
+        :param platform_name: platform
+        :param target_ids: list of target ids
+        :return: list of targets which matched the requirements
+        """
+        aux_device_mapping_table = []
+        for tid in target_ids:
+            for item in device_mapping_table:
+                if platform_name:
+                    if item['platform_name'] != platform_name:
+                        # skipping boards that do not match with specified platform
+                        continue
+
+                if item['target_id'] == tid:
+                    aux_device_mapping_table.append(item)
+
+        return aux_device_mapping_table
+
+    @staticmethod
+    def _map_by_prefix(device_mapping_table, platform_name, prefix):
+        """
+        Map available devices to required devices by prefix
+        :param device_mapping_table: available devices
+        :param platform_name: platform
+        :param prefix: prefix with to find
+        :return: list of targets which matched the requirements
+        """
+        aux_device_mapping_table = []
+        for item in device_mapping_table:
+            if platform_name:
+                if item['platform_name'] != platform_name:
+                    # skipping boards that do not match
+                    # with specified platform
+                    continue
+
+            if item['target_id'].startswith(str(prefix)):
+                aux_device_mapping_table.append(item)
+
+        return aux_device_mapping_table
+
+    @staticmethod
+    def _map_by_platform(device_mapping_table, platform_name):
+        """
+        Map available devices to required devices by platform
+        :param device_mapping_table: available devices
+        :param platform_name: platform
+        :return: list of targets which matched the requirements
+        """
+        aux_device_mapping_table = []
+        for item in device_mapping_table:
+            if platform_name:
+                if item['platform_name'] == platform_name:
+                    aux_device_mapping_table.append(item)
+
+        return aux_device_mapping_table
