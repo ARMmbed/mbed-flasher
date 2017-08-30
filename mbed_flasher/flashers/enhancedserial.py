@@ -11,12 +11,16 @@ this class could be enhanced with a read_until() method and more
 like found in the telnetlib.
 """
 import re
+import termios
+from time import sleep
 import pkg_resources
 from serial import Serial, SerialException, SerialTimeoutException
-from time import sleep
 
 
-class EnhancedSerial(Serial):
+class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors
+    '''
+    EnhancedSerial module
+    '''
     def __init__(self, *args, **kwargs):
         # ensure that a reasonable timeout is set
         timeout = kwargs.get('timeout', 0.1)
@@ -32,25 +36,26 @@ class EnhancedSerial(Serial):
         """! Retrieve pyserial module version
         @return Returns float with pyserial module number
         """
+        # pylint: disable = anomalous-backslash-in-string
         self.re_float = re.compile("^\d+\.\d+")
         pyserial_version = pkg_resources.require("pyserial")[0].version
         version = 3.0
-        m = self.re_float.search(pyserial_version)
-        if m:
+        match = self.re_float.search(pyserial_version)
+        if match:
             try:
-                version = float(m.group(0))
+                version = float(match.group(0))
             except ValueError:
                 version = 3.0   # We will assume you've got latest (3.0+)
         return version
 
-    def safe_sendBreak(self):
+    def safe_send_break(self):
         """! Closure for pyserial version dependant API calls
         """
         if self.is_pyserial_v3:
-            return self._safe_sendBreak_v3_0()
-        return self._safe_sendBreak_v2_7()
+            return self._safe_send_break_v3_0()
+        return self._safe_send_break_v2_7()
 
-    def _safe_sendBreak_v2_7(self):
+    def _safe_send_break_v2_7(self):
         """! pyserial 2.7 API implementation of sendBreak/setBreak
         @details
         Below API is deprecated for pyserial 3.x versions!
@@ -60,18 +65,19 @@ class EnhancedSerial(Serial):
         result = True
         try:
             self.sendBreak()
-        except:
+        except termios.error:
             # In Linux a termios.error is raised in sendBreak and in setBreak.
-            # The following setBreak() is needed to release the reset signal on the target mcu.
+            # The following setBreak() is needed to release the reset signal on the
+            # target mcu.
             try:
                 sleep(1)
                 self.setBreak(False)
                 sleep(1)
-            except:
+            except termios.error:
                 result = False
         return result
 
-    def _safe_sendBreak_v3_0(self):
+    def _safe_send_break_v3_0(self):
         """! pyserial 3.x API implementation of send_brea / break_condition
         @details
         http://pyserial.readthedocs.org/en/latest/pyserial_api.html#serial.Serial.send_break
@@ -80,23 +86,24 @@ class EnhancedSerial(Serial):
         result = True
         try:
             self.send_break()
-        except:
+        except termios.error:
             # In Linux a termios.error is raised in sendBreak and in setBreak.
-            # The following break_condition = False is needed to release the reset signal on the target mcu.
+            # The following break_condition = False is needed to release the reset signal
+            # on the target mcu.
             self.break_condition = False
         return result
-        
-    def readline(self, maxsize=None, timeout=1.0):
-        """maxsize is ignored, timeout in seconds is the max time that is way for a complete line"""
+
+    def readline(self, timeout=1.0):
+        """
+        :param timeout: timeout in seconds is the max time that is way for a complete line
+        """
         tries = 0
         while 1:
             try:
                 block = self.read(512)
                 if isinstance(block, bytes):
-                    block = block.decode()
-                elif isinstance(block, str):
-                    block = block.decode()
-                else:
+                    block = str(block.decode())
+                elif not isinstance(block, str):
                     raise ValueError("Unknown data")
             except SerialTimeoutException:
                 # Exception that is raised on write timeouts.
@@ -105,8 +112,9 @@ class EnhancedSerial(Serial):
                 # In case the device can not be found or can not be configured.
                 block = ''
             except ValueError:
-                # Will be raised when parameter are out of range, e.g. baud rate, data bits.
-                # UnicodeError-Raised when a Unicode-related encoding or decoding error occurs.
+                # Raised when parameter are out of range, e.g. baud rate, data bits.
+                # UnicodeError-Raised when a Unicode-related encoding or decoding
+                # error occurs.
                 # It is a subclass of ValueError.
                 block = ''
             self.buf += block
@@ -120,7 +128,7 @@ class EnhancedSerial(Serial):
         line, self.buf = self.buf, ''
         return line
 
-    def readlines(self, sizehint=None, timeout=1.0):
+    def readlines(self, timeout=1.0):
         """read all lines that are available. abort after timout
         when no more data arrives."""
         lines = []
@@ -136,10 +144,13 @@ if __name__ == '__main__':
     # do some simple tests with a Loopback HW (see test.py for details)
     PORT = 0
     # test, only with Loopback HW (shortcut RX/TX pins (3+4 on DSUB 9 and 25) )
-    s = EnhancedSerial(PORT)
+    S = EnhancedSerial(PORT)
     # write out some test data lines
-    s.write('\n'.join("hello how are you".split()))
+    S.write('\n'.join("hello how are you".split()))
     # and read them back
-    print(s.readlines())
+
+    # python 3 compatibility
+    # pylint: disable=superfluous-parens
+    print(S.readlines())
     # this one should print an empty list
-    print(s.readlines(timeout=0.4))
+    print(S.readlines(timeout=0.4))

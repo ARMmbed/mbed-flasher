@@ -89,7 +89,7 @@ class Erase(object):
         port.flushOutput()
         if port:
             self.logger.info("sendBreak to device to reboot")
-            result = port.safe_sendBreak()
+            result = port.safe_send_break()
             if result:
                 self.logger.info("reset completed")
             else:

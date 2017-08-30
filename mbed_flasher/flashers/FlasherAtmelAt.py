@@ -22,6 +22,11 @@ import tempfile
 
 
 class FlasherAtmelAt(object):
+    """
+    Class FlasherAtmelAt
+
+    Target on flashing Atmel.
+    """
     name = "atmel"
     exe = None
     supported_targets = ["SAM4E"]
@@ -33,10 +38,17 @@ class FlasherAtmelAt(object):
 
     @staticmethod
     def get_supported_targets():
+        """
+        :return: supported Atmel types
+        """
         return ["SAM4E"]
 
     @staticmethod
     def set_atprogram_exe(exe):
+        """
+        :param exe: Atmel program
+        :return:
+        """
         if exe is None:
             path = ''
             if os.path.exists('C:\\Program File\\Atmel\\'):
@@ -44,35 +56,41 @@ class FlasherAtmelAt(object):
             elif os.path.exists('C:\\Program File (x86)\\Atmel\\'):
                 path = 'C:\\Program Files (x86)\\Atmel\\'
             if path:
-                for dirpath, subdirs, files in os.walk(path):
-                    for x in files:
-                        if x.find("atprogram.exe") != -1:
-                            FlasherAtmelAt.exe = os.path.join(dirpath, x)
+                for dirpath, _, files in os.walk(path):
+                    for _file in files:
+                        if _file.find("atprogram.exe") != -1:
+                            FlasherAtmelAt.exe = os.path.join(dirpath, _file)
+                            # python 3 way, disable superfluous-parens
+                            # pylint: disable=C0325
                             print(FlasherAtmelAt.exe)
         if not FlasherAtmelAt.exe:
             for ospath in os.environ['PATH'].split(os.pathsep):
                 if ospath.find('Atmel') != -1:
-                    FlasherAtmelAt.exe = "atprogram.exe"  # assume that atprogram is in path
+                    # assume that atprogram is in path
+                    FlasherAtmelAt.exe = "atprogram.exe"
                     break
             else:
                 FlasherAtmelAt.exe = exe
-        
+
         FlasherAtmelAt.logger.debug("atprogram location: %s", FlasherAtmelAt.exe)
 
     @staticmethod
     def get_available_devices():
-        """list available devices
+        """
+        :return: list of available devices
         """
         if not FlasherAtmelAt.exe:
             return []
         FlasherAtmelAt.set_atprogram_exe(FlasherAtmelAt.exe)
         cmd = FlasherAtmelAt.exe + " list"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
+        stdout, _ = proc.communicate()
         connected_devices = []
         if proc.returncode == 0:
             lines = stdout.splitlines()
             for line in lines:
+                # Disable anomalous-backslash-in-string
+                # pylint: disable=W1401
                 ret = FlasherAtmelAt.find(line, 'edbg\W+(.*)')
                 if ret:
                     connected_devices.append({
@@ -82,7 +100,8 @@ class FlasherAtmelAt(object):
                         "target_id": ret,
                         "baud_rate": 460800
                     })
-        FlasherAtmelAt.logger.debug("Connected atprogrammer supported devices: %s", connected_devices)
+        FlasherAtmelAt.logger.debug(
+            "Connected atprogrammer supported devices: %s", connected_devices)
         return connected_devices
 
     # actual flash procedure
@@ -95,10 +114,16 @@ class FlasherAtmelAt(object):
         with tempfile.TemporaryFile() as temp:
             temp.write(source)
             temp.close()
+            # statement below has effect
+            # pylint: disable=pointless-statement
             temp.name
             # actual flash procedure
 
-            cmd = self.exe+" -t edbg -i SWD -d atsam4e16e -s "+target['target_id']+" -v -cl 10mhz  program --verify -f "+temp.name
+            cmd = self.exe \
+                  + " -t edbg -i SWD -d atsam4e16e -s "\
+                  + target['target_id']\
+                  + " -v -cl 10mhz  program --verify -f "\
+                  + temp.name
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = proc.communicate()
             FlasherAtmelAt.logger.debug(stdout)
@@ -106,7 +131,7 @@ class FlasherAtmelAt(object):
             return proc.returncode
 
     @staticmethod
-    def lookupExe(alternatives):
+    def lookup_exe(alternatives):
         """lookup existing exe
         :param alternatives: exes
         :return: founded exe
@@ -123,8 +148,8 @@ class FlasherAtmelAt(object):
         :param lookup:
         :return:
         """
-        m = re.search(lookup, line)
-        if m:
-            if m.group(1):
-                return m.group(1)
+        match = re.search(lookup, line)
+        if match:
+            if match.group(1):
+                return match.group(1)
         return False
