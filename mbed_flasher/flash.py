@@ -142,6 +142,7 @@ class Flash(object):
                                   ' -t <platform>.')
                 return EXIT_CODE_NO_PLATFORM_GIVEN
 
+    # pylint: disable=too-many-arguments
     def flash_multiple(self, build, platform_name,
                        method='simple', target_ids_or_prefix='', no_reset=None):
         """
@@ -205,6 +206,7 @@ class Flash(object):
 
         return ret_codes
 
+    # pylint: disable=too-many-return-statements
     def flash(self, build, target_id=None, platform_name=None,
               device_mapping_table=None, method='simple', no_reset=None):
         """Flash (mbed) device

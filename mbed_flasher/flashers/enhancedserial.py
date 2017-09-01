@@ -17,7 +17,7 @@ import pkg_resources
 from serial import Serial, SerialException, SerialTimeoutException
 
 
-class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors
+class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors, too-many-instance-attributes
     '''
     EnhancedSerial module
     '''

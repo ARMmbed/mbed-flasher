@@ -277,6 +277,7 @@ class FlasherCLI(object):
             return retcode
         return operation_wrapper
 
+    # pylint: disable=too-many-return-statements
     @cli_decorator
     def subcmd_flash_handler(self, args):
         """

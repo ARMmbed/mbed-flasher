@@ -244,6 +244,7 @@ class FlasherMbed(object):
         else:
             return target
 
+    # pylint: disable=too-many-return-statements
     def flash(self, source, target, method, no_reset):
         """copy file to the destination
         :param source: binary to be flashed

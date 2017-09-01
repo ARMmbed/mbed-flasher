@@ -16,6 +16,8 @@ limitations under the License.
 
 import logging
 
+
+# pylint: disable=too-few-public-methods
 class Logger(object):
     """
     Logger provider
