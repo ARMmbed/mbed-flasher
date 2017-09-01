@@ -34,6 +34,7 @@ class FlasherMbed(object):
     """
     name = "mbed"
     FLASHING_VERIFICATION_TIMEOUT = 100
+    MOUNT_POINT_TIMEOUT = 20
 
     def __init__(self):
         self.logger = logging.getLogger('mbed-flasher')
@@ -178,17 +179,18 @@ class FlasherMbed(object):
                               target['target_id'])
             return -12
 
-        for _ in range(10):
+        for _ in range(FlasherMbed.MOUNT_POINT_TIMEOUT):
             mounts = os.popen('mount |grep vfat').read().splitlines()
             for mount in mounts:
                 if mount.find(new_target['dev_point']) != -1:
                     new_target['mount_point'] = \
                         mount.split('on')[1].split('type')[0].strip()
                     return
-                sleep(1)
+            sleep(1)
 
-        self.logger.error("vfat mount point for %s did not re-appear in "
-                          "the system in 10 seconds", target['target_id'])
+        self.logger.error(
+            "vfat mount point for %s did not re-appear in the system in %i seconds",
+            target['target_id'], FlasherMbed.MOUNT_POINT_TIMEOUT)
         return -12
 
     def check_points_unchanged(self, target):
