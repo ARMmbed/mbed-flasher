@@ -87,20 +87,6 @@ class FlasherMbed(object):
                 self.logger.info("reset failed")
         port.close()
 
-    @staticmethod
-    def auxiliary_drive_check(drive):
-        """
-        Check if auxiliary drive exists
-        """
-        out = os.listdir(drive[0])
-        for item in out:
-            if item.find('.HTM') != -1:
-                break
-        else:
-            return False
-        if drive[1] not in out:
-            return True
-
     def runner(self, drive):
         """
         Runner
@@ -109,22 +95,16 @@ class FlasherMbed(object):
         while True:
             sleep(2)
             if platform.system() == 'Windows':
-                proc = Popen(["dir", drive[0]],
-                             stdin=PIPE,
-                             stdout=PIPE,
-                             stderr=PIPE,
-                             shell=True)
+                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
             else:
                 proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
             out = proc.stdout.read()
             proc.communicate()
-            if out.find(b'.HTM') != -1:
+
+            if out.lower().find(b'.htm') != -1:
                 if out.find(drive[1].encode()) == -1:
                     break
-            if platform.system() == 'Windows':
-                if not out:
-                    if self.auxiliary_drive_check(drive):
-                        break
+
             if time() - start_time > self.FLASHING_VERIFICATION_TIMEOUT:
                 self.logger.debug("re-mount check timed out for %s", drive[0])
                 break
