@@ -37,7 +37,7 @@ def verify_output_per_device(serial_port, command, output):
     )
     if ser.isOpen():
         time.sleep(0.2)
-        ser.write('%s\n\r' % command)
+        ser.write('%s\n\r' % command.encode())
         out = ''
         time.sleep(0.5)
         while ser.inWaiting() > 0:

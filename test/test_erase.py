@@ -18,7 +18,11 @@ limitations under the License.
 
 import logging
 import unittest
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    # python 3 compatible import
+    from io import StringIO
 import mock
 import mbed_lstools
 from mbed_flasher.erase import Erase

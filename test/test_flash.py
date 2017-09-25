@@ -19,7 +19,11 @@ limitations under the License.
 import logging
 import unittest
 import os
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    # python 3 compatible import
+    from io import StringIO
 import platform
 import mock
 import mbed_lstools
@@ -44,7 +48,7 @@ class FlashTestCase(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             flasher.flash(build='file.bin', target_id=None,
                           platform_name=None, device_mapping_table=None, method='simple')
-        self.assertIn("target_id or target_name is required", context.exception, )
+        self.assertIn("target_id or target_name is required", context.exception.msg)
 
     # test with name longer than 30, disable the warning here
     # pylint: disable=invalid-name
@@ -94,7 +98,7 @@ class FlashTestCase(unittest.TestCase):
                               device_mapping_table=None,
                               method='simple')
             self.assertIn("Platform 'K65G' is not supported by mbed-flasher",
-                          context.exception, )
+                          str(context.exception))
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_hw_flash(self):
