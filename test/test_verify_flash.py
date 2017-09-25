@@ -79,6 +79,7 @@ class FlashVerifyTestCase(unittest.TestCase):
     second flashes found second binary to device and verifies that response is seen
     third flashes the helloworld binary to device and verifies that no response is seen
     """
+    bin_path = os.path.join('test', 'helloworld.bin')
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
@@ -101,7 +102,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                     serial_port = target['serial_port']
                     break
         if target_id and serial_port:
-            ret = flasher.flash(build='test/helloworld.bin',
+            ret = flasher.flash(build=self.bin_path,
                                 target_id=target_id,
                                 platform_name='K64F',
                                 device_mapping_table=False,
@@ -117,7 +118,7 @@ class FlashVerifyTestCase(unittest.TestCase):
             if not verify_output_per_device(serial_port, 'help', 'echo'):
                 self.assertEqual(
                     verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build='test/helloworld.bin',
+            ret = flasher.flash(build=self.bin_path,
                                 target_id=target_id,
                                 platform_name='K64F',
                                 device_mapping_table=False,
@@ -166,7 +167,7 @@ class FlashVerifyTestCase(unittest.TestCase):
             if not verify_output_per_device(serial_port, 'help', 'echo'):
                 self.assertEqual(
                     verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build='test/helloworld.bin',
+            ret = flasher.flash(build=self.bin_path,
                                 target_id=target_id,
                                 platform_name='K64F',
                                 device_mapping_table=False,

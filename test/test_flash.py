@@ -31,6 +31,7 @@ class FlashTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
     mbeds = mbed_lstools.create()
+    bin_path = os.path.join('test', 'helloworld.bin')
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
@@ -57,7 +58,7 @@ class FlashTestCase(unittest.TestCase):
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_target_id_all(self):
         flasher = Flash()
-        ret = flasher.flash(build='test/helloworld.bin',
+        ret = flasher.flash(build=self.bin_path,
                             target_id='all',
                             platform_name=False,
                             device_mapping_table=None,
@@ -67,7 +68,7 @@ class FlashTestCase(unittest.TestCase):
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_one_target_id(self):
         flasher = Flash()
-        ret = flasher.flash(build='test/helloworld.bin',
+        ret = flasher.flash(build=self.bin_path,
                             target_id='0240000029164e45002f0012706e0006f301000097969900',
                             platform_name=False,
                             device_mapping_table=None,
@@ -87,7 +88,7 @@ class FlashTestCase(unittest.TestCase):
         if target_id:
             flasher = Flash()
             with self.assertRaises(NotImplementedError) as context:
-                flasher.flash(build='test/helloworld.bin',
+                flasher.flash(build=self.bin_path,
                               target_id=target_id,
                               platform_name='K65G',
                               device_mapping_table=None,
@@ -107,7 +108,7 @@ class FlashTestCase(unittest.TestCase):
                     break
         if target_id:
             flasher = Flash()
-            ret = flasher.flash(build='test/helloworld.bin',
+            ret = flasher.flash(build=self.bin_path,
                                 target_id=target_id,
                                 platform_name=False,
                                 device_mapping_table=None,
@@ -118,7 +119,7 @@ class FlashTestCase(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_with_file_with_all(self, mock_stdout):
         flasher = Flash()
-        ret = flasher.flash(build='test/helloworld.bin',
+        ret = flasher.flash(build=self.bin_path,
                             target_id='all',
                             platform_name='K64F',
                             device_mapping_table=None,
@@ -131,7 +132,7 @@ class FlashTestCase(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_with_file_with_prefix(self, mock_stdout):
         flasher = Flash()
-        ret = flasher.flash(build='test/helloworld.bin',
+        ret = flasher.flash(build=self.bin_path,
                             target_id='0',
                             platform_name=None,
                             device_mapping_table=None,
@@ -147,6 +148,7 @@ class FlashTestCase(unittest.TestCase):
         targets = mbeds.list_mbeds()
         mount_point = None
         target_to_test = None
+        fail_txt_path = os.path.join('test', 'failing.txt')
         for target in targets:
             if target['platform_name'] == 'K64F':
                 if 'target_id' in target and 'mount_point' in target:
@@ -156,19 +158,19 @@ class FlashTestCase(unittest.TestCase):
         if target_to_test:
             flasher = FlasherMbed()
             flasher.FLASHING_VERIFICATION_TIMEOUT = 2
-            with open('test/failing.txt', 'w') as new_file:
+            with open(fail_txt_path, 'w') as new_file:
                 new_file.write("0000000000000000000000000000000000")
-            ret = flasher.flash(source='test/failing.txt',
+            ret = flasher.flash(source=fail_txt_path,
                                 target=target_to_test,
                                 method='simple',
                                 no_reset=False)
             self.assertEqual(ret, -15)
             if platform.system() == 'Windows':
                 os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
-                os.system('del %s' % os.path.join(os.getcwd(), 'test/failing.txt'))
+                os.system('del %s' % os.path.join(os.getcwd(), fail_txt_path))
             else:
                 os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
-                os.system('rm %s' % os.path.join(os.getcwd(), 'test/failing.txt'))
+                os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
         if mock_stdout:
             pass
 
@@ -179,6 +181,7 @@ class FlashTestCase(unittest.TestCase):
         targets = mbeds.list_mbeds()
         target_id = None
         mount_point = None
+        fail_bin_path = os.path.join('test', 'fail.bin')
         for target in targets:
             if target['platform_name'] == 'K64F':
                 if 'target_id' in target and 'mount_point' in target:
@@ -187,9 +190,9 @@ class FlashTestCase(unittest.TestCase):
                     break
         if target_id:
             flasher = Flash()
-            with open('test/fail.bin', 'w') as new_file:
+            with open(fail_bin_path, 'w') as new_file:
                 new_file.write("0000000000000000000000000000000000")
-            ret = flasher.flash(build='test/fail.bin',
+            ret = flasher.flash(build=fail_bin_path,
                                 target_id=target_id,
                                 platform_name='K64F',
                                 device_mapping_table=None,
@@ -197,10 +200,10 @@ class FlashTestCase(unittest.TestCase):
             self.assertEqual(ret, -4)
             if platform.system() == 'Windows':
                 os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
-                os.system('del %s' % os.path.join(os.getcwd(), 'test/fail.bin'))
+                os.system('del %s' % os.path.join(os.getcwd(), fail_bin_path))
             else:
                 os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
-                os.system('rm %s' % os.path.join(os.getcwd(), 'test/fail.bin'))
+                os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
         if mock_stdout:
             pass
 

@@ -16,6 +16,7 @@ limitations under the License.
 """
 # pylint:disable=missing-docstring
 
+import os
 import logging
 import unittest
 from StringIO import StringIO
@@ -88,20 +89,23 @@ class MainTestCase(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_wrong_platform(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K65G"])
+        bin_path = os.path.join('test', 'helloworld.bin')
+        fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K65G"])
         self.assertEqual(fcli.execute(), 10)
         self.assertIn("Not supported platform: K65G", mock_stdout.getvalue())
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_tid_missing(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin", "-t", "K64F"])
+        bin_path = os.path.join('test', 'helloworld.bin')
+        fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K64F"])
         self.assertEqual(fcli.execute(), 15)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_wrong_tid(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "test/helloworld.bin",
+        bin_path = os.path.join('test', 'helloworld.bin')
+        fcli = FlasherCLI(["flash", "-i", bin_path,
                            "--tid", "555", "-t", "K64F"])
         self.assertEqual(fcli.execute(), 20)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")

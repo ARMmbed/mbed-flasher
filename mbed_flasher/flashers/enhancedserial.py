@@ -11,7 +11,6 @@ this class could be enhanced with a read_until() method and more
 like found in the telnetlib.
 """
 import re
-import termios
 from time import sleep
 import pkg_resources
 from serial import Serial, SerialException, SerialTimeoutException
@@ -55,6 +54,7 @@ class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors, too-many-ins
             return self._safe_send_break_v3_0()
         return self._safe_send_break_v2_7()
 
+    # pylint: disable=bare-except
     def _safe_send_break_v2_7(self):
         """! pyserial 2.7 API implementation of sendBreak/setBreak
         @details
@@ -65,7 +65,7 @@ class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors, too-many-ins
         result = True
         try:
             self.sendBreak()
-        except termios.error:
+        except:
             # In Linux a termios.error is raised in sendBreak and in setBreak.
             # The following setBreak() is needed to release the reset signal on the
             # target mcu.
@@ -73,7 +73,7 @@ class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors, too-many-ins
                 sleep(1)
                 self.setBreak(False)
                 sleep(1)
-            except termios.error:
+            except:
                 result = False
         return result
 
@@ -86,7 +86,7 @@ class EnhancedSerial(Serial): # pylint: disable=too-many-ancestors, too-many-ins
         result = True
         try:
             self.send_break()
-        except termios.error:
+        except:
             # In Linux a termios.error is raised in sendBreak and in setBreak.
             # The following break_condition = False is needed to release the reset signal
             # on the target mcu.
