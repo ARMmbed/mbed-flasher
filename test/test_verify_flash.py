@@ -21,6 +21,7 @@ import unittest
 import time
 import os
 import serial
+import six
 from mbed_flasher.flash import Flash
 from mbed_flasher.reset import Reset
 import mbed_lstools
@@ -37,11 +38,18 @@ def verify_output_per_device(serial_port, command, output):
     )
     if ser.isOpen():
         time.sleep(0.2)
-        ser.write('%s\n\r' % command.encode())
+        if six.PY2:
+            ser.write('%s\n\r' % command)
+        else:
+            new_command = '%s\n\r' % command
+            ser.write(new_command.encode('utf-8'))
         out = ''
         time.sleep(0.5)
         while ser.inWaiting() > 0:
-            out += ser.read(1)
+            if six.PY2:
+                out += ser.read(1)
+            else:
+                out += ser.read(1).decode('utf-8')
         if out.find(output) != -1:
             ser.close()
             return True

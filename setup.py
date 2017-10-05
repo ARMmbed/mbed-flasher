@@ -15,7 +15,11 @@ limitations under the License.
 """
 
 import os
+# pylint: disable=E0611,F0401
+#         No name 'core' in module 'distutils'
+#         Unable to import 'distutils.core'
 from distutils.core import setup
+import sys
 from setuptools import find_packages
 
 
@@ -50,7 +54,7 @@ setup(name='mbed-flasher',
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
       install_requires=[
-          "mbed-ls",
+          "mbed-ls==1.2.16" if "win" in sys.platform else ["mbed-ls==1.2.14"],
           "six",
           "pyserial",
           "pyOCD"

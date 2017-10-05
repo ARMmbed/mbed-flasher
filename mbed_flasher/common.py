@@ -16,8 +16,9 @@ limitations under the License.
 
 import logging
 import platform
-from subprocess import check_output
 from time import sleep
+from subprocess import check_output
+import six
 
 import mbed_lstools
 
@@ -111,6 +112,8 @@ class MountVerifier(object):
         """
         lines = check_output(["ls", "-oA", "/dev/serial/by-id/"]).splitlines()
         for line in lines:
+            if six.PY3:
+                line = line.decode('utf-8')
             if line.find(target['target_id']) != -1 \
                     and target['serial_port'].split('/')[-1] != line.split('/')[-1]:
                 if 'serial_port' not in new_target:
@@ -130,6 +133,8 @@ class MountVerifier(object):
         """
         lines = check_output(["ls", "-oA", "/dev/disk/by-id/"]).splitlines()
         for dev_line in lines:
+            if six.PY3:
+                dev_line = dev_line.decode('utf-8')
             if dev_line.find(target['target_id']) != -1:
                 if 'dev_point' not in new_target:
                     new_target['dev_point'] = '/dev/' + dev_line.split('/')[-1]
@@ -157,6 +162,8 @@ class MountVerifier(object):
         for _ in range(MountVerifier.MOUNT_POINT_TIMEOUT):
             mounts = check_output(["mount", "|", "grep", "vfat"], shell=True).splitlines()
             for mount in mounts:
+                if six.PY3:
+                    mount = mount.decode('utf-8')
                 if mount.find(new_target['dev_point']) != -1:
                     new_target['mount_point'] = \
                         mount.split('on')[1].split('type')[0].strip()

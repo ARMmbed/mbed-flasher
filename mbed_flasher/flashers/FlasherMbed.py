@@ -111,7 +111,7 @@ class FlasherMbed(object):
                 self.logger.debug("re-mount check timed out for %s", drive[0])
                 break
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-return-statements, duplicate-except
     def flash(self, source, target, method, no_reset):
         """copy file to the destination
         :param source: binary to be flashed

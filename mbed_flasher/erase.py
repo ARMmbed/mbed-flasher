@@ -22,6 +22,7 @@ from os.path import join, isfile
 from threading import Thread
 import platform
 from subprocess import PIPE, Popen
+import six
 from mbed_flasher.common import Logger, MountVerifier
 
 EXIT_CODE_SUCCESS = 0
@@ -145,7 +146,7 @@ class Erase(object):
                 self.logger.debug("erase check timed out for %s", mount_point)
                 break
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-return-statements, too-many-branches
     def erase_board(self, target, no_reset):
         """
         :param target: target to which perform the erase
@@ -165,7 +166,10 @@ class Erase(object):
                     automation_activated = True
                 if line.find(b"Interface Version") != -1:
                     try:
-                        daplink_version = int(line.split(' ')[-1])
+                        if six.PY2:
+                            daplink_version = int(line.split(' ')[-1])
+                        else:
+                            daplink_version = int(line.decode('utf-8').split(' ')[-1])
                     except (IndexError, ValueError):
                         self.logger.error("Failed to parse DAPLINK version from DETAILS.TXT")
                         return EXIT_CODE_IMPLEMENTATION_MISSING
