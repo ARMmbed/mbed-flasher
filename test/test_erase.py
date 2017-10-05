@@ -66,8 +66,11 @@ class EraseTestCase(unittest.TestCase):
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_erase_with_all(self):
         eraser = Erase()
+        mbeds = mbed_lstools.create()
+        device_amount_before = len(mbeds.list_mbeds())
         ret = eraser.erase(target_id='all', method='simple')
         self.assertEqual(ret, 0)
+        self.assertEqual(device_amount_before, len(mbeds.list_mbeds()))
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_erase_with_target_id(self):
@@ -80,6 +83,7 @@ class EraseTestCase(unittest.TestCase):
                 ret = eraser.erase(target_id=item['target_id'], method='simple')
                 break
         self.assertEqual(ret, 0)
+        self.assertEqual(len(devices), len(mbeds.list_mbeds()))
 
     # test func name is larger than 30, but is meaningful
     # pylint: disable=invalid-name
@@ -96,6 +100,7 @@ class EraseTestCase(unittest.TestCase):
                                    no_reset=True)
                 break
         self.assertEqual(ret, 0)
+        self.assertEqual(len(devices), len(mbeds.list_mbeds()))
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_erase_with_target_id_list(self):
@@ -108,6 +113,7 @@ class EraseTestCase(unittest.TestCase):
                 ret = eraser.erase(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, 0)
+        self.assertEqual(len(devices), len(mbeds.list_mbeds()))
 
     # For some reason a bunch of tracebacks on usb.core langid problems.
     # @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")

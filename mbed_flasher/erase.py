@@ -22,7 +22,7 @@ from os.path import join, isfile
 from threading import Thread
 import platform
 from subprocess import PIPE, Popen
-from mbed_flasher.common import Logger
+from mbed_flasher.common import Logger, MountVerifier
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
@@ -34,7 +34,9 @@ EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE = 29
 EXIT_CODE_IMPLEMENTATION_MISSING = 31
 EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED = 33
 EXIT_CODE_TARGET_ID_MISSING = 34
+ERASE_REMOUNT_TIMEOUT = 10
 ERASE_VERIFICATION_TIMEOUT = 30
+ERASE_DAPLINK_SUPPORT_VERSION = 243
 
 
 class Erase(object):
@@ -98,60 +100,113 @@ class Erase(object):
         port.close()
         return EXIT_CODE_SUCCESS
 
-    def runner(self, drive):
+    def wait_to_disappear(self, mount_point):
         """
-        :param drive:
+        :param mount_point: mount_point to watch disappear
+        """
+        start_time = time()
+        while True:
+            sleep(0.1)
+            if platform.system() == 'Windows':
+                proc = Popen(["dir", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
+                err = proc.stderr.read()
+            else:
+                proc = Popen(["ls", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                err = proc.stderr.read()
+
+            if err:
+                self.logger.debug("Remount due to erase")
+                break
+
+            if time() - start_time > ERASE_REMOUNT_TIMEOUT:
+                self.logger.debug("Didn't notice device to disappear for remount")
+                break
+
+    def runner(self, mount_point, filename):
+        """
+        :param mount_point: mount_point to check for
+        :param filename: erase command filename
         """
         start_time = time()
         while True:
             sleep(0.3)
             if platform.system() == 'Windows':
-                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                proc = Popen(["dir", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
                 out = proc.stdout.read()
             else:
-                proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                proc = Popen(["ls", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 out = proc.stdout.read()
+
             if out.find(b'.HTM') != -1:
-                if out.find(drive[1].encode()) == -1:
+                if out.find(filename.encode()) == -1:
                     break
+
             if time() - start_time > ERASE_VERIFICATION_TIMEOUT:
-                self.logger.debug("erase check timed out for %s", drive[0])
+                self.logger.debug("erase check timed out for %s", mount_point)
                 break
 
-    def erase_board(self, mount_point, serial_port, no_reset):
+    # pylint: disable=too-many-return-statements
+    def erase_board(self, target, no_reset):
         """
-        :param mount_point: mount point
-        :param serial_port: serial port
+        :param target: target to which perform the erase
         :param no_reset: erase with/without reset
         :return: exit code
         """
         automation_activated = False
-        if isfile(join(mount_point, 'DETAILS.TXT')):
-            with open(join(mount_point, 'DETAILS.TXT'), 'rb') as new_file:
-                for lines in new_file:
-                    if lines.find(b"Automation allowed: 1") != -1:
-                        automation_activated = True
-                    else:
-                        continue
-        if automation_activated:
-            self.logger.warn("Experimental feature, might not do anything!")
-            self.logger.info("erasing device")
-            with open(join(mount_point, 'ERASE.ACT'), 'wb'):
-                pass
-            auto_thread = Thread(target=self.runner, args=([mount_point, 'ERASE.ACT'],))
-            auto_thread.start()
-            while auto_thread.is_alive():
-                auto_thread.join(0.5)
-            if not no_reset:
-                success = self.reset_board(serial_port)
-                if success != 0:
-                    self.logger.error("erase failed")
-                    return success
-            self.logger.info("erase completed")
-            return EXIT_CODE_SUCCESS
-        else:
-            print("Selected device does not support erasing through DAPLINK")
+        daplink_version = 0
+        if not isfile(join(target["mount_point"], 'DETAILS.TXT')):
+            self.logger.error("No DETAILS.TXT found")
             return EXIT_CODE_IMPLEMENTATION_MISSING
+
+        self.logger.error(join(target["mount_point"], 'DETAILS.TXT'))
+        with open(join(target["mount_point"], 'DETAILS.TXT'), 'rb') as new_file:
+            for line in new_file:
+                if line.find(b"Automation allowed: 1") != -1:
+                    automation_activated = True
+                if line.find(b"Interface Version") != -1:
+                    try:
+                        daplink_version = int(line.split(' ')[-1])
+                    except (IndexError, ValueError):
+                        self.logger.error("Failed to parse DAPLINK version from DETAILS.TXT")
+                        return EXIT_CODE_IMPLEMENTATION_MISSING
+
+        if not automation_activated:
+            self.logger.error("Selected device does not support erasing through DAPLINK")
+            return EXIT_CODE_IMPLEMENTATION_MISSING
+
+        if daplink_version < ERASE_DAPLINK_SUPPORT_VERSION:
+            msg = "Selected device has Daplink version %s," \
+                  "erasing supported from version %s onwards"
+            self.logger.error(msg, daplink_version, ERASE_DAPLINK_SUPPORT_VERSION)
+            return EXIT_CODE_IMPLEMENTATION_MISSING
+
+        with open(join(target["mount_point"], 'ERASE.ACT'), 'wb'):
+            pass
+
+        auto_thread = Thread(target=self.wait_to_disappear,
+                             args=(target["mount_point"],))
+        auto_thread.start()
+        while auto_thread.is_alive():
+            auto_thread.join(0.5)
+
+        new_target = MountVerifier(self.logger).check_points_unchanged(target)
+        if isinstance(new_target, int):
+            return new_target
+
+        auto_thread = Thread(target=self.runner,
+                             args=(new_target["mount_point"], 'ERASE.ACT'))
+        auto_thread.start()
+        while auto_thread.is_alive():
+            auto_thread.join(0.5)
+
+        if not no_reset:
+            success = self.reset_board(target["serial_port"])
+            if success != 0:
+                self.logger.error("erase failed")
+                return success
+
+        self.logger.info("erase completed")
+        return EXIT_CODE_SUCCESS
 
     def erase(self, target_id=None, no_reset=None, method=None):
         """
@@ -178,7 +233,7 @@ class Erase(object):
                 return EXIT_CODE_IMPLEMENTATION_MISSING
 
             if method == 'simple' and 'mount_point' in item and 'serial_port' in item:
-                self.erase_board(item['mount_point'], item['serial_port'], no_reset)
+                self.erase_board(target=item, no_reset=no_reset)
             elif method == 'pyocd':
                 try:
                     from pyOCD.board import MbedBoard

@@ -26,6 +26,7 @@ EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE = 55
 EXIT_CODE_SYSTEM_INTERRUPT = 60
 EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST = 65
 
+
 class Flash(object):
     """ Flash object, which manage flashing single device
     """

@@ -15,6 +15,11 @@ limitations under the License.
 """
 
 import logging
+import platform
+from subprocess import check_output
+from time import sleep
+
+import mbed_lstools
 
 
 # pylint: disable=too-few-public-methods
@@ -32,3 +37,133 @@ class Logger(object):
 
     def __call__(self, name):
         return self.logger
+
+
+class MountVerifier(object):
+    """
+    Verifier class used to verify that device returns to operational state
+    after flash or erase.
+    """
+    MOUNT_POINT_TIMEOUT = 20
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    def check_points_unchanged(self, target):
+        """
+        Check if points are unchanged
+        """
+        new_target = {}
+        if platform.system() == 'Windows':
+            mbeds = mbed_lstools.create()
+            if target['serial_port'] != mbeds.get_mbed_com_port(target['target_id']):
+                new_target['serial_port'] = mbeds.get_mbed_com_port(target['target_id'])
+
+            return self._get_target(new_target=new_target, target=target)
+
+        if platform.system() == 'Darwin':
+            return self._get_target(new_target, target)
+
+        return_code = self._check_serial_point_duplicates(target=target,
+                                                          new_target=new_target)
+        if return_code:
+            return return_code
+
+        return_code = self._check_device_point_duplicates(target=target,
+                                                          new_target=new_target)
+        if return_code:
+            return return_code
+
+        return_code = self._verify_mount_point(target=target, new_target=new_target)
+        if return_code:
+            return return_code
+
+        return self._get_target(new_target, target)
+
+    def _get_target(self, new_target, target):
+        """
+        get target
+        """
+        if new_target:
+            if 'serial_port' in new_target:
+                self.logger.debug("serial port %s has changed to %s",
+                                  target['serial_port'], new_target['serial_port'])
+            else:
+                self.logger.debug("serial port %s has not changed",
+                                  target['serial_port'])
+            if 'mount_point' in new_target:
+                self.logger.debug("mount point %s has changed to %s",
+                                  target['mount_point'], new_target['mount_point'])
+            else:
+                self.logger.debug("mount point %s has not changed",
+                                  target['mount_point'])
+            new_target['target_id'] = target['target_id']
+            return new_target
+
+        return target
+
+    def _check_serial_point_duplicates(self, target, new_target):
+        """
+        Verify that target is not listed multiple times in /dev/serial/by-id
+        :param target: old target
+        :param new_target: new target
+        :return: if all is well None, otherwise error code
+        """
+        lines = check_output(["ls", "-oA", "/dev/serial/by-id/"]).splitlines()
+        for line in lines:
+            if line.find(target['target_id']) != -1 \
+                    and target['serial_port'].split('/')[-1] != line.split('/')[-1]:
+                if 'serial_port' not in new_target:
+                    new_target['serial_port'] = '/dev/' + line.split('/')[-1]
+                else:
+                    self.logger.error('target_id %s has more than 1 '
+                                      'serial port in the system',
+                                      target['target_id'])
+                    return -10
+
+    def _check_device_point_duplicates(self, target, new_target):
+        """
+        Verify that target is not listed multiple times in /dev/disk/by-id
+        :param target: old target
+        :param new_target: new target
+        :return: if all is well None, otherwise error code
+        """
+        lines = check_output(["ls", "-oA", "/dev/disk/by-id/"]).splitlines()
+        for dev_line in lines:
+            if dev_line.find(target['target_id']) != -1:
+                if 'dev_point' not in new_target:
+                    new_target['dev_point'] = '/dev/' + dev_line.split('/')[-1]
+                else:
+                    self.logger.error("target_id %s has more than 1 "
+                                      "device point in the system",
+                                      target['target_id'])
+                    return -11
+
+    def _verify_mount_point(self, target, new_target):
+        """
+        Verify that if target has changed points a mount point can still be found for it
+        :param target: old target
+        :param new_target: new target
+        :return: if all is well None, otherwise error code
+        """
+        if not new_target:
+            return
+
+        if 'dev_point' not in new_target:
+            self.logger.error("Target %s is missing /dev/disk/by-id/ point",
+                              target['target_id'])
+            return -12
+
+        for _ in range(MountVerifier.MOUNT_POINT_TIMEOUT):
+            mounts = check_output(["mount", "|", "grep", "vfat"], shell=True).splitlines()
+            for mount in mounts:
+                if mount.find(new_target['dev_point']) != -1:
+                    new_target['mount_point'] = \
+                        mount.split('on')[1].split('type')[0].strip()
+                    return
+            sleep(1)
+
+        self.logger.error(
+            "vfat mount point for %s did not re-appear in the system in %i seconds",
+            target['target_id'], MountVerifier.MOUNT_POINT_TIMEOUT)
+        return -12
