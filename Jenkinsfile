@@ -228,6 +228,7 @@ def winTest(String pythonVersion) {
                 pip freeze
                 python setup.py install
                 coverage run -m unittest discover -s test -vvv
+                if %errorlevel% neq 0 exit /b %errorlevel%
                 coverage html & coverage xml
                 deactivate
             """
@@ -242,6 +243,7 @@ def winTest(String pythonVersion) {
                 pip freeze
                 python setup.py install
                 coverage run -m unittest discover -s test -vvv
+                if %errorlevel% neq 0 exit /b %errorlevel%
                 coverage html & coverage xml
                 deactivate
             """
