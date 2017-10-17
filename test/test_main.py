@@ -19,6 +19,7 @@ limitations under the License.
 import os
 import logging
 import unittest
+from test.test_helper import Helper
 import six
 try:
     from StringIO import StringIO
@@ -46,9 +47,10 @@ class MainTestCase(unittest.TestCase):
         # Mock logging
         # pylint: disable=no-member
         mock_logging.disable(logging.CRITICAL)
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def tearDown(self):
-        pass
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_parser_invalid(self):
         with self.assertRaises(SystemExit) as context:

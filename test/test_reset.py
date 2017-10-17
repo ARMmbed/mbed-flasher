@@ -23,9 +23,11 @@ try:
 except ImportError:
     # python 3 compatible import
     from io import StringIO
+from test.test_helper import Helper
 import mock
 import mbed_lstools
 from mbed_flasher.reset import Reset
+
 
 class ResetTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
@@ -34,9 +36,10 @@ class ResetTestCase(unittest.TestCase):
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def tearDown(self):
-        pass
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_reset_with_none(self):
         resetter = Reset()

@@ -25,6 +25,7 @@ except ImportError:
     # python 3 compatible import
     from io import StringIO
 import platform
+from test.test_helper import Helper
 import mock
 import mbed_lstools
 from mbed_flasher.flash import Flash
@@ -39,9 +40,10 @@ class FlashTestCase(unittest.TestCase):
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def tearDown(self):
-        pass
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_run_file_does_not_exist(self):
         flasher = Flash()
@@ -168,13 +170,13 @@ class FlashTestCase(unittest.TestCase):
                                 target=target_to_test,
                                 method='simple',
                                 no_reset=False)
-            self.assertEqual(ret, -15)
             if platform.system() == 'Windows':
                 os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
                 os.system('del %s' % os.path.join(os.getcwd(), fail_txt_path))
             else:
                 os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
+            self.assertEqual(ret, -15)
         if mock_stdout:
             pass
 
@@ -201,13 +203,13 @@ class FlashTestCase(unittest.TestCase):
                                 platform_name='K64F',
                                 device_mapping_table=None,
                                 method='simple')
-            self.assertEqual(ret, -4)
             if platform.system() == 'Windows':
                 os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
                 os.system('del %s' % os.path.join(os.getcwd(), fail_bin_path))
             else:
                 os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
+            self.assertEqual(ret, -4)
         if mock_stdout:
             pass
 

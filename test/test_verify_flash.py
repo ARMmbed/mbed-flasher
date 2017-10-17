@@ -20,6 +20,7 @@ import logging
 import unittest
 import time
 import os
+from test.test_helper import Helper
 import serial
 import six
 from mbed_flasher.flash import Flash
@@ -91,9 +92,10 @@ class FlashVerifyTestCase(unittest.TestCase):
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def tearDown(self):
-        pass
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     @unittest.skipIf(check_two_binaries_exist() is False,
                      "binaries missing or too many binaries in test-folder")
