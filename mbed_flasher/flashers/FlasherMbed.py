@@ -38,8 +38,8 @@ class FlasherMbed(object):
     name = "mbed"
     FLASHING_VERIFICATION_TIMEOUT = 100
 
-    def __init__(self):
-        self.logger = logging.getLogger('mbed-flasher')
+    def __init__(self, logger=None):
+        self.logger = logger if logger else logging.getLogger('mbed-flasher')
 
     @staticmethod
     def get_supported_targets():

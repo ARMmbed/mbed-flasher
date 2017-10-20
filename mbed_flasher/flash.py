@@ -33,9 +33,11 @@ class Flash(object):
     _flashers = []
     supported_targets = {}
 
-    def __init__(self):
-        logger = Logger('mbed-flasher')
-        self.logger = logger.logger
+    def __init__(self, logger=None):
+        if logger is None:
+            logger = Logger('mbed-flasher')
+            logger = logger.logger
+        self.logger = logger
         self._flashers = self.__get_flashers()
         self.supported_targets = self.__update_supported_targets()
 
@@ -102,7 +104,7 @@ class Flash(object):
             raise NotImplementedError("Flashing %s is not supported" % platform_name)
 
         for flasher in self._flashers:
-            return flasher()
+            return flasher(logger=self.logger)
 
         raise Exception("oh nou")
 

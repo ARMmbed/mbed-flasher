@@ -32,9 +32,9 @@ class FlasherAtmelAt(object):
     supported_targets = ["SAM4E"]
     logger = logging
 
-    def __init__(self, exe=None):
+    def __init__(self, exe=None, logger=None):
         FlasherAtmelAt.set_atprogram_exe(exe)
-        self.logger = logging.getLogger('mbed-flasher')
+        self.logger = logger if logger else logging.getLogger('mbed-flasher')
 
     @staticmethod
     def get_supported_targets():
