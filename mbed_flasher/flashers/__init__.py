@@ -15,12 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from mbed_flasher.flashers.FlasherMbed import FlasherMbed
+from mbed_flasher.flashers.FlasherMbed import FlasherMbed as mbed_flasher
 
 # disable Invalid constant name warning, not a const
 # pylint: disable=C0103
 AvailableFlashers = [
-    FlasherMbed
+    mbed_flasher
 ]
 
 '''

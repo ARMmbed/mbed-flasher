@@ -29,7 +29,7 @@ from test.test_helper import Helper
 import mock
 import mbed_lstools
 from mbed_flasher.flash import Flash
-from mbed_flasher.flashers import FlasherMbed
+from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 
 
 class FlashTestCase(unittest.TestCase):
@@ -80,6 +80,65 @@ class FlashTestCase(unittest.TestCase):
                             device_mapping_table=None,
                             method='simple')
         self.assertEqual(ret, 55)
+
+    # pylint: disable=unused-argument
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
+    @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
+    def test_run_with_uppercase_HTM(self, mock_popen, mock_verifier, mock_copy_file):
+        mock_verifier.return_value = {'target_id':'123',
+                                      'platform_name': 'K64F',
+                                      'mount_point': 'path/'}
+
+        mock_stdout = mock.Mock()
+        mock_out = mock.Mock(side_effect=[b"no-htm", b"test.HTM", b"no-htm"])
+        mock_stdout.read = mock_out
+        mock_popen.return_value.stdout = mock_stdout
+
+        mock_popen.return_value.communicate.return_value = ('', '')
+
+        flasher = Flash()
+        ret = flasher.flash(build=self.bin_path,
+                            target_id='123',
+                            platform_name='K64F',
+                            device_mapping_table=[{
+                                'target_id': '123',
+                                'platform_name': 'K64F',
+                                'mount_point': '',
+                            }],
+                            method='simple',
+                            no_reset=True)
+        self.assertEqual(ret, 0)
+        self.assertEqual(2, mock_out.call_count)
+
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
+    @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
+    def test_run_with_lowercase_HTM(self, mock_popen, mock_verifier, mock_copy_file):
+        mock_verifier.return_value = {'target_id': '123',
+                                      'platform_name': 'K64F',
+                                      'mount_point': 'path/'}
+
+        mock_stdout = mock.Mock()
+        mock_out = mock.Mock(side_effect=[b"no-htm", b"test.htm", b"no-htm"])
+        mock_stdout.read = mock_out
+        mock_popen.return_value.stdout = mock_stdout
+
+        mock_popen.return_value.communicate.return_value = ('', '')
+
+        flasher = Flash()
+        ret = flasher.flash(build=self.bin_path,
+                            target_id='123',
+                            platform_name='K64F',
+                            device_mapping_table=[{
+                                'target_id': '123',
+                                'platform_name': 'K64F',
+                                'mount_point': '',
+                            }],
+                            method='simple',
+                            no_reset=True)
+        self.assertEqual(ret, 0)
+        self.assertEqual(2, mock_out.call_count)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_run_with_file_with_one_target_id_wrong_platform(self):
