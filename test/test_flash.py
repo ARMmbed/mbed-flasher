@@ -62,9 +62,9 @@ class FlashTestCase(unittest.TestCase):
         self.assertEqual(ret, 45)
 
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_flash_logger_created(self, mock_logger):
+    def test_flash_logger_created(self, mock_logger):  # pylint: disable=no-self-use
         mock_logger.return_value = mock.MagicMock()
-        flash = Flash()
+        flash = Flash()  # pylint: disable=unused-variable
         mock_logger.assert_called_once_with("mbed-flasher")
 
     @mock.patch("mbed_flasher.flash.Logger")
