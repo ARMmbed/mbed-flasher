@@ -50,7 +50,7 @@ def verify_output_per_device(serial_port, command, output):
             if six.PY2:
                 out += ser.read(1)
             else:
-                out += ser.read(1).decode('utf-8')
+                out += ser.read(1).decode('utf-8', "replace")
         if out.find(output) != -1:
             ser.close()
             return True
