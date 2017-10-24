@@ -61,6 +61,20 @@ class FlashTestCase(unittest.TestCase):
                             method='simple')
         self.assertEqual(ret, 45)
 
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_flash_logger_created(self, mock_logger):  # pylint: disable=no-self-use
+        mock_logger.return_value = mock.MagicMock()
+        flash = Flash()  # pylint: disable=unused-variable
+        mock_logger.assert_called_once_with("mbed-flasher")
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_flash_logger_not_created(self, mock_logger):
+        mock_logger.return_value = mock.MagicMock()
+        very_real_logger = mock.MagicMock()
+        flash = Flash(logger=very_real_logger)
+        mock_logger.assert_not_called()
+        self.assertEqual(very_real_logger, flash.logger)
+
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_target_id_all(self):
         flasher = Flash()
@@ -271,6 +285,7 @@ class FlashTestCase(unittest.TestCase):
             self.assertEqual(ret, -4)
         if mock_stdout:
             pass
+
 
 if __name__ == '__main__':
     unittest.main()
