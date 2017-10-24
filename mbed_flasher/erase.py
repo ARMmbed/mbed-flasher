@@ -110,12 +110,10 @@ class Erase(object):
             sleep(0.1)
             if platform.system() == 'Windows':
                 proc = Popen(["dir", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-                err = proc.stderr.read()
-                proc.communicate()
             else:
                 proc = Popen(["ls", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                err = proc.stderr.read()
-                proc.communicate()
+            err = proc.stderr.read()
+            proc.communicate()
 
             if err:
                 self.logger.debug("Remount due to erase")
@@ -135,13 +133,10 @@ class Erase(object):
             sleep(0.3)
             if platform.system() == 'Windows':
                 proc = Popen(["dir", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-                out = proc.stdout.read()
-                proc.communicate()
             else:
                 proc = Popen(["ls", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                out = proc.stdout.read()
-                proc.communicate()
-
+            out = proc.stdout.read()
+            proc.communicate()
             if out.find(b'.HTM') != -1:
                 if out.find(filename.encode()) == -1:
                     break
