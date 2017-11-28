@@ -28,7 +28,17 @@ import six
 import mbed_lstools
 
 from mbed_flasher.common import MountVerifier
+from mbed_flasher.daplink_errors import DAPLINK_ERRORS
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
+
+EXIT_CODE_SUCCESS = 0
+EXIT_CODE_FLASH_FAILED = -4
+EXIT_CODE_RESET_FAIL = -6
+EXIT_CODE_FILE_COULD_NOT_BE_READ = -7
+EXIT_CODE_PYOCD_NOT_INSTALLED = -8
+EXIT_CODE_EGDB_NOT_SUPPORTED = -13
+EXIT_CODE_OS_ERROR = -14
+EXIT_CODE_FILE_STILL_PRESENT = -15
 
 
 class FlasherMbed(object):
@@ -72,7 +82,8 @@ class FlasherMbed(object):
                 # python 3 compatibility
                 # pylint: disable=superfluous-parens
                 print('Reset could not be given. Close your Serial connection to device.')
-            return -6
+            return EXIT_CODE_RESET_FAIL
+
         port.baudrate = 115200
         port.timeout = 1
         port.xonxoff = False
@@ -132,7 +143,7 @@ class FlasherMbed(object):
 
         if method == 'edbg':
             self.logger.debug("edbg is not supported for Mbed devices")
-            return -13
+            return EXIT_CODE_EGDB_NOT_SUPPORTED
 
         try:
             if 'serial_port' in target and not no_reset:
@@ -140,8 +151,8 @@ class FlasherMbed(object):
                 sleep(0.1)
 
             copy_file_success = self.copy_file(source, destination)
-            if copy_file_success == -7:
-                return -7
+            if copy_file_success == EXIT_CODE_FILE_COULD_NOT_BE_READ:
+                return EXIT_CODE_FILE_COULD_NOT_BE_READ
 
             self.logger.debug("copy finished")
             sleep(4)
@@ -156,6 +167,7 @@ class FlasherMbed(object):
             thread.start()
             while thread.is_alive():
                 thread.join(2.5)
+
             if not no_reset:
                 if 'serial_port' in new_target:
                     self.reset_board(new_target['serial_port'])
@@ -171,7 +183,7 @@ class FlasherMbed(object):
             raise err
         except OSError as err:
             self.logger.error("Write failed due to OSError: %s", err)
-            return -14
+            return EXIT_CODE_OS_ERROR
 
     def try_pyocd_flash(self, source, target):
         """
@@ -182,8 +194,8 @@ class FlasherMbed(object):
         except ImportError:
             # python 3 compatibility
             # pylint: disable=superfluous-parens
-            print('pyOCD missing, install\n')
-            return -8
+            self.logger.error("pyOCD missing, install")
+            return EXIT_CODE_PYOCD_NOT_INSTALLED
 
         try:
             with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
@@ -197,11 +209,11 @@ class FlasherMbed(object):
                 self.logger.debug("resetting device: %s", target["target_id"])
                 sleep(0.5)  # small sleep for lesser HW ie raspberry
                 ocd_target.reset()
-            return 0
+            return EXIT_CODE_SUCCESS
         except AttributeError as err:
             self.logger.error("Flashing failed: %s. tid=%s",
                               err, target["target_id"])
-            return -4
+            return EXIT_CODE_FLASH_FAILED
 
     def copy_file(self, source, destination):
         """
@@ -220,9 +232,11 @@ class FlasherMbed(object):
             self.logger.debug('read source file')
             with open(source, 'rb') as source_file:
                 aux_source = source_file.read()
+
             if not aux_source:
                 self.logger.error("File couldn't be read")
-                return -7
+                return EXIT_CODE_FILE_COULD_NOT_BE_READ
+
             self.logger.debug("SHA1: %s",
                               hashlib.sha1(aux_source).hexdigest())
             self.logger.debug("writing binary: %s (size=%i bytes)",
@@ -247,6 +261,11 @@ class FlasherMbed(object):
             destination,
             os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
 
+    @staticmethod
+    def _read_file(path, file_name):
+        with open(join(path, file_name), 'r') as fault:
+            return fault.read().strip()
+
     def verify_flash_success(self, new_target, target, tail):
         """
         verify flash went well
@@ -255,21 +274,27 @@ class FlasherMbed(object):
             mount = new_target['mount_point']
         else:
             mount = target['mount_point']
+
         if isfile(join(mount, 'FAIL.TXT')):
-            with open(join(mount, 'FAIL.TXT'), 'r') as fault:
-                fault = fault.read().strip()
+            fault = FlasherMbed._read_file(mount, "FAIL.TXT")
             self.logger.error("Flashing failed: %s. tid=%s",
                               fault, target["target_id"])
-            return -4
+
+            try:
+                return DAPLINK_ERRORS[fault]
+            except KeyError:
+                return EXIT_CODE_FLASH_FAILED
+
         if isfile(join(mount, 'ASSERT.TXT')):
-            with open(join(mount, 'ASSERT.TXT'), 'r') as fault:
-                fault = fault.read().strip()
+            fault = FlasherMbed._read_file(mount, "ASSERT.TXT")
             self.logger.error("Flashing failed: %s. tid=%s",
                               fault, target)
-            return -4
+            return EXIT_CODE_FLASH_FAILED
+
         if isfile(join(mount, tail)):
             self.logger.error("Flashing failed: File still present "
                               "in mount point. tid info: %s", target)
-            return -15
+            return EXIT_CODE_FILE_STILL_PRESENT
+
         self.logger.debug("ready")
-        return 0
+        return EXIT_CODE_SUCCESS
