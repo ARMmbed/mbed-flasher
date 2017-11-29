@@ -30,7 +30,7 @@ import mock
 import mbed_lstools
 from mbed_flasher.main import FlasherCLI
 
-FLASHER_VERSION = '0.4.5'
+FLASHER_VERSION = '0.5.0'
 
 
 class MainTestCase(unittest.TestCase):
