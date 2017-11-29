@@ -44,10 +44,6 @@ def baseBuild() {
         def scmVars = checkout scm
         env.GIT_COMMIT_HASH = scmVars.GIT_COMMIT
 
-
-        // copy artifacts
-        copyArtifacts()
-
         if (isUnix()) {
             stage("linux py2") {
                 unittest("py2")
@@ -73,23 +69,6 @@ def baseBuild() {
             }
         }
     }
-}
-
-
-def copyArtifacts(){
-    echo "Copying artifacts from mbed-os-cliapp_for_CI/label=GCC_ARM"
-    step([
-        $class: 'CopyArtifact',
-        fingerprintArtifacts: true,
-        flatten: true,
-        projectName: "ARMmbed/mbed-os-cliapp/master",
-        filter: '**/K64F_arm-none-eabi-gcc_eth0/mbed-os-cliapp.bin',
-        selector: [
-            $class: 'StatusBuildSelector',
-            stable: true
-        ],
-        target: 'test/'
-    ])
 }
 
 
