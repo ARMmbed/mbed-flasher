@@ -96,10 +96,11 @@ class FlashTestCase(unittest.TestCase):
         self.assertEqual(ret, 55)
 
     # pylint: disable=unused-argument
+    @mock.patch('os.path.ismount')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
     @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
-    def test_run_with_uppercase_HTM(self, mock_popen, mock_verifier, mock_copy_file):
+    def test_run_with_uppercase_HTM(self, mock_popen, mock_verifier, mock_copy_file, mock_is_mount):
         mock_verifier.return_value = {'target_id':'123',
                                       'platform_name': 'K64F',
                                       'mount_point': 'path/'}
@@ -108,6 +109,8 @@ class FlashTestCase(unittest.TestCase):
         mock_out = mock.Mock(side_effect=[b"no-htm", b"test.HTM", b"no-htm"])
         mock_stdout.read = mock_out
         mock_popen.return_value.stdout = mock_stdout
+
+        mock_is_mount.side_effect = [True, True, False, False]
 
         mock_popen.return_value.communicate.return_value = ('', '')
 
@@ -125,10 +128,11 @@ class FlashTestCase(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(2, mock_out.call_count)
 
+    @mock.patch('os.path.ismount')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
     @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
-    def test_run_with_lowercase_HTM(self, mock_popen, mock_verifier, mock_copy_file):
+    def test_run_with_lowercase_HTM(self, mock_popen, mock_verifier, mock_copy_file, mock_is_mount):
         mock_verifier.return_value = {'target_id': '123',
                                       'platform_name': 'K64F',
                                       'mount_point': 'path/'}
@@ -139,6 +143,8 @@ class FlashTestCase(unittest.TestCase):
         mock_popen.return_value.stdout = mock_stdout
 
         mock_popen.return_value.communicate.return_value = ('', '')
+
+        mock_is_mount.side_effect = [True, True, False, False]
 
         flasher = Flash()
         ret = flasher.flash(build=self.bin_path,

@@ -30,6 +30,7 @@ import mbed_lstools
 from mbed_flasher.common import MountVerifier
 from mbed_flasher.daplink_errors import DAPLINK_ERRORS
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
+from mbed_flasher.flashers.MbedFlashError import MountPointDisappearTimeoutError
 
 EXIT_CODE_SUCCESS = 0
 EXIT_CODE_FLASH_FAILED = -4
@@ -163,9 +164,8 @@ class FlasherMbed(object):
             self.logger.debug("copy finished")
 
             # expected behaviour after file copied for mount point is to disappear
-            check_result = self._check_mount_point_disappear(mount_point)
-            if check_result == EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT:
-                return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
+            self._check_mount_point_disappear(mount_point)
+            self.logger.info("mount point disappear success")
 
             new_target = MountVerifier(self.logger).check_points_unchanged(target)
 
@@ -188,6 +188,9 @@ class FlasherMbed(object):
             # verify flashing went as planned
             self.logger.debug("verifying flash")
             return self.verify_flash_success(new_target, target, tail)
+        except MountPointDisappearTimeoutError as err:
+            self.logger.error(err)
+            return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
         except IOError as err:
             self.logger.error(err)
             raise err
@@ -321,11 +324,11 @@ class FlasherMbed(object):
 
             if not os.path.ismount(mount_point) and mount_point_previous_mounted is True:
                 self.logger.info("mount point disappears now after file copied")
-                return EXIT_CODE_SUCCESS
+                return
 
             sleep(1)
             mount_point_disappear_timeout -= 1
 
         self.logger.error("After file copied, mount point did not disappear in the system in %i seconds",
                           mount_point_disappear_timeout)
-        return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
+        raise MountPointDisappearTimeoutError
