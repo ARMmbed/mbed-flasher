@@ -45,7 +45,7 @@ class MountVerifier(object):
     Verifier class used to verify that device returns to operational state
     after flash or erase.
     """
-    MOUNT_POINT_TIMEOUT = 20
+    MOUNT_POINT_TIMEOUT = 60
     SERIAL_POINT_TIMEOUT = 20
 
     def __init__(self, logger):

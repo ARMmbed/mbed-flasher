@@ -160,7 +160,27 @@ class FlasherMbed(object):
                 return EXIT_CODE_FILE_COULD_NOT_BE_READ
 
             self.logger.debug("copy finished")
-            sleep(4)
+
+            def worker(mp):
+                mount_point_previous_mounted = None
+
+                count = 10
+
+                while count > 0:
+                    print os.path.ismount(mp)
+
+                    if os.path.ismount(mp):
+                        mount_point_previous_mounted = True
+
+                    if not os.path.ismount(mp) and mount_point_previous_mounted is True:
+                        break
+
+                    sleep(1)
+                    count -= 1
+
+            t = Thread(target=worker, args=(mount_point,))
+            t.start()
+            t.join()
 
             new_target = MountVerifier(self.logger).check_points_unchanged(target)
 
