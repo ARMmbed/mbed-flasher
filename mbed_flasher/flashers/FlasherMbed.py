@@ -39,6 +39,7 @@ EXIT_CODE_PYOCD_NOT_INSTALLED = -8
 EXIT_CODE_EGDB_NOT_SUPPORTED = -13
 EXIT_CODE_OS_ERROR = -14
 EXIT_CODE_FILE_STILL_PRESENT = -15
+EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT = 240
 
 
 class FlasherMbed(object):
@@ -161,26 +162,10 @@ class FlasherMbed(object):
 
             self.logger.debug("copy finished")
 
-            def worker(mp):
-                mount_point_previous_mounted = None
-
-                count = 10
-
-                while count > 0:
-                    print os.path.ismount(mp)
-
-                    if os.path.ismount(mp):
-                        mount_point_previous_mounted = True
-
-                    if not os.path.ismount(mp) and mount_point_previous_mounted is True:
-                        break
-
-                    sleep(1)
-                    count -= 1
-
-            t = Thread(target=worker, args=(mount_point,))
-            t.start()
-            t.join()
+            # expected behaviour after file copied for mount point is to disappear
+            check_result = self._check_mount_point_disappear(mount_point)
+            if check_result == EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT:
+                return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
 
             new_target = MountVerifier(self.logger).check_points_unchanged(target)
 
@@ -323,3 +308,24 @@ class FlasherMbed(object):
 
         self.logger.debug("ready")
         return EXIT_CODE_SUCCESS
+
+    def _check_mount_point_disappear(self, mount_point):
+        # check if mount point disappear after file copied into device
+        mount_point_previous_mounted = None
+
+        mount_point_disappear_timeout = 20
+
+        while mount_point_disappear_timeout > 0:
+            if os.path.ismount(mount_point):
+                mount_point_previous_mounted = True
+
+            if not os.path.ismount(mount_point) and mount_point_previous_mounted is True:
+                self.logger.info("mount point disappears now after file copied")
+                return EXIT_CODE_SUCCESS
+
+            sleep(1)
+            mount_point_disappear_timeout -= 1
+
+        self.logger.error("After file copied, mount point did not disappear in the system in %i seconds",
+                          mount_point_disappear_timeout)
+        return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
