@@ -233,7 +233,7 @@ class Erase(object):
         for item in targets_to_erase:
             if item['platform_name'] != 'K64F':
                 print("Only mbed devices supported")
-                return EXIT_CODE_IMPLEMENTATION_MISSING
+                return EXIT_CODE_SUCCESS
 
             if method == 'simple' and 'mount_point' in item and 'serial_port' in item:
                 self.erase_board(target=item, no_reset=no_reset)
