@@ -56,10 +56,15 @@ class MountVerifier(object):
         """
         new_target = {}
         if platform.system() == 'Windows':
-            mbeds = mbed_lstools.create()
-            if target['serial_port'] != mbeds.get_mbed_com_port(target['target_id']):
-                new_target['serial_port'] = mbeds.get_mbed_com_port(target['target_id'])
-
+            mbedls = mbed_lstools.create()
+            mbeds = mbedls.list_mbeds(filter_function=
+                                      lambda m: m['target_id'] == target['target_id'])
+            if len(mbeds) == 1:
+                if target['serial_port'] != mbeds[0]['serial_port']:
+                    new_target['serial_port'] = mbeds[0]['serial_port']
+            elif len(mbeds) > 1:
+                self.logger.warning('got multiple target with same target_id: %s',
+                                    target['target_id'])
             return self._get_target(new_target=new_target, target=target)
 
         if platform.system() == 'Darwin':

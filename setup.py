@@ -19,7 +19,6 @@ import os
 #         No name 'core' in module 'distutils'
 #         Unable to import 'distutils.core'
 from distutils.core import setup
-import sys
 from setuptools import find_packages
 
 
@@ -37,7 +36,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='mbed-flasher',
-      version='0.5.1',
+      version='0.6.0',
       description=DESCRIPTION,
       long_description=read('README.md'),
       author=OWNER_NAMES,
@@ -54,7 +53,7 @@ setup(name='mbed-flasher',
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
       install_requires=[
-          "mbed-ls==1.2.16" if "win" in sys.platform else ["mbed-ls==1.2.14"],
+          "mbed-ls==1.3.5",
           "six",
           "pyserial",
           "pyOCD"

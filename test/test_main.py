@@ -30,7 +30,7 @@ import mock
 import mbed_lstools
 from mbed_flasher.main import FlasherCLI
 
-FLASHER_VERSION = '0.5.1'
+FLASHER_VERSION = '0.6.0'
 
 
 class MainTestCase(unittest.TestCase):
@@ -146,8 +146,8 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), 25)
         six.assertRegex(self, mock_stdout.getvalue(),
                         r"Could not find given target_id from attached devices"
-                        r"\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')"
-                        r"(,\s\'[0-9a-fA-F]+\')*\]",
+                        r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
+                        r"(,\su?\'[0-9a-fA-F]+\')*\]",
                         "Regex match failed")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -170,8 +170,8 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), 25)
         six.assertRegex(self, mock_stdout.getvalue(),
                         r"Could not find given target_id from attached devices"
-                        r"\nAvailable target_ids:\n\[(\'[0-9a-fA-F]+\')"
-                        r"(,\s\'[0-9a-fA-F]+\')*\]",
+                        r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
+                        r"(,\su?\'[0-9a-fA-F]+\')*\]",
                         "Regex match failed")
 
 if __name__ == '__main__':

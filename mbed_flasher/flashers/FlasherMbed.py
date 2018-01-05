@@ -57,7 +57,12 @@ class FlasherMbed(object):
         Load target mapping information
         """
         mbeds = mbed_lstools.create()
-        return sorted(set(mbeds.manufacture_ids.values()))
+
+        # this should works for >=v1.3.0
+        # @todo this is workaround until mbed-ls provide public
+        #       API to get list of supported platform names
+        list_supported_targets = sorted(set(name for id, name in mbeds.plat_db.items()))
+        return list_supported_targets
 
     @staticmethod
     def get_available_devices():
