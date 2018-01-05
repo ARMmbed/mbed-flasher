@@ -290,7 +290,7 @@ class FlashTestCase(unittest.TestCase):
                 os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
 
-            self.assertEqual(ret, 240)
+            self.assertEqual(ret, 3)
         if mock_stdout:
             pass
 
