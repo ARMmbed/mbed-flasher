@@ -163,20 +163,25 @@ class FlasherMbed(object):
 
             self.logger.debug("copy finished")
 
-            # expected behaviour after file copied for mount point is to disappear
-            self._check_mount_point_disappear(mount_point)
-            self.logger.info("mount point disappear success")
+            try:
+                # expected behaviour after file copied for mount point is to disappear
+                self._check_mount_point_disappear(mount_point)
+                self.logger.info("mount point disappear success")
+            except MountPointDisappearTimeoutError as err:
+                self.logger.error(err)
+                # MountVerifier(self.logger).check_points_unchanged(target)
+                return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
+            finally:
+                new_target = MountVerifier(self.logger).check_points_unchanged(target)
 
-            new_target = MountVerifier(self.logger).check_points_unchanged(target)
+                if isinstance(new_target, int):
+                    return new_target
 
-            if isinstance(new_target, int):
-                return new_target
-
-            thread = Thread(target=self.runner,
-                            args=([target['mount_point'], tail],))
-            thread.start()
-            while thread.is_alive():
-                thread.join(2.5)
+                thread = Thread(target=self.runner,
+                                args=([target['mount_point'], tail],))
+                thread.start()
+                while thread.is_alive():
+                    thread.join(2.5)
 
             if not no_reset:
                 if 'serial_port' in new_target:

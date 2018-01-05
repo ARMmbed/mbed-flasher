@@ -255,7 +255,7 @@ class FlashTestCase(unittest.TestCase):
             else:
                 os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
-            self.assertEqual(ret, -15)
+            self.assertEqual(ret, 240)
         if mock_stdout:
             pass
 
@@ -290,7 +290,7 @@ class FlashTestCase(unittest.TestCase):
                 os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
 
-            self.assertEqual(ret, 3)
+            self.assertEqual(ret, 240)
         if mock_stdout:
             pass
 
