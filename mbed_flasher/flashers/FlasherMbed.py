@@ -129,7 +129,7 @@ class FlasherMbed(object):
                 self.logger.debug("re-mount check timed out for %s", drive[0])
                 break
 
-    # pylint: disable=too-many-return-statements, duplicate-except
+    # pylint: disable=too-many-return-statements, duplicate-except, too-many-branches, lost-exception
     def flash(self, source, target, method, no_reset):
         """copy file to the destination
         :param source: binary to be flashed
@@ -168,6 +168,9 @@ class FlasherMbed(object):
                 self._check_mount_point_disappear(mount_point)
                 self.logger.info("mount point disappear success")
             except MountPointDisappearTimeoutError as err:
+                # The pylint warnings: lost-exception happens if some error other than the
+                # MountPointDisappearTimeoutError occurs in the above try block, it has chance
+                # to be overwritten by the following finally block raised errors
                 self.logger.error(err)
                 # MountVerifier(self.logger).check_points_unchanged(target)
                 return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
@@ -193,9 +196,6 @@ class FlasherMbed(object):
             # verify flashing went as planned
             self.logger.debug("verifying flash")
             return self.verify_flash_success(new_target, target, tail)
-        except MountPointDisappearTimeoutError as err:
-            self.logger.error(err)
-            return EXIT_CODE_MOUNT_POINT_DISAPPEAR_TIMEOUT
         except IOError as err:
             self.logger.error(err)
             raise err
@@ -334,6 +334,5 @@ class FlasherMbed(object):
             sleep(1)
             mount_point_disappear_timeout -= 1
 
-        self.logger.error("After file copied, mount point did not disappear in the system in %i seconds",
-                          mount_point_disappear_timeout)
+        self.logger.error("After file copied, mount point did not disappear in 20 seconds")
         raise MountPointDisappearTimeoutError
