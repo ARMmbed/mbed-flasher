@@ -321,7 +321,7 @@ class FlasherMbed(object):
         # check if mount point disappear after file copied into device
         mount_point_previous_mounted = None
 
-        mount_point_disappear_timeout = 20
+        mount_point_disappear_timeout = 30
 
         while mount_point_disappear_timeout > 0:
             if os.path.ismount(mount_point):
