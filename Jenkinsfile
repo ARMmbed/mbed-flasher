@@ -149,6 +149,7 @@ def linux_pylint_check() {
         echo "python 2 pylint check started"
         sh """
             . .py2venv/bin/activate
+            pylint --version
             ./run_pylint.sh | tee logs/pylint.log
             deactivate
         """
@@ -156,6 +157,7 @@ def linux_pylint_check() {
         echo "python3 pylint check started"
         sh """
             . .py3venv/bin/activate
+            pylint --version
             ./run_pylint.sh | tee logs/pylint3.log
             deactivate
         """
