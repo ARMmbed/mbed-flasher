@@ -17,7 +17,7 @@ limitations under the License.
 import logging
 import platform
 from time import sleep
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 import six
 
 import mbed_lstools
@@ -46,6 +46,7 @@ class MountVerifier(object):
     after flash or erase.
     """
     MOUNT_POINT_TIMEOUT = 20
+    SERIAL_POINT_TIMEOUT = 20
 
     def __init__(self, logger):
         self.logger = logger
@@ -115,19 +116,41 @@ class MountVerifier(object):
         :param new_target: new target
         :return: if all is well None, otherwise error code
         """
-        lines = check_output(["ls", "-oA", "/dev/serial/by-id/"]).splitlines()
-        for line in lines:
-            if six.PY3:
-                line = line.decode('utf-8')
-            if line.find(target['target_id']) != -1 \
-                    and target['serial_port'].split('/')[-1] != line.split('/')[-1]:
-                if 'serial_port' not in new_target:
-                    new_target['serial_port'] = '/dev/' + line.split('/')[-1]
-                else:
-                    self.logger.error('target_id %s has more than 1 '
-                                      'serial port in the system',
-                                      target['target_id'])
-                    return -10
+        for _ in range(MountVerifier.SERIAL_POINT_TIMEOUT):
+            try:
+                lines = check_output(["ls", "-oA", "/dev/serial/by-id/"]).splitlines()
+            except CalledProcessError:
+                lines = []
+
+            target_found_once = False
+            for line in lines:
+                if six.PY3:
+                    line = line.decode('utf-8')
+
+                if line.find(target['target_id']) != -1:
+                    target_found_once = True
+                    if target['serial_port'].split('/')[-1] != line.split('/')[-1]:
+                        if 'serial_port' not in new_target:
+                            new_target['serial_port'] = '/dev/' + line.split('/')[-1]
+                            self.logger.debug('target_id %s serial port changed from %s to %s',
+                                              target['target_id'], target['serial_port'],
+                                              new_target['serial_port'])
+                        else:
+                            self.logger.error('target_id %s has more than 1 '
+                                              'serial port in the system',
+                                              target['target_id'])
+                            return -10
+
+            # If target is found even once expect duplication to have appeared
+            if target_found_once:
+                return
+
+            sleep(1)
+
+        self.logger.error(
+            "serial point for %s did not re-appear in the system in %i seconds",
+            target['target_id'], MountVerifier.SERIAL_POINT_TIMEOUT)
+        return -12
 
     def _check_device_point_duplicates(self, target, new_target):
         """
