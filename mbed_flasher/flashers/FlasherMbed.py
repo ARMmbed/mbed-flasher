@@ -49,6 +49,7 @@ class FlasherMbed(object):
     """
     name = "mbed"
     FLASHING_VERIFICATION_TIMEOUT = 100
+    MOUNT_POINT_DISAPPEAR_TIMEOUT = 30
 
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
@@ -316,9 +317,7 @@ class FlasherMbed(object):
         # check if mount point disappear after file copied into device
         mount_point_previous_mounted = None
 
-        mount_point_disappear_timeout = 30
-
-        while mount_point_disappear_timeout > 0:
+        for _ in range(self.MOUNT_POINT_DISAPPEAR_TIMEOUT):
             if os.path.ismount(mount_point):
                 mount_point_previous_mounted = True
 
@@ -327,7 +326,7 @@ class FlasherMbed(object):
                 return
 
             sleep(1)
-            mount_point_disappear_timeout -= 1
 
-        self.logger.error("After file copied, mount point did not disappear in 20 seconds")
+        self.logger.error("After file copied, mount point did not disappear in %d seconds",
+                          self.MOUNT_POINT_DISAPPEAR_TIMEOUT)
         raise MountPointDisappearTimeoutError
