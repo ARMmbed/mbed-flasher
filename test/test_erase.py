@@ -18,21 +18,24 @@ limitations under the License.
 
 import logging
 import unittest
-try:
-    from StringIO import StringIO
-except ImportError:
-    # python 3 compatible import
-    from io import StringIO
 from test.test_helper import Helper
 import mock
 import mbed_lstools
 from mbed_flasher.erase import Erase
+from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 
+# pylint: disable=C0103
+list_mbeds_ext = Helper.list_mbeds_ext
+list_mbeds_eraseable = Helper.list_mbeds_eraseable
+# pylint: enable=C0103
 
 class EraseTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
     mbeds = mbed_lstools.create()
+
+    all_devices = Helper.list_mbeds_ext()
+    erase_allowed_devices = Helper.list_mbeds_eraseable(all_devices)
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
@@ -40,59 +43,117 @@ class EraseTestCase(unittest.TestCase):
 
     def tearDown(self):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
+        devices = list_mbeds_ext()
+        # validates that there is still all devices than was originally
+        self.assertEqual(len(devices), len(EraseTestCase.all_devices))
+        count_eraseable = len(list_mbeds_eraseable(devices))
+        self.assertEqual(count_eraseable, len(EraseTestCase.erase_allowed_devices))
 
     def test_erase_with_none(self):
         eraser = Erase()
         ret = eraser.erase(target_id=None, method='simple')
         self.assertEqual(ret, 34)
 
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_erase_with_wrong_target_id(self, mock_stdout):
+    def test_erase_with_wrong_target_id(self):
         eraser = Erase()
         ret = eraser.erase(target_id='555', method='simple')
         self.assertEqual(ret, 21)
-        if mock_stdout:
-            self.assertEqual(mock_stdout.getvalue(),
-                             'Could not map given target_id(s) to available devices\n')
 
-    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_erase_with_all_no_devices(self, mock_stdout):
-        eraser = Erase()
-        ret = eraser.erase(target_id='all', method='simple')
-        self.assertEqual(ret, 21)
-        if mock_stdout:
-            self.assertEqual(mock_stdout.getvalue(),
-                             'Could not map given target_id(s) to available devices\n')
+    def test_erase_with_all_no_devices(self):
+        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
+            mocked_get.return_value = []
+            eraser = Erase()
+            ret = eraser.erase(target_id='all', method='simple')
+            self.assertEqual(ret, 21)
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(all_devices == [], "no hardware attached")
+    @unittest.skipIf(erase_allowed_devices != all_devices, "cannot erase all mbeds")
     def test_erase_with_all(self):
         eraser = Erase()
-        mbeds = mbed_lstools.create()
-        device_amount_before = len(mbeds.list_mbeds())
         ret = eraser.erase(target_id='all', method='simple')
         self.assertEqual(ret, 0)
-        self.assertEqual(device_amount_before, len(mbeds.list_mbeds()))
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(erase_allowed_devices == [], "no erase allowed mbeds")
     def test_erase_with_target_id(self):
-        mbeds = mbed_lstools.create()
-        devices = mbeds.list_mbeds()
         eraser = Erase()
+        devices = EraseTestCase.erase_allowed_devices
         ret = None
         for item in devices:
             if item['target_id']:
                 ret = eraser.erase(target_id=item['target_id'], method='simple')
                 break
         self.assertEqual(ret, 0)
-        self.assertEqual(len(devices), len(mbeds.list_mbeds()))
 
+    @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
     # pylint: disable=invalid-name
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    def test_erase_failed_non_supported_devices(self, _):
+        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
+            devices = [{"target_id": "123",
+                        "platform_name": "K64F",
+                        "mount_point": "/mnt/k64f",
+                        "serial_port": "/dev/uart"}]
+            mocked_get.return_value = devices
+            eraser = Erase()
+            ret = None
+            for item in devices:
+                if item['target_id']:
+                    ret = eraser.erase(target_id=item['target_id'], method='simple')
+                    break
+            self.assertEqual(ret, 31)
+
+    @mock.patch("os.path.isfile", return_value=True)
+    # test func name is larger than 30, but is meaningful
+    # pylint: disable=invalid-name
+    def test_erase_failed_mount_point_missing(self, _):
+        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
+            devices = [{"target_id": "123",
+                        "platform_name": "K64F",
+                        "serial_port": "/dev/uart"}]
+            mocked_get.return_value = devices
+            eraser = Erase()
+            ret = None
+            for item in devices:
+                if item['target_id']:
+                    ret = eraser.erase(target_id=item['target_id'], method='simple')
+                    break
+            self.assertEqual(ret, 35)
+
+    @mock.patch("os.path.isfile", return_value=True)
+    # test func name is larger than 30, but is meaningful
+    # pylint: disable=invalid-name
+    def test_erase_failed_serial_port_missing(self, _):
+        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
+            devices = [{"target_id": "123",
+                        "platform_name": "K64F",
+                        "mount_point": "/mnt/k64f"}]
+            mocked_get.return_value = devices
+            eraser = Erase()
+            ret = None
+            for item in devices:
+                if item['target_id']:
+                    ret = eraser.erase(target_id=item['target_id'], method='simple')
+                    break
+            self.assertEqual(ret, 36)
+
+    @unittest.skipIf(erase_allowed_devices == [], "no hardware attached")
+    # test func name is larger than 30, but is meaningful
+    # pylint: disable=invalid-name
+    def test_erase_failed_non_supported_method(self):
+        devices = EraseTestCase.erase_allowed_devices
+        eraser = Erase()
+        ret = None
+        for item in devices:
+            if item['target_id']:
+                ret = eraser.erase(target_id=item['target_id'], method='unknown')
+                break
+        self.assertEqual(ret, 29)
+
+    @unittest.skipIf(all_devices == [], "no hardware attached")
+    # test func name is larger than 30, but is meaningful
+    # pylint: disable=invalid-name
     def test_erase_with_target_id_no_reset(self):
-        mbeds = mbed_lstools.create()
-        devices = mbeds.list_mbeds()
+        devices = EraseTestCase.erase_allowed_devices
         eraser = Erase()
         ret = None
         for item in devices:
@@ -102,12 +163,10 @@ class EraseTestCase(unittest.TestCase):
                                    no_reset=True)
                 break
         self.assertEqual(ret, 0)
-        self.assertEqual(len(devices), len(mbeds.list_mbeds()))
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
+    @unittest.skipIf(erase_allowed_devices == [], "no erase allowed hardware attached")
     def test_erase_with_target_id_list(self):
-        mbeds = mbed_lstools.create()
-        devices = mbeds.list_mbeds()
+        devices = EraseTestCase.erase_allowed_devices
         eraser = Erase()
         ret = None
         for item in devices:
@@ -115,15 +174,14 @@ class EraseTestCase(unittest.TestCase):
                 ret = eraser.erase(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, 0)
-        self.assertEqual(len(devices), len(mbeds.list_mbeds()))
 
     # For some reason a bunch of tracebacks on usb.core langid problems.
-    # @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    # @mock.patch('sys.stdout', new_callable=StringIO)
-    # def test_erase_with_all_pyocd(self, mock_stdout):
+    # @unittest.skipIf(all_devices == [], "no hardware attached")
+    # def test_erase_with_all_pyocd(self):
     #    eraser = Erase()
     #    ret = eraser.erase(target_id='all', method='pyocd')
     #    self.assertEqual(ret, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

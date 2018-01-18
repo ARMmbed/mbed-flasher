@@ -57,3 +57,21 @@ class Helper(object):
                     selected_targets.append(target)
 
         return selected_targets
+
+    @staticmethod
+    def list_mbeds_ext():
+        """
+         :return: list of mbeds with details.txt content
+        """
+        mbeds = mbed_lstools.create()
+        return mbeds.list_mbeds(read_details_txt=True)
+
+    @staticmethod
+    def list_mbeds_eraseable(devices=None):
+        """
+        :param devices: devices list or None
+        :return: list eraseable mbeds extended list
+        """
+        devices = devices or Helper.list_mbeds_ext()
+        devices = [dev for dev in devices if dev.get('daplink_automation_allowed') == '1']
+        return devices

@@ -35,6 +35,8 @@ EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE = 29
 EXIT_CODE_IMPLEMENTATION_MISSING = 31
 EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED = 33
 EXIT_CODE_TARGET_ID_MISSING = 34
+EXIT_CODE_MOUNT_POINT_MISSING = 35
+EXIT_CODE_SERIAL_PORT_MISSING = 36
 ERASE_REMOUNT_TIMEOUT = 10
 ERASE_VERIFICATION_TIMEOUT = 30
 ERASE_DAPLINK_SUPPORT_VERSION = 243
@@ -145,20 +147,62 @@ class Erase(object):
                 self.logger.debug("erase check timed out for %s", mount_point)
                 break
 
+    def erase(self, target_id=None, no_reset=None, method=None):
+        """
+        Erase (mbed) device(s).
+        :param target_id: target_id
+        :param no_reset: erase with/without reset
+        :param method: method for erase i.e. simple, pyocd or edbg
+        """
+        self.logger.info("Starting erase for given target_id %s", target_id)
+        self.logger.info("method used for reset: %s", method)
+        available_devices = self.get_available_device_mapping()
+
+        if target_id is None:
+            return EXIT_CODE_TARGET_ID_MISSING
+
+        targets_to_erase = self.prepare_target_to_erase(target_id, available_devices)
+
+        if len(targets_to_erase) <= 0:
+            self.logger.error("Could not map given target_id(s) to available devices")
+            return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
+
+        for item in targets_to_erase:
+            if method == 'simple':
+                erase_fnc = self._erase_board_simple
+            elif method == 'pyocd':
+                erase_fnc = self._erase_board_with_pyocd
+            elif method == 'edbg':
+                self.logger.error("Not supported yet")
+                return EXIT_CODE_IMPLEMENTATION_MISSING
+            else:
+                self.logger.error("Selected method %s not supported", method)
+                return EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE
+
+            code = erase_fnc(target=item, no_reset=no_reset)
+            if code is not EXIT_CODE_SUCCESS:
+                return code
+
+        return EXIT_CODE_SUCCESS
+
     # pylint: disable=too-many-return-statements, too-many-branches
-    def erase_board(self, target, no_reset):
+    def _erase_board_simple(self, target, no_reset):
         """
         :param target: target to which perform the erase
         :param no_reset: erase with/without reset
         :return: exit code
         """
+        if 'mount_point' not in target:
+            return EXIT_CODE_MOUNT_POINT_MISSING
+        if 'serial_port' not in target:
+            return EXIT_CODE_SERIAL_PORT_MISSING
         automation_activated = False
         daplink_version = 0
         if not isfile(join(target["mount_point"], 'DETAILS.TXT')):
             self.logger.error("No DETAILS.TXT found")
             return EXIT_CODE_IMPLEMENTATION_MISSING
 
-        self.logger.error(join(target["mount_point"], 'DETAILS.TXT'))
+        self.logger.debug(join(target["mount_point"], 'DETAILS.TXT'))
         with open(join(target["mount_point"], 'DETAILS.TXT'), 'rb') as new_file:
             for line in new_file:
                 if line.find(b"Automation allowed: 1") != -1:
@@ -174,7 +218,7 @@ class Erase(object):
                         return EXIT_CODE_IMPLEMENTATION_MISSING
 
         if not automation_activated:
-            self.logger.error("Selected device does not support erasing through DAPLINK")
+            self.logger.error("Selected device does not have automation activated in DAPLINK")
             return EXIT_CODE_IMPLEMENTATION_MISSING
 
         if daplink_version < ERASE_DAPLINK_SUPPORT_VERSION:
@@ -208,59 +252,29 @@ class Erase(object):
                 self.logger.error("erase failed")
                 return success
 
-        self.logger.info("erase completed")
+        self.logger.info("erase %s completed", target['target_id'])
         return EXIT_CODE_SUCCESS
 
-    def erase(self, target_id=None, no_reset=None, method=None):
-        """
-        Erase (mbed) device
-        :param target_id: target_id
-        :param method: method for erase i.e. simple, pyocd or edbg
-        """
-        self.logger.info("Starting erase for given target_id %s", target_id)
-        self.logger.info("method used for reset: %s", method)
-        available_devices = self.get_available_device_mapping()
-
-        if target_id is None:
-            return EXIT_CODE_TARGET_ID_MISSING
-
-        targets_to_erase = self.prepare_target_to_erase(target_id, available_devices)
-
-        if len(targets_to_erase) <= 0:
-            print("Could not map given target_id(s) to available devices")
-            return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
-
-        for item in targets_to_erase:
-            if item['platform_name'] != 'K64F':
-                print("Only mbed devices supported")
-                return EXIT_CODE_IMPLEMENTATION_MISSING
-
-            if method == 'simple' and 'mount_point' in item and 'serial_port' in item:
-                self.erase_board(target=item, no_reset=no_reset)
-            elif method == 'pyocd':
-                try:
-                    from pyOCD.board import MbedBoard
-                    from pyOCD.pyDAPAccess import DAPAccessIntf
-                except ImportError:
-                    print('pyOCD missing, install it\n')
-                    return EXIT_CODE_PYOCD_MISSING
-                board = MbedBoard.chooseBoard(board_id=item["target_id"])
-                self.logger.info("erasing device")
-                ocd_target = board.target
-                flash = ocd_target.flash
-                try:
-                    flash.eraseAll()
-                    if not no_reset:
-                        ocd_target.reset()
-                except DAPAccessIntf.TransferFaultError:
-                    pass
-                self.logger.info("erase completed")
-            elif method == 'edbg':
-                print("Not supported yet")
-            else:
-                print("Selected method %s not supported" % method)
-                return EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE
-
+    def _erase_board_with_pyocd(self, target, no_reset):
+        try:
+            from pyOCD.board import MbedBoard
+            from pyOCD.pyDAPAccess import DAPAccessIntf
+        except ImportError:
+            self.logger.error("pyOCD missing, install it")
+            return EXIT_CODE_PYOCD_MISSING
+        target_id = target["target_id"]
+        board = MbedBoard.chooseBoard(board_id=target_id)
+        self.logger.info("erasing device: %s", target_id)
+        ocd_target = board.target
+        flash = ocd_target.flash
+        try:
+            flash.eraseAll()
+            if not no_reset:
+                ocd_target.reset()
+        except DAPAccessIntf.TransferFaultError as error:
+            self.logger.error(error)
+            return EXIT_CODE_PYOCD_ERASE_FAILED
+        self.logger.info("erase completed for target: %s", target_id)
         return EXIT_CODE_SUCCESS
 
     @staticmethod
