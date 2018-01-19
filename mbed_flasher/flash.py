@@ -15,16 +15,17 @@ limitations under the License.
 """
 
 from os.path import isfile
+
 from mbed_flasher.common import Logger
 from mbed_flasher.flashers import AvailableFlashers
-
-EXIT_CODE_NO_PLATFORM_GIVEN = 35
-EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE = 40
-EXIT_CODE_FILE_DOES_NOT_EXIST = 45
-EXIT_CODE_KEYBOARD_INTERRUPT = 50
-EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE = 55
-EXIT_CODE_SYSTEM_INTERRUPT = 60
-EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST = 65
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
+from mbed_flasher.return_codes import EXIT_CODE_FILE_DOES_NOT_EXIST
+from mbed_flasher.return_codes import EXIT_CODE_KEYBOARD_INTERRUPT
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_SYSTEM_INTERRUPT
+from mbed_flasher.return_codes import EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST
 
 
 class Flash(object):
@@ -143,7 +144,7 @@ class Flash(object):
                 self.logger.error('Multiple devices and platforms found,'
                                   'please specify preferred platform with'
                                   ' -t <platform>.')
-                return EXIT_CODE_NO_PLATFORM_GIVEN
+                return EXIT_CODE_PLATFORM_REQUIRED
 
     # pylint: disable=too-many-arguments
     def flash_multiple(self, build, platform_name,
@@ -191,7 +192,7 @@ class Flash(object):
         for item in device_mapping_table:
             self.logger.info(item['target_id'])
 
-        ret_codes = 0
+        ret_code = EXIT_CODE_SUCCESS
         i = 1
         for device in device_mapping_table:
             ret = self.flash(build=build,
@@ -200,14 +201,14 @@ class Flash(object):
                              device_mapping_table=device_mapping_table,
                              method=method,
                              no_reset=no_reset)
-            if ret == 0:
+            if ret == EXIT_CODE_SUCCESS:
                 self.logger.debug("dev#%i -> SUCCESS", i)
             else:
                 self.logger.warning("dev#%i -> FAIL", i)
-            ret_codes += ret
+                ret_code = EXIT_CODE_FLASH_FAILED
             i += 1
 
-        return ret_codes
+        return ret_code
 
     # pylint: disable=too-many-return-statements
     def flash(self, build, target_id=None, platform_name=None,
@@ -257,7 +258,7 @@ class Flash(object):
                                                            device_mapping_table)
         except KeyError as err:
             self.logger.error(err)
-            return EXIT_CODE_TARGET_ID_COULD_NOT_BE_MAPPED_TO_DEVICE
+            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 
         platform_name = self._get_platform_name(platform_name, target_mbed)
 

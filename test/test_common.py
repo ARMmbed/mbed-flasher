@@ -20,7 +20,8 @@ import unittest
 import mock
 
 from mbed_flasher.common import MountVerifier
-
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_CONFLICT
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT
 
 class MountVerifierTestCase(unittest.TestCase):
     # pylint: disable=invalid-name
@@ -56,7 +57,7 @@ class MountVerifierTestCase(unittest.TestCase):
         return_value = mount_verifier._check_serial_point_duplicates(
             target=target, new_target={})
 
-        self.assertEqual(return_value, -10)
+        self.assertEqual(return_value, EXIT_CODE_TARGET_ID_CONFLICT)
 
     # pylint: disable=invalid-name
     @mock.patch("mbed_flasher.common.check_output")
@@ -69,7 +70,7 @@ class MountVerifierTestCase(unittest.TestCase):
         return_value = mount_verifier._check_serial_point_duplicates(
             target={'target_id': 'test'}, new_target={})
 
-        self.assertEqual(return_value, -12)
+        self.assertEqual(return_value, EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT)
 
 
 if __name__ == '__main__':

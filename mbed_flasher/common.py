@@ -22,6 +22,11 @@ import six
 
 import mbed_lstools
 
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_CONFLICT
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
+
 
 # pylint: disable=too-few-public-methods
 class Logger(object):
@@ -139,7 +144,7 @@ class MountVerifier(object):
                             self.logger.error('target_id %s has more than 1 '
                                               'serial port in the system',
                                               target['target_id'])
-                            return -10
+                            return EXIT_CODE_TARGET_ID_CONFLICT
 
             # If target is found even once expect duplication to have appeared
             if target_found_once:
@@ -150,7 +155,7 @@ class MountVerifier(object):
         self.logger.error(
             "serial point for %s did not re-appear in the system in %i seconds",
             target['target_id'], MountVerifier.SERIAL_POINT_TIMEOUT)
-        return -12
+        return EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT
 
     def _check_device_point_duplicates(self, target, new_target):
         """
@@ -170,7 +175,7 @@ class MountVerifier(object):
                     self.logger.error("target_id %s has more than 1 "
                                       "device point in the system",
                                       target['target_id'])
-                    return -11
+                    return EXIT_CODE_TARGET_ID_CONFLICT
 
     def _verify_mount_point(self, target, new_target):
         """
@@ -185,7 +190,7 @@ class MountVerifier(object):
         if 'dev_point' not in new_target:
             self.logger.error("Target %s is missing /dev/disk/by-id/ point",
                               target['target_id'])
-            return -12
+            return EXIT_CODE_TARGET_ID_MISSING
 
         for _ in range(MountVerifier.MOUNT_POINT_TIMEOUT):
             mounts = check_output(["mount", "|", "grep", "vfat"], shell=True).splitlines()
@@ -201,4 +206,4 @@ class MountVerifier(object):
         self.logger.error(
             "vfat mount point for %s did not re-appear in the system in %i seconds",
             target['target_id'], MountVerifier.MOUNT_POINT_TIMEOUT)
-        return -12
+        return EXIT_CODE_MOUNT_POINT_MISSING

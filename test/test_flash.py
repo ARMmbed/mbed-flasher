@@ -19,18 +19,30 @@ limitations under the License.
 import logging
 import unittest
 import os
+from test.test_helper import Helper
+
 try:
     from StringIO import StringIO
 except ImportError:
     # python 3 compatible import
     from io import StringIO
 import platform
-from test.test_helper import Helper
+
 import mock
 import mbed_lstools
+
 from mbed_flasher.flash import Flash
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
-
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_FILE_DOES_NOT_EXIST
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_SOFTWARE_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_TRANSIENT_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_TARGET_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_INTERFACE_ERROR
 
 class FlashTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
@@ -59,7 +71,7 @@ class FlashTestCase(unittest.TestCase):
         ret = flasher.flash(build='file.bin', target_id=True,
                             platform_name=False, device_mapping_table=None,
                             method='simple')
-        self.assertEqual(ret, 45)
+        self.assertEqual(ret, EXIT_CODE_FILE_DOES_NOT_EXIST)
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_flash_logger_created(self, mock_logger):  # pylint: disable=no-self-use
@@ -83,7 +95,7 @@ class FlashTestCase(unittest.TestCase):
                             platform_name=False,
                             device_mapping_table=None,
                             method='simple')
-        self.assertEqual(ret, 40)
+        self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
     def test_run_with_file_with_one_target_id(self):
@@ -93,7 +105,7 @@ class FlashTestCase(unittest.TestCase):
                             platform_name=False,
                             device_mapping_table=None,
                             method='simple')
-        self.assertEqual(ret, 55)
+        self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     # pylint: disable=unused-argument
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
@@ -122,7 +134,7 @@ class FlashTestCase(unittest.TestCase):
                             }],
                             method='simple',
                             no_reset=True)
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(2, mock_out.call_count)
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
@@ -151,7 +163,7 @@ class FlashTestCase(unittest.TestCase):
                             }],
                             method='simple',
                             no_reset=True)
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(2, mock_out.call_count)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
@@ -192,7 +204,7 @@ class FlashTestCase(unittest.TestCase):
                                 platform_name=False,
                                 device_mapping_table=None,
                                 method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -203,7 +215,7 @@ class FlashTestCase(unittest.TestCase):
                             platform_name='K64F',
                             device_mapping_table=None,
                             method='simple')
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if mock_stdout:
             pass
 
@@ -216,7 +228,7 @@ class FlashTestCase(unittest.TestCase):
                             platform_name=None,
                             device_mapping_table=None,
                             method='simple')
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if mock_stdout:
             pass
 
@@ -249,7 +261,7 @@ class FlashTestCase(unittest.TestCase):
             else:
                 os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
-            self.assertEqual(ret, -15)
+            self.assertEqual(ret, EXIT_CODE_FILE_STILL_PRESENT)
         if mock_stdout:
             pass
 
@@ -284,7 +296,7 @@ class FlashTestCase(unittest.TestCase):
                 os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
                 os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
 
-            self.assertEqual(ret, 3)
+            self.assertEqual(ret, EXIT_CODE_DAPLINK_USER_ERROR)
         if mock_stdout:
             pass
 
@@ -298,7 +310,7 @@ class FlashVerify(unittest.TestCase):
         return_value = FlasherMbed().verify_flash_success(
             new_target=new_target, target={}, tail="")
 
-        self.assertEqual(return_value, 0)
+        self.assertEqual(return_value, EXIT_CODE_SUCCESS)
 
     # test with name longer than 30, disable the warning here
     # pylint: disable=invalid-name
@@ -318,7 +330,7 @@ class FlashVerify(unittest.TestCase):
         return_value = FlasherMbed().verify_flash_success(
             new_target=new_target, target=target, tail="")
 
-        self.assertEqual(return_value, -4)
+        self.assertEqual(return_value, EXIT_CODE_FLASH_FAILED)
 
     # test with name longer than 30, disable the warning here
     # pylint: disable=invalid-name
@@ -340,47 +352,64 @@ class FlashVerify(unittest.TestCase):
                 new_target=new_target, target=target, tail="")
             self.assertEqual(return_value, code)
 
-        check("An internal error has occurred", 1)
-        check("End of stream has been reached", 1)
-        check("End of stream is unknown", 1)
+        check("An internal error has occurred", EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
+        check("End of stream has been reached", EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
+        check("End of stream is unknown", EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
 
-        check("An error occurred during the transfer", 2)
-        check("Possible mismatch between file size and size programmed", 2)
-        check("File sent out of order by PC. Target might not be programmed correctly.", 2)
-        check("An error has occurred", 2)
+        check("An error occurred during the transfer", EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
+        check("Possible mismatch between file size and size programmed",
+              EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
+        check("File sent out of order by PC. Target might not be programmed correctly.",
+              EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
+        check("An error has occurred", EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
 
-        check("The transfer timed out.", 3)
-        check("The interface firmware ABORTED programming. Image is trying to set security bits", 3)
-        check("The hex file cannot be decoded. Checksum calculation failure occurred.", 3)
-        check("The hex file cannot be decoded. Parser logic failure occurred.", 3)
-        check("The hex file cannot be programmed. Logic failure occurred.", 3)
+        check("The transfer timed out.", EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The interface firmware ABORTED programming. Image is trying to set security bits",
+              EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The hex file cannot be decoded. Checksum calculation failure occurred.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The hex file cannot be decoded. Parser logic failure occurred.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The hex file cannot be programmed. Logic failure occurred.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
         check("The hex file you dropped isn't compatible with this mode or device."
-              "Are you in MAINTENANCE mode? See HELP FAQ.HTM", 3)
-        check("The hex file offset load address is not correct.", 3)
-        check("The starting address for the bootloader update is wrong.", 3)
-        check("The starting address for the interface update is wrong.", 3)
-        check("The application file format is unknown and cannot be parsed and/or processed.", 3)
+              "Are you in MAINTENANCE mode? See HELP FAQ.HTM", EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The hex file offset load address is not correct.", EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The starting address for the bootloader update is wrong.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The starting address for the interface update is wrong.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The application file format is unknown and cannot be parsed and/or processed.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
 
-        check("The interface firmware FAILED to reset/halt the target MCU", 4)
+        check("The interface firmware FAILED to reset/halt the target MCU",
+              EXIT_CODE_DAPLINK_TARGET_ERROR)
         check("The interface firmware FAILED to download the flash programming"
-              " algorithms to the target MCU", 4)
+              " algorithms to the target MCU", EXIT_CODE_DAPLINK_TARGET_ERROR)
         check("The interface firmware FAILED to download the flash"
-              " data contents to be programmed", 4)
-        check("The interface firmware FAILED to initialize the target MCU", 4)
-        check("The interface firmware FAILED to unlock the target for programming", 4)
-        check("Flash algorithm erase sector command FAILURE", 4)
-        check("Flash algorithm erase all command FAILURE", 4)
-        check("Flash algorithm write command FAILURE", 4)
+              " data contents to be programmed", EXIT_CODE_DAPLINK_TARGET_ERROR)
+        check("The interface firmware FAILED to initialize the target MCU",
+              EXIT_CODE_DAPLINK_TARGET_ERROR)
+        check("The interface firmware FAILED to unlock the target for programming",
+              EXIT_CODE_DAPLINK_TARGET_ERROR)
+        check("Flash algorithm erase sector command FAILURE", EXIT_CODE_DAPLINK_TARGET_ERROR)
+        check("Flash algorithm erase all command FAILURE", EXIT_CODE_DAPLINK_TARGET_ERROR)
+        check("Flash algorithm write command FAILURE", EXIT_CODE_DAPLINK_TARGET_ERROR)
 
-        check("In application programming aborted due to an out of bounds address.", 5)
-        check("In application programming initialization failed.", 5)
-        check("In application programming uninit failed.", 5)
-        check("In application programming write failed.", 5)
-        check("In application programming sector erase failed.", 5)
-        check("In application programming mass erase failed.", 5)
-        check("In application programming not supported on this device.", 5)
-        check("In application programming failed because the update sent was incomplete.", 5)
-        check("The bootloader CRC did not pass.", 5)
+        check("In application programming aborted due to an out of bounds address.",
+              EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming initialization failed.",
+              EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming uninit failed.", EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming write failed.", EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming sector erase failed.",
+              EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming mass erase failed.", EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming not supported on this device.",
+              EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("In application programming failed because the update sent was incomplete.",
+              EXIT_CODE_DAPLINK_INTERFACE_ERROR)
+        check("The bootloader CRC did not pass.", EXIT_CODE_DAPLINK_INTERFACE_ERROR)
 
 if __name__ == '__main__':
     unittest.main()

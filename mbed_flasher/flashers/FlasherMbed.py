@@ -30,15 +30,14 @@ import mbed_lstools
 from mbed_flasher.common import MountVerifier
 from mbed_flasher.daplink_errors import DAPLINK_ERRORS
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
-
-EXIT_CODE_SUCCESS = 0
-EXIT_CODE_FLASH_FAILED = -4
-EXIT_CODE_RESET_FAIL = -6
-EXIT_CODE_FILE_COULD_NOT_BE_READ = -7
-EXIT_CODE_PYOCD_NOT_INSTALLED = -8
-EXIT_CODE_EGDB_NOT_SUPPORTED = -13
-EXIT_CODE_OS_ERROR = -14
-EXIT_CODE_FILE_STILL_PRESENT = -15
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_RESET_FAIL
+from mbed_flasher.return_codes import EXIT_CODE_FILE_COULD_NOT_BE_READ
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_NOT_INSTALLED
+from mbed_flasher.return_codes import EXIT_CODE_EGDB_NOT_SUPPORTED
+from mbed_flasher.return_codes import EXIT_CODE_OS_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
 
 
 class FlasherMbed(object):
@@ -116,6 +115,12 @@ class FlasherMbed(object):
                 proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
             else:
                 proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+
+            # todo: replace read() -> "(stdout, stderr) = proc.communicate()"
+            # see: https://docs.python.org/2/library/subprocess.html#subprocess.Popen.kill
+            # "Use communicate() rather than .stdin.write, .stdout.read or .stderr.read to
+            # avoid deadlocks due to any of the other OS pipe buffers filling up and blocking
+            # the child process."
             out = proc.stdout.read()
             proc.communicate()
 

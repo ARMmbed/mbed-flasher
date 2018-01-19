@@ -23,6 +23,13 @@ import mock
 import mbed_lstools
 from mbed_flasher.erase import Erase
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 
 # pylint: disable=C0103
 list_mbeds_ext = Helper.list_mbeds_ext
@@ -52,26 +59,26 @@ class EraseTestCase(unittest.TestCase):
     def test_erase_with_none(self):
         eraser = Erase()
         ret = eraser.erase(target_id=None, method='simple')
-        self.assertEqual(ret, 34)
+        self.assertEqual(ret, EXIT_CODE_TARGET_ID_MISSING)
 
     def test_erase_with_wrong_target_id(self):
         eraser = Erase()
         ret = eraser.erase(target_id='555', method='simple')
-        self.assertEqual(ret, 21)
+        self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     def test_erase_with_all_no_devices(self):
         with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
             mocked_get.return_value = []
             eraser = Erase()
             ret = eraser.erase(target_id='all', method='simple')
-            self.assertEqual(ret, 21)
+            self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     @unittest.skipIf(all_devices == [], "no hardware attached")
     @unittest.skipIf(erase_allowed_devices != all_devices, "cannot erase all mbeds")
     def test_erase_with_all(self):
         eraser = Erase()
         ret = eraser.erase(target_id='all', method='simple')
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     @unittest.skipIf(erase_allowed_devices == [], "no erase allowed mbeds")
     def test_erase_with_target_id(self):
@@ -82,7 +89,7 @@ class EraseTestCase(unittest.TestCase):
             if item['target_id']:
                 ret = eraser.erase(target_id=item['target_id'], method='simple')
                 break
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
@@ -100,7 +107,7 @@ class EraseTestCase(unittest.TestCase):
                 if item['target_id']:
                     ret = eraser.erase(target_id=item['target_id'], method='simple')
                     break
-            self.assertEqual(ret, 31)
+            self.assertEqual(ret, EXIT_CODE_IMPLEMENTATION_MISSING)
 
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
@@ -117,7 +124,7 @@ class EraseTestCase(unittest.TestCase):
                 if item['target_id']:
                     ret = eraser.erase(target_id=item['target_id'], method='simple')
                     break
-            self.assertEqual(ret, 35)
+            self.assertEqual(ret, EXIT_CODE_MOUNT_POINT_MISSING)
 
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
@@ -134,7 +141,7 @@ class EraseTestCase(unittest.TestCase):
                 if item['target_id']:
                     ret = eraser.erase(target_id=item['target_id'], method='simple')
                     break
-            self.assertEqual(ret, 36)
+            self.assertEqual(ret, EXIT_CODE_SERIAL_PORT_MISSING)
 
     @unittest.skipIf(erase_allowed_devices == [], "no hardware attached")
     # test func name is larger than 30, but is meaningful
@@ -147,7 +154,7 @@ class EraseTestCase(unittest.TestCase):
             if item['target_id']:
                 ret = eraser.erase(target_id=item['target_id'], method='unknown')
                 break
-        self.assertEqual(ret, 29)
+        self.assertEqual(ret, EXIT_CODE_MISUSE_CMD)
 
     @unittest.skipIf(all_devices == [], "no hardware attached")
     # test func name is larger than 30, but is meaningful
@@ -162,7 +169,7 @@ class EraseTestCase(unittest.TestCase):
                                    method='simple',
                                    no_reset=True)
                 break
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     @unittest.skipIf(erase_allowed_devices == [], "no erase allowed hardware attached")
     def test_erase_with_target_id_list(self):
@@ -173,14 +180,14 @@ class EraseTestCase(unittest.TestCase):
             if item['target_id']:
                 ret = eraser.erase(target_id=[item['target_id']], method='simple')
                 break
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     # For some reason a bunch of tracebacks on usb.core langid problems.
     # @unittest.skipIf(all_devices == [], "no hardware attached")
     # def test_erase_with_all_pyocd(self):
     #    eraser = Erase()
     #    ret = eraser.erase(target_id='all', method='pyocd')
-    #    self.assertEqual(ret, 0)
+    #    self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
 
 if __name__ == '__main__':

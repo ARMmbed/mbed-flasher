@@ -20,15 +20,14 @@ limitations under the License.
 from serial.serialutil import SerialException
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
 from mbed_flasher.common import Logger
-
-EXIT_CODE_SUCCESS = 0
-EXIT_CODE_COULD_NOT_MAP_TO_DEVICE = 3
-EXIT_CODE_PYOCD_MISSING = 5
-EXIT_CODE_PYOCD_RESET_FAILED = 7
-EXIT_CODE_NONSUPPORTED_METHOD_FOR_RESET = 9
-EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
-EXIT_CODE_SERIAL_RESET_FAILED = 13
-EXIT_CODE_TARGET_ID_MISSING = 15
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_RESET_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_OPEN_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_RESET_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 
 
 class Reset(object):
@@ -72,7 +71,7 @@ class Reset(object):
             # pylint: disable=no-member
             if err.message.find('could not open port') != -1:
                 print('Reset could not be given. Close your Serial connection to device.')
-            return EXIT_CODE_RESET_FAILED_PORT_OPEN
+            return EXIT_CODE_SERIAL_PORT_OPEN_FAILED
         port.baudrate = 115200
         port.timeout = 1
         port.xonxoff = False
@@ -106,7 +105,7 @@ class Reset(object):
 
         if len(targets_to_reset) <= 0:
             print("Could not map given target_id(s) to available devices")
-            return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
+            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 
         for item in targets_to_reset:
             if method == 'simple' and 'serial_port' in item:
@@ -117,7 +116,7 @@ class Reset(object):
                 print("Not supported yet")
             else:
                 print("Selected method %s not supported" % method)
-                return EXIT_CODE_NONSUPPORTED_METHOD_FOR_RESET
+                return EXIT_CODE_MISUSE_CMD
 
         return EXIT_CODE_SUCCESS
 

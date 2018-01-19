@@ -29,15 +29,15 @@ import time
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
 
-EXIT_CODE_SUCCESS = 0
-EXIT_CODE_FILE_MISSING = 5
-EXIT_CODE_NOT_SUPPORTED_PLATFORM = 10
-EXIT_CODE_NO_TARGET_ID = 15
-EXIT_CODE_DEVICES_MISSING = 20
-EXIT_CODE_COULD_NOT_MAP_DEVICE = 25
-EXIT_CODE_COULD_NOT_MAP_ALL_DEVICE = 30
-EXIT_CODE_PLATFORM_REQUIRED = 40
+LOGS_TTL = 172800 # 2 days, when log file is older it will be deleted
 
 def get_subparser(subparsers, name, func, **kwargs):
     """
@@ -111,7 +111,7 @@ class FlasherCLI(object):
         if not os.path.exists('logs'):
             os.mkdir('logs')
         files_to_be_removed = []
-        old_logs = time.time()-172800  # 2 days
+        old_logs = time.time()-LOGS_TTL
         for root, _, files in os.walk('logs/'):
             for name in files:
                 if str(name).find('_mbed-flasher.txt') != -1:
@@ -136,7 +136,7 @@ class FlasherCLI(object):
         if self.args.func:
             return self.args.func(self.args)
         self.parser.print_usage()
-        return 0
+        return EXIT_CODE_SUCCESS
 
     def argparser_setup(self, sysargs):
         """! Configure CLI (Command Line options) options
@@ -303,7 +303,7 @@ class FlasherCLI(object):
 
         if not args.tid:
             print("Target_id is missing")
-            return EXIT_CODE_NO_TARGET_ID
+            return EXIT_CODE_TARGET_ID_MISSING
 
         if 'all' in args.tid:
             retcode = flasher.flash(build=args.input, target_id='all',
@@ -386,7 +386,7 @@ class FlasherCLI(object):
                 retcode = resetter.reset(target_id=ids, method=args.method)
         else:
             print("Target_id is missing")
-            return EXIT_CODE_NO_TARGET_ID
+            return EXIT_CODE_TARGET_ID_MISSING
 
         return retcode
 
@@ -405,7 +405,7 @@ class FlasherCLI(object):
                                        method=args.method)
         else:
             print("Target_id is missing")
-            return EXIT_CODE_NO_TARGET_ID
+            return EXIT_CODE_TARGET_ID_MISSING
 
         return retcode
 

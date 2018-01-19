@@ -19,7 +19,8 @@ import re
 import subprocess
 import logging
 import tempfile
-
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
 
 class FlasherAtmelAt(object):
     """
@@ -128,7 +129,7 @@ class FlasherAtmelAt(object):
             stdout, stderr = proc.communicate()
             FlasherAtmelAt.logger.debug(stdout)
             FlasherAtmelAt.logger.debug(stderr)
-            return proc.returncode
+            return EXIT_CODE_SUCCESS if proc.returncode == 0 else EXIT_CODE_FLASH_FAILED
 
     @staticmethod
     def lookup_exe(alternatives):

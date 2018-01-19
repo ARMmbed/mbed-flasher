@@ -21,11 +21,15 @@ import unittest
 import time
 import os
 from test.test_helper import Helper
+
 import serial
 import six
+import mbed_lstools
+
 from mbed_flasher.flash import Flash
 from mbed_flasher.reset import Reset
-import mbed_lstools
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+
 
 
 def verify_output_per_device(serial_port, command, output):
@@ -117,14 +121,14 @@ class FlashVerifyTestCase(unittest.TestCase):
                                 platform_name='K64F',
                                 device_mapping_table=False,
                                 method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
             second_binary = find_second_binary()
             self.assertIsNotNone(second_binary, 'Second binary not found')
             ret = flasher.flash(build=second_binary,
                                 target_id=target_id, platform_name='K64F',
                                 device_mapping_table=False, method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             if not verify_output_per_device(serial_port, 'help', 'echo'):
                 self.assertEqual(
                     verify_output_per_device(serial_port, 'help', 'echo'), True)
@@ -133,7 +137,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                                 platform_name='K64F',
                                 device_mapping_table=False,
                                 method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
     @unittest.skipIf(check_two_binaries_exist() is False,
@@ -159,7 +163,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                                 platform_name='K64F',
                                 device_mapping_table=False,
                                 method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             if not verify_output_per_device(serial_port, 'help', 'echo'):
                 self.assertEqual(
                     verify_output_per_device(serial_port, 'help', 'echo'), True)
@@ -170,10 +174,10 @@ class FlashVerifyTestCase(unittest.TestCase):
                                 device_mapping_table=False,
                                 method='simple',
                                 no_reset=True)
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
             ret = resetter.reset(target_id=target_id, method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             if not verify_output_per_device(serial_port, 'help', 'echo'):
                 self.assertEqual(
                     verify_output_per_device(serial_port, 'help', 'echo'), True)
@@ -182,7 +186,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                                 platform_name='K64F',
                                 device_mapping_table=False,
                                 method='simple')
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
 if __name__ == '__main__':

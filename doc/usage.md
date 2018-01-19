@@ -28,7 +28,7 @@
         * [Resetting a single device using pyOCD](#resetting-a-single-device-using-pyocd)
         * [Resetting devices with a prefix](#resetting-devices-with-a-prefix)
         * [Resetting all devices using pyOCD](#resetting-all-devices-using-pyocd)
-        
+
 * [Command Line Interface](#command-line-interface)
     * [Listing commands](#listing-commands)
         * [Running mbed-flasher without input](#running-mbed-flasher-without-input)
@@ -56,7 +56,7 @@
         * [Resetting multiple devices with verbose output](#resetting-multiple-devices-with-verbose-output)
         * [Resetting with a prefix with verbose output](#resetting-with-a-prefix-with-verbose-output)
         * [Resetting all devices with verbose output](#resetting-all-devices-with-verbose-output)
-    
+* [Exit codes](#exit-codes)
 ## Python API
 
 ### Flash API
@@ -617,3 +617,8 @@ C:\>mbedflash -vvv reset --tid all
 C:\>
 ```
 
+## Exit codes
+
+`0` exit code means success and other failures.
+
+See all exit codes from [here](exit_codes.md)

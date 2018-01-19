@@ -23,20 +23,20 @@ from threading import Thread
 import platform
 from subprocess import PIPE, Popen
 import six
-from mbed_flasher.common import Logger, MountVerifier
 
-EXIT_CODE_SUCCESS = 0
-EXIT_CODE_RESET_FAILED_PORT_OPEN = 11
-EXIT_CODE_SERIAL_RESET_FAILED = 13
-EXIT_CODE_COULD_NOT_MAP_TO_DEVICE = 21
-EXIT_CODE_PYOCD_MISSING = 23
-EXIT_CODE_PYOCD_ERASE_FAILED = 27
-EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE = 29
-EXIT_CODE_IMPLEMENTATION_MISSING = 31
-EXIT_CODE_ERASE_FAILED_NOT_SUPPORTED = 33
-EXIT_CODE_TARGET_ID_MISSING = 34
-EXIT_CODE_MOUNT_POINT_MISSING = 35
-EXIT_CODE_SERIAL_PORT_MISSING = 36
+from mbed_flasher.common import Logger, MountVerifier
+from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_OPEN_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_RESET_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_ERASE_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
+from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_MISSING
+
 ERASE_REMOUNT_TIMEOUT = 10
 ERASE_VERIFICATION_TIMEOUT = 30
 ERASE_DAPLINK_SUPPORT_VERSION = 243
@@ -85,7 +85,7 @@ class Erase(object):
             #  pylint: disable=no-member
             if err.message.find('could not open port') != -1:
                 print('Reset could not be given. Close your Serial connection to device.')
-            return EXIT_CODE_RESET_FAILED_PORT_OPEN
+            return EXIT_CODE_SERIAL_PORT_OPEN_FAILED
         port.baudrate = 115200
         port.timeout = 1
         port.xonxoff = False
@@ -165,7 +165,7 @@ class Erase(object):
 
         if len(targets_to_erase) <= 0:
             self.logger.error("Could not map given target_id(s) to available devices")
-            return EXIT_CODE_COULD_NOT_MAP_TO_DEVICE
+            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 
         for item in targets_to_erase:
             if method == 'simple':
@@ -177,7 +177,7 @@ class Erase(object):
                 return EXIT_CODE_IMPLEMENTATION_MISSING
             else:
                 self.logger.error("Selected method %s not supported", method)
-                return EXIT_CODE_NONSUPPORTED_METHOD_FOR_ERASE
+                return EXIT_CODE_MISUSE_CMD
 
             code = erase_fnc(target=item, no_reset=no_reset)
             if code is not EXIT_CODE_SUCCESS:
