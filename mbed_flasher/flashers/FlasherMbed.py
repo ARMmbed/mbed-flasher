@@ -291,7 +291,13 @@ class FlasherMbed(object):
                               fault, target["target_id"])
 
             try:
-                return DAPLINK_ERRORS[fault]
+                errors = [error for error in DAPLINK_ERRORS if error in fault]
+                assert len(errors) == 1
+                return DAPLINK_ERRORS[errors[0]]
+            except AssertionError:
+                self.logger.warning("Expected to find exactly one error in fault: %s",
+                                    fault)
+                return EXIT_CODE_FLASH_FAILED
             except KeyError:
                 return EXIT_CODE_FLASH_FAILED
 

@@ -411,5 +411,48 @@ class FlashVerify(unittest.TestCase):
               EXIT_CODE_DAPLINK_INTERFACE_ERROR)
         check("The bootloader CRC did not pass.", EXIT_CODE_DAPLINK_INTERFACE_ERROR)
 
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._read_file')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.isfile')
+    def test_verify_flash_success_new_style(self, mock_isfile, mock_read_file):
+        def isfile_function(path):
+            if "FAIL" in path:
+                return True
+            return False
+
+        mock_isfile.side_effect = isfile_function
+        mock_read_file.return_value = """
+error: File sent out of order by PC. Target might not be programmed correctly.
+error type: transient, user
+        """
+
+        new_target = {"mount_point": ""}
+        target = {"target_id": ""}
+        return_value = FlasherMbed().verify_flash_success(
+            new_target=new_target, target=target, tail="")
+
+        self.assertEqual(return_value, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
+
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._read_file')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.isfile')
+    def test_verify_flash_success_multiple_hits(self, mock_isfile, mock_read_file):
+        def isfile_function(path):
+            if "FAIL" in path:
+                return True
+            return False
+
+        mock_isfile.side_effect = isfile_function
+        mock_read_file.return_value = """
+error: File sent out of order by PC. Target might not be programmed correctly.
+An error occurred during the transfer.
+error type: transient, user
+        """
+
+        new_target = {"mount_point": ""}
+        target = {"target_id": ""}
+        return_value = FlasherMbed().verify_flash_success(
+            new_target=new_target, target=target, tail="")
+
+        self.assertEqual(return_value, EXIT_CODE_FLASH_FAILED)
+
 if __name__ == '__main__':
     unittest.main()
