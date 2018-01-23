@@ -44,6 +44,7 @@ from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_TRANSIENT_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_TARGET_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_INTERFACE_ERROR
 
+
 class FlashTestCase(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
@@ -136,6 +137,15 @@ class FlashTestCase(unittest.TestCase):
                             no_reset=True)
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(2, mock_out.call_count)
+
+    # pylint: disable=no-self-use
+    @unittest.skipIf(platform.system() != 'Windows', 'require windows')
+    @mock.patch('os.system')
+    def test_copy_file_with_spaces(self, mock_system):
+        flasher = FlasherMbed()
+        flasher.copy_file(__file__, "tar get")
+        should_be = 'copy "%s" "tar get"' % __file__
+        mock_system.assert_called_once_with(should_be)
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
     @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
