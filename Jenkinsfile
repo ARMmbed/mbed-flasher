@@ -268,7 +268,7 @@ def postBuild() {
 
 
 timestamps {
-    timeout(time: 40, unit: "MINUTES") {
+    timeout(time: 60, unit: "MINUTES") {
         parallel parallelSteps
     }
 }
