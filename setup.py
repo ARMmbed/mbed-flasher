@@ -22,11 +22,11 @@ from distutils.core import setup
 from setuptools import find_packages
 
 
-LICENSE = open('LICENSE').read()
+LICENSE = open("LICENSE").read()
 DESCRIPTION = "mbed-flasher"
-OWNER_NAMES = 'Jussi Vatjus-Anttila'
-OWNER_EMAILS = 'Jussi.Vatjus-Anttila@arm.com'
-
+OWNER_NAMES = "Jussi Vatjus-Anttila"
+OWNER_EMAILS = "Jussi.Vatjus-Anttila@arm.com"
+VERSION = "0.6.2"
 
 # Utility function to cat in a file (used for the README)
 def read(fname):
@@ -35,19 +35,19 @@ def read(fname):
     """
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup(name='mbed-flasher',
-      version='0.6.1',
+setup(name="mbed-flasher",
+      version=VERSION,
       description=DESCRIPTION,
-      long_description=read('README.md'),
+      long_description=read("README.md"),
       author=OWNER_NAMES,
       author_email=OWNER_EMAILS,
       maintainer=OWNER_NAMES,
       maintainer_email=OWNER_EMAILS,
-      url='https://github.com/ARMmbed/mbed-flasher',
-      packages=find_packages(),
-      package_data={'': ['FlasherMbed.target_info.json']},
+      url="https://github.com/ARMmbed/mbed-flasher",
+      download_url="https://api.github.com/repos/ARMmbed/mbed-flasher/tarball/v{}".format(VERSION),
+      packages=find_packages(exclude=["doc", "test", "logs"]),
       license=LICENSE,
-      test_suite='test',
+      test_suite="test",
       tests_require=["mock"],
       entry_points={
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
@@ -57,4 +57,15 @@ setup(name='mbed-flasher',
           "six",
           "pyserial",
           "pyOCD"
+      ],
+      classifiers=[
+          "Development Status :: 5 - Production/Stable",
+          "Environment :: Console",
+          "License :: OSI Approved :: Apache Software License",
+          "Intended Audience :: Developers",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
+          "Topic :: Software Development :: Embedded Systems",
+          "Programming Language :: Python :: 2.7",
+          "Programming Language :: Python :: 3.6"
       ])
