@@ -62,14 +62,14 @@ def verify_output_per_device(serial_port, command, output):
         return False
 
 
-def check_two_binaries_exist():
+def check_three_binaries_exist():
     count = 0
     for _, _, files in os.walk('test/'):
         for name in files:
             if str(name).endswith('.bin'):
                 count += 1
 
-    return bool(count == 2)
+    return bool(count == 3)
 
 
 def find_second_binary():
@@ -101,7 +101,7 @@ class FlashVerifyTestCase(unittest.TestCase):
     def tearDown(self):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
-    @unittest.skipIf(check_two_binaries_exist() is False,
+    @unittest.skipIf(check_three_binaries_exist() is False,
                      "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash(self):
         mbeds = mbed_lstools.create()
@@ -140,7 +140,7 @@ class FlashVerifyTestCase(unittest.TestCase):
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
-    @unittest.skipIf(check_two_binaries_exist() is False,
+    @unittest.skipIf(check_three_binaries_exist() is False,
                      "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash_no_reset(self):
         mbeds = mbed_lstools.create()

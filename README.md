@@ -3,7 +3,7 @@
 ## Description
 
 mbed-flasher is a simple Python-based tool for flashing single or multiple boards.
-It provides a simple Command Line Interface and Python API for flashing. 
+It provides a simple Command Line Interface and Python API for flashing.
 
 The purpose is to provide a clean and simple library that is easy to integrate to other tools.
 It can be easily developed further to support flashing in mbed OS and other platforms.
@@ -72,8 +72,9 @@ optional arguments:
   --tid TARGET_ID, --target_id TARGET_ID
                         Target to be flashed, ALL will flash all connected
                         devices with given platform-name, also multiple
-                        targets can be given. Short target_id matches boards
-                        by prefix
+                        targets can be given. Does not continue flashing
+                        next device in case of failures. Short target_id
+                        matches boards by prefix
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
                         Platform of the target device(s)
   --no-reset            Do not reset device before or after flashing

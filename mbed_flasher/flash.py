@@ -19,7 +19,6 @@ from os.path import isfile
 from mbed_flasher.common import Logger
 from mbed_flasher.flashers import AvailableFlashers
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
-from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
 from mbed_flasher.return_codes import EXIT_CODE_FILE_DOES_NOT_EXIST
 from mbed_flasher.return_codes import EXIT_CODE_KEYBOARD_INTERRUPT
@@ -192,7 +191,6 @@ class Flash(object):
         for item in device_mapping_table:
             self.logger.info(item['target_id'])
 
-        ret_code = EXIT_CODE_SUCCESS
         i = 1
         for device in device_mapping_table:
             ret = self.flash(build=build,
@@ -205,10 +203,10 @@ class Flash(object):
                 self.logger.debug("dev#%i -> SUCCESS", i)
             else:
                 self.logger.warning("dev#%i -> FAIL", i)
-                ret_code = EXIT_CODE_FLASH_FAILED
+                return ret
             i += 1
 
-        return ret_code
+        return EXIT_CODE_SUCCESS
 
     # pylint: disable=too-many-return-statements
     def flash(self, build, target_id=None, platform_name=None,

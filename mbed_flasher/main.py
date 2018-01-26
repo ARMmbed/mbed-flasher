@@ -209,7 +209,8 @@ class FlasherCLI(object):
                                               help='Reset given resource')
         parser_reset.add_argument('--tid', '--target_id',
                                   help='Target to be reset or ALL, '
-                                       'also multiple targets can be given. '
+                                       'also multiple targets can be given.'
+                                       'Does not continue flashing next device in case of failures.'
                                        'Short target_id matches boards by prefix',
                                   default=None, metavar='TARGET_ID', action='append')
         parser_reset.add_argument('method',
