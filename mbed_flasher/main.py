@@ -29,6 +29,7 @@ import time
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
+from mbed_flasher.return_codes import FAILURE_RETURN_CODE_MAPPING_TABLE
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
@@ -486,7 +487,13 @@ def mbedflash_main():
     """
 
     cli = FlasherCLI()
-    exit(cli.execute())
+    retcode = cli.execute()
+    if retcode:
+        try:
+            cli.logger.error("Failed: %s", FAILURE_RETURN_CODE_MAPPING_TABLE[retcode])
+        except KeyError:
+            cli.logger.error("Failed with unknown reason: %s", str(retcode))
+    exit(retcode)
 
 if __name__ == '__main__':
     mbedflash_main()
