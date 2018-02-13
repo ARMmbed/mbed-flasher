@@ -16,7 +16,7 @@ limitations under the License.
 
 from os.path import isfile
 
-from mbed_flasher.common import Logger
+from mbed_flasher.common import Common, Logger
 from mbed_flasher.flashers import AvailableFlashers
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
@@ -40,6 +40,13 @@ class Flash(object):
         self.logger = logger
         self._flashers = self.__get_flashers()
         self.supported_targets = self.__update_supported_targets()
+
+    def get_all_flashers(self):
+        """
+        Getter for flashers
+        :return: list of flashers
+        """
+        return self._flashers
 
     def get_supported_targets(self):
         """
@@ -66,6 +73,13 @@ class Flash(object):
             all_supported_targets.extend(supported_targets)
         return all_supported_targets
 
+    def get_available_device_mapping(self):
+        """
+        Get available devices
+        :return: list of devices
+        """
+        return Common(self.logger).get_available_device_mapping(self._flashers)
+
     @staticmethod
     def __get_flashers():
         """
@@ -84,16 +98,6 @@ class Flash(object):
                 return available_flasher
 
         return EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST
-
-    def get_available_device_mapping(self):
-        """
-        :return: list of available devices
-        """
-        available_devices = []
-        for flasher in self._flashers:
-            devices = flasher.get_available_devices()
-            available_devices.extend(devices)
-        return available_devices
 
     def __get_flasher(self, platform_name):
         """
@@ -156,7 +160,7 @@ class Flash(object):
         :param no_reset: with/without reset
         :return:
         """
-        device_mapping_table = self.get_available_device_mapping()
+        device_mapping_table = Common(self.logger).get_available_device_mapping(self._flashers)
 
         if not platform_name:
             return_code = self._verify_platform_coherence(device_mapping_table)
@@ -293,7 +297,7 @@ class Flash(object):
             elif not isinstance(device_mapping_table, list):
                 raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
-            device_mapping_table = self.get_available_device_mapping()
+            device_mapping_table = Common(self.logger).get_available_device_mapping(self._flashers)
 
         self.logger.debug(device_mapping_table)
 

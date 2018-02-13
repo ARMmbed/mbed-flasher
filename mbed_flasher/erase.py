@@ -24,7 +24,7 @@ import platform
 from subprocess import PIPE, Popen
 import six
 
-from mbed_flasher.common import Logger, MountVerifier
+from mbed_flasher.common import Common, Logger, MountVerifier
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_OPEN_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_RESET_FAILED
@@ -53,13 +53,10 @@ class Erase(object):
 
     def get_available_device_mapping(self):
         """
-        :return: list of available devices
+        Get available devices
+        :return: list of devices
         """
-        available_devices = []
-        for flasher in self.flashers:
-            devices = flasher.get_available_devices()
-            available_devices.extend(devices)
-        return available_devices
+        return Common(self.logger).get_available_device_mapping(self.flashers)
 
     @staticmethod
     def __get_flashers():
@@ -154,12 +151,13 @@ class Erase(object):
         :param no_reset: erase with/without reset
         :param method: method for erase i.e. simple, pyocd or edbg
         """
-        self.logger.info("Starting erase for given target_id %s", target_id)
-        self.logger.info("method used for reset: %s", method)
-        available_devices = self.get_available_device_mapping()
-
         if target_id is None:
             return EXIT_CODE_TARGET_ID_MISSING
+
+        self.logger.info("Starting erase for given target_id %s", target_id)
+        self.logger.info("method used for reset: %s", method)
+        available_devices = Common(self.logger).get_available_device_mapping(
+            self.flashers, target_id)
 
         targets_to_erase = self.prepare_target_to_erase(target_id, available_devices)
 

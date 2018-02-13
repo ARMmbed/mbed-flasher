@@ -19,7 +19,7 @@ limitations under the License.
 
 from serial.serialutil import SerialException
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
-from mbed_flasher.common import Logger
+from mbed_flasher.common import Common, Logger
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_MISSING
@@ -34,6 +34,7 @@ class Reset(object):
     """ Reset object, which manages reset for given devices
     """
     _flashers = []
+
     def __init__(self):
         logger = Logger('mbed-flasher')
         self.logger = logger.logger
@@ -41,13 +42,10 @@ class Reset(object):
 
     def get_available_device_mapping(self):
         """
-        :return: available devices
+        Get available devices
+        :return: list of devices
         """
-        available_devices = []
-        for flasher in self._flashers:
-            devices = flasher.get_available_devices()
-            available_devices.extend(devices)
-        return available_devices
+        return Common(self.logger).get_available_device_mapping(self._flashers)
 
     @staticmethod
     def __get_flashers():
@@ -94,12 +92,13 @@ class Reset(object):
         :param target_id: target_id
         :param method: method for reset i.e. simple, pyocd or edbg
         """
-        self.logger.info("Starting reset for target_id %s", target_id)
-        self.logger.info("Method for reset: %s", method)
-        available_devices = self.get_available_device_mapping()
-
         if target_id is None:
             return EXIT_CODE_TARGET_ID_MISSING
+
+        self.logger.info("Starting reset for target_id %s", target_id)
+        self.logger.info("Method for reset: %s", method)
+        available_devices = Common(self.logger).get_available_device_mapping(
+            self._flashers, target_id)
 
         targets_to_reset = self.prepare_target_to_reset(target_id, available_devices)
 

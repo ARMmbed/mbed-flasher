@@ -14,17 +14,100 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-# pylint:disable=missing-docstring
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
 
 import unittest
 import mock
 
-from mbed_flasher.common import MountVerifier
+from mbed_flasher.common import Common, MountVerifier
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_CONFLICT
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT
 
+# pylint: disable=too-few-public-methods
+class Flasher(object):
+    def __init__(self, result):
+        self._result = result
+        self.call_count = 0
+
+    def get_available_devices(self):
+        self.call_count += 1
+        return self._result
+
+
+class CommonTestCase(unittest.TestCase):
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_no_devices(self, logger):
+        flasher = Flasher([])
+        results = Common(logger).get_available_device_mapping([flasher])
+        self.assertEqual(results, [])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_no_target(self, logger):
+        flasher = Flasher(["asd"])
+        results = Common(logger).get_available_device_mapping([flasher])
+        self.assertEqual(results, ["asd"])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_with_target_empty_list(self, logger):
+        flasher = Flasher(["asd"])
+        results = Common(logger).get_available_device_mapping([flasher], [])
+        self.assertEqual(results, ["asd"])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_with_target_all(self, logger):
+        flasher = Flasher(["asd"])
+        results = Common(logger).get_available_device_mapping([flasher], "all")
+        self.assertEqual(results, ["asd"])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_with_target_not_matching(self, logger):
+        flasher = Flasher([{"target_id": "asd"}])
+        results = Common(logger).get_available_device_mapping([flasher], "dsd")
+        self.assertEqual(results, [{"target_id": "asd"}])
+        self.assertEqual(flasher.call_count, 5)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_with_target_matching(self, logger):
+        flasher = Flasher([{"target_id": "asd"}])
+        results = Common(logger).get_available_device_mapping([flasher], "asd")
+        self.assertEqual(results, [{"target_id": "asd"}])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_with_target_partly_matching(self, logger):
+        flasher = Flasher([{"target_id": "asd"}])
+        results = Common(logger).get_available_device_mapping([flasher], "as")
+        self.assertEqual(results, [{"target_id": "asd"}])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_empty_with_invalid_listing(self, logger):
+        flasher = Flasher([{"target": "asd"}])
+        results = Common(logger).get_available_device_mapping([flasher], "as")
+        self.assertEqual(results, [])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_empty_with_invalid_listing_2(self, logger):
+        flasher = Flasher("asd")
+        results = Common(logger).get_available_device_mapping([flasher], "as")
+        self.assertEqual(results, [])
+        self.assertEqual(flasher.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_get_available_device_mapping_returns_list_of_one(self, logger):
+        flasher = Flasher([{"target_id": "asd"}])
+        results = Common(logger).get_available_device_mapping([flasher], ["asd"])
+        self.assertEqual(results, [{"target_id": "asd"}])
+        self.assertEqual(flasher.call_count, 1)
+
+
 class MountVerifierTestCase(unittest.TestCase):
-    # pylint: disable=invalid-name
     @mock.patch("mbed_flasher.common.check_output")
     @mock.patch("mbed_flasher.flash.Logger")
     def test_check_serial_duplicates_succeeds(self, logger, mock_check_output):
@@ -45,7 +128,6 @@ class MountVerifierTestCase(unittest.TestCase):
 
         self.assertEqual(return_value, None)
 
-    # pylint: disable=invalid-name
     @mock.patch("mbed_flasher.common.check_output")
     @mock.patch("mbed_flasher.flash.Logger")
     def test_check_serial_duplicates_finds(self, logger, mock_check_output):
@@ -59,7 +141,6 @@ class MountVerifierTestCase(unittest.TestCase):
 
         self.assertEqual(return_value, EXIT_CODE_TARGET_ID_CONFLICT)
 
-    # pylint: disable=invalid-name
     @mock.patch("mbed_flasher.common.check_output")
     @mock.patch("mbed_flasher.flash.Logger")
     def test_check_serial_duplicates_timeouts(self, logger, mock_check_output):

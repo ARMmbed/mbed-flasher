@@ -29,6 +29,60 @@ from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
 
 
 # pylint: disable=too-few-public-methods
+class Common(object):
+    """
+    Class for holding common methods for all operations (flash, erase, reset).
+    """
+    GET_DEVICES_RETRY = 5
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    def get_available_device_mapping(self, flashers, target=None):
+        """
+        Loop through flashers in search for devices.
+        If specific device is given retry multiple times if not found.
+        :return: list of available devices
+        """
+
+        def get_devices():
+            """
+            Get devices from flasher.
+            :return: list of devices
+            """
+            available_devices = []
+            for flasher in flashers:
+                available_devices.extend(flasher.get_available_devices())
+
+            return available_devices
+
+        if isinstance(target, list) and len(target) == 1:
+            target = target[0]
+
+        if not isinstance(target, six.string_types) or target == "all":
+            return get_devices()
+
+        devices = []
+        # This is a workaround for a problem where mbedls (basically mount command)
+        # fails to list mount point sometimes in linux. Occurs at least in Raspberry Pi3.
+        for index in range(Common.GET_DEVICES_RETRY):
+            if index > 0:
+                self.logger.warning("Did not find %s, trying again (%d)", target, index)
+
+            devices = get_devices()
+            try:
+                for target_id in [device["target_id"] for device in devices]:
+                    if target in target_id:
+                        return devices
+            except (KeyError, TypeError):
+                self.logger.exception("Invalid device listing from flasher")
+                return []
+
+        self.logger.warning("Did not find %s giving up", target)
+        return devices
+
+
+# pylint: disable=too-few-public-methods
 class Logger(object):
     """
     Logger provider

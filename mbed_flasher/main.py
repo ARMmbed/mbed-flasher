@@ -26,6 +26,7 @@ from os.path import isdir, isfile, join
 import json
 import time
 
+from mbed_flasher.common import Common
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
@@ -286,7 +287,7 @@ class FlasherCLI(object):
         flash command handler
         """
         flasher = Flash()
-        available = flasher.get_available_device_mapping()
+        available = Common(self.logger).get_available_device_mapping(flasher.get_all_flashers())
         available_target_ids = []
         retcode = 0
         #print(args)
@@ -449,7 +450,8 @@ class FlasherCLI(object):
         :param tid: target id
         """
         flasher = Flash()
-        available = flasher.get_available_device_mapping()
+        available = Common(self.logger).get_available_device_mapping(
+            flasher.get_all_flashers(), tid)
         target_ids = []
         available_target_ids = []
         if not available:
