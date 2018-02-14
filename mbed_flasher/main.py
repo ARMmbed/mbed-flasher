@@ -286,11 +286,10 @@ class FlasherCLI(object):
         """
         flash command handler
         """
-        flasher = Flash()
-        available = Common(self.logger).get_available_device_mapping(flasher.get_all_flashers())
-        available_target_ids = []
-        retcode = 0
-        #print(args)
+        if not args.tid:
+            print("Target_id is missing")
+            return EXIT_CODE_TARGET_ID_MISSING
+
         if args.input:
             if not isfile(args.input):
                 print("Could not find given file: %s" % args.input)
@@ -298,15 +297,17 @@ class FlasherCLI(object):
         else:
             print("File is missing")
             return EXIT_CODE_FILE_MISSING
+
+        flasher = Flash()
+        available = Common(self.logger).get_available_device_mapping(
+            flasher.get_all_flashers(), args.tid)
+        available_target_ids = []
+        retcode = 0
         if args.platform_name:
             if args.platform_name not in flasher.get_supported_targets():
                 print("Not supported platform: %s" % args.platform_name)
                 print("Supported platforms: %s" % flasher.get_supported_targets())
                 return EXIT_CODE_NOT_SUPPORTED_PLATFORM
-
-        if not args.tid:
-            print("Target_id is missing")
-            return EXIT_CODE_TARGET_ID_MISSING
 
         if 'all' in args.tid:
             retcode = flasher.flash(build=args.input, target_id='all',

@@ -87,20 +87,20 @@ class MainTestCase(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_file_does_not_exist(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", "None"])
+        fcli = FlasherCLI(["flash", "-i", "None", "--tid", "target"])
         self.assertEqual(fcli.execute(), EXIT_CODE_FILE_MISSING)
         self.assertEqual(mock_stdout.getvalue(), 'Could not find given file: None\n')
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_file_not_given(self, mock_stdout):
-        fcli = FlasherCLI(["flash", "-i", None])
+        fcli = FlasherCLI(["flash", "-i", None, "--tid", "target"])
         self.assertEqual(fcli.execute(), EXIT_CODE_FILE_MISSING)
         self.assertEqual(mock_stdout.getvalue(), 'File is missing\n')
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_wrong_platform(self, mock_stdout):
         bin_path = os.path.join('test', 'helloworld.bin')
-        fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K65G"])
+        fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K65G", "--tid", "target"])
         self.assertEqual(fcli.execute(), EXIT_CODE_NOT_SUPPORTED_PLATFORM)
         self.assertIn("Not supported platform: K65G", mock_stdout.getvalue())
 

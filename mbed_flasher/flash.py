@@ -250,7 +250,8 @@ class Flash(object):
                                            target_ids_or_prefix=target_id,
                                            no_reset=no_reset)
 
-        device_mapping_table = self._refine__device_mapping_table(device_mapping_table)
+        device_mapping_table = self._refine__device_mapping_table(
+            device_mapping_table, target_id)
 
         try:
             if target_id:
@@ -285,7 +286,7 @@ class Flash(object):
             self.logger.info("flash fails")
         return retcode
 
-    def _refine__device_mapping_table(self, device_mapping_table):
+    def _refine__device_mapping_table(self, device_mapping_table, target):
         """
         get device mapping table if it's None.
         refine device_mapping table to be list
@@ -297,7 +298,8 @@ class Flash(object):
             elif not isinstance(device_mapping_table, list):
                 raise SystemError('device_mapping_table wasn\'t list or dictionary')
         else:
-            device_mapping_table = Common(self.logger).get_available_device_mapping(self._flashers)
+            device_mapping_table = Common(self.logger).get_available_device_mapping(
+                self._flashers, target)
 
         self.logger.debug(device_mapping_table)
 
