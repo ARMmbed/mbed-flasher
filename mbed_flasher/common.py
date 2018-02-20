@@ -34,6 +34,7 @@ class Common(object):
     Class for holding common methods for all operations (flash, erase, reset).
     """
     GET_DEVICES_RETRY = 5
+    GET_DEVICES_RETRY_INTERVAL = 1
 
     def __init__(self, logger):
         self.logger = logger
@@ -77,6 +78,8 @@ class Common(object):
             except (KeyError, TypeError):
                 self.logger.exception("Invalid device listing from flasher")
                 return []
+
+            sleep(Common.GET_DEVICES_RETRY_INTERVAL)
 
         self.logger.warning("Did not find %s giving up", target)
         return devices
