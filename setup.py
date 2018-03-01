@@ -26,7 +26,7 @@ LICENSE = open("LICENSE").read()
 DESCRIPTION = "mbed-flasher"
 OWNER_NAMES = "Jussi Vatjus-Anttila"
 OWNER_EMAILS = "Jussi.Vatjus-Anttila@arm.com"
-VERSION = "0.6.5"
+VERSION = "0.7.0"
 
 # Utility function to cat in a file (used for the README)
 def read(fname):
@@ -53,7 +53,7 @@ setup(name="mbed-flasher",
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
       install_requires=[
-          "mbed-ls==1.3.7",
+          "mbed-ls==1.4.0",
           "six",
           "pyserial",
           "pyOCD"

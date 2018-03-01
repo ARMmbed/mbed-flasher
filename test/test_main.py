@@ -37,7 +37,7 @@ from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 
-FLASHER_VERSION = '0.6.5'
+FLASHER_VERSION = '0.7.0'
 
 
 class MainTestCase(unittest.TestCase):
