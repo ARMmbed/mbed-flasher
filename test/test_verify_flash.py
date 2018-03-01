@@ -71,14 +71,6 @@ def check_three_binaries_exist():
 
     return bool(count == 3)
 
-
-def find_second_binary():
-    for root, _, files in os.walk('test/'):
-        for name in files:
-            if str(name).endswith('.bin') and str(name).find('helloworld') == -1:
-                return str(os.path.join(root, name))
-    return None
-
 # this is not a const
 # pylint: disable=invalid-name
 mbed = mbed_lstools.create()
@@ -93,6 +85,7 @@ class FlashVerifyTestCase(unittest.TestCase):
     third flashes the helloworld binary to device and verifies that no response is seen
     """
     bin_path = os.path.join('test', 'helloworld.bin')
+    second_bin_path = os.path.join('test', 'example_app_K64F.bin')
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
@@ -123,9 +116,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                                 method='simple')
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
-            second_binary = find_second_binary()
-            self.assertIsNotNone(second_binary, 'Second binary not found')
-            ret = flasher.flash(build=second_binary,
+            ret = flasher.flash(build=self.second_bin_path,
                                 target_id=target_id, platform_name='K64F',
                                 device_mapping_table=False, method='simple')
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
@@ -156,9 +147,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                     serial_port = target['serial_port']
                     break
         if target_id and serial_port:
-            second_binary = find_second_binary()
-            self.assertIsNotNone(second_binary, 'Second binary not found')
-            ret = flasher.flash(build=second_binary,
+            ret = flasher.flash(build=self.second_bin_path,
                                 target_id=target_id,
                                 platform_name='K64F',
                                 device_mapping_table=False,
@@ -168,7 +157,7 @@ class FlashVerifyTestCase(unittest.TestCase):
                 self.assertEqual(
                     verify_output_per_device(serial_port, 'help', 'echo'), True)
 
-            ret = flasher.flash(build=second_binary,
+            ret = flasher.flash(build=self.second_bin_path,
                                 target_id=target_id,
                                 platform_name='K64F',
                                 device_mapping_table=False,
