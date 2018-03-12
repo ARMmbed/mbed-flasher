@@ -45,6 +45,7 @@ class FlasherMbed(object):
     Implementation class of mbed-flasher flash operation
     """
     name = "mbed"
+    supported_targets = None
     FLASHING_VERIFICATION_TIMEOUT = 100
 
     def __init__(self, logger=None):
@@ -55,13 +56,15 @@ class FlasherMbed(object):
         """
         Load target mapping information
         """
-        mbeds = mbed_lstools.create()
+        if not FlasherMbed.supported_targets:
+            mbeds = mbed_lstools.create()
 
-        # this should works for >=v1.3.0
-        # @todo this is workaround until mbed-ls provide public
-        #       API to get list of supported platform names
-        list_supported_targets = sorted(set(name for id, name in mbeds.plat_db.items()))
-        return list_supported_targets
+            # this should works for >=v1.3.0
+            # @todo this is workaround until mbed-ls provide public
+            #       API to get list of supported platform names
+            FlasherMbed.supported_targets = sorted(set(name for id, name in mbeds.plat_db.items()))
+
+        return FlasherMbed.supported_targets
 
     @staticmethod
     def get_available_devices():
@@ -70,6 +73,17 @@ class FlasherMbed(object):
         """
         mbeds = mbed_lstools.create()
         return mbeds.list_mbeds()
+
+    # pylint: disable=unused-argument
+    @staticmethod
+    def can_flash(target):
+        """
+        Check if target should be flasher by drag and drop method.
+        Currently there is no reason not to try it.
+        :param target: target board
+        :return: True
+        """
+        return True
 
     def reset_board(self, serial_port):
         """

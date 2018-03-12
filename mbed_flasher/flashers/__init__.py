@@ -16,27 +16,13 @@ limitations under the License.
 """
 
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed as mbed_flasher
+from mbed_flasher.flashers.FlasherJLink import FlasherJLink as jlink_flasher
 
 # disable Invalid constant name warning, not a const
 # pylint: disable=C0103
-AvailableFlashers = [
-    mbed_flasher
-]
+AvailableFlashers = []
 
-'''
-if platform.system() == 'Windows':
-    for ospath in os.environ['PATH'].split(os.pathsep):
-        if ospath.find('Atmel') != -1:
-            AvailableFlashers.append(FlasherAtmelAt)
-        if FlasherAtmelAt not in AvailableFlashers:
-            path = ''
-            if os.path.exists('C:\\Program Files\\Atmel\\'):
-                path = 'C:\\Program Files\\Atmel\\'
-            elif os.path.exists('C:\\Program Files (x86)\\Atmel\\'):
-                path = 'C:\\Program Files (x86)\\Atmel\\'
-            if path:
-                for dirpath, subdirs, files in os.walk(path):
-                    for x in files:
-                        if x.find("atprogram.exe") != -1:
-                            AvailableFlashers.append(FlasherAtmelAt)
-'''
+# Order matters since JLinkExe flash is preferred for JLink boards
+if jlink_flasher.is_executable_installed():
+    AvailableFlashers.append(jlink_flasher)
+AvailableFlashers.append(mbed_flasher)

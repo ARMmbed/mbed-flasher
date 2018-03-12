@@ -45,23 +45,23 @@ class CommonTestCase(unittest.TestCase):
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_get_available_device_mapping_returns_no_target(self, logger):
-        flasher = Flasher(["asd"])
+        flasher = Flasher([{"target_id": "asd"}])
         results = Common(logger).get_available_device_mapping([flasher])
-        self.assertEqual(results, ["asd"])
+        self.assertEqual(results, [{"target_id": "asd"}])
         self.assertEqual(flasher.call_count, 1)
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_get_available_device_mapping_returns_with_target_empty_list(self, logger):
-        flasher = Flasher(["asd"])
+        flasher = Flasher([{"target_id": "asd"}])
         results = Common(logger).get_available_device_mapping([flasher], [])
-        self.assertEqual(results, ["asd"])
+        self.assertEqual(results, [{"target_id": "asd"}])
         self.assertEqual(flasher.call_count, 1)
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_get_available_device_mapping_returns_with_target_all(self, logger):
-        flasher = Flasher(["asd"])
+        flasher = Flasher([{"target_id": "asd"}])
         results = Common(logger).get_available_device_mapping([flasher], "all")
-        self.assertEqual(results, ["asd"])
+        self.assertEqual(results, [{"target_id": "asd"}])
         self.assertEqual(flasher.call_count, 1)
 
     @mock.patch("mbed_flasher.flash.Logger")

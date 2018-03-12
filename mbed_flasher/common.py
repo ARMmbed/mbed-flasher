@@ -48,14 +48,15 @@ class Common(object):
 
         def get_devices():
             """
-            Get devices from flasher.
+            Get unique devices from flashers.
             :return: list of devices
             """
             available_devices = []
             for flasher in flashers:
                 available_devices.extend(flasher.get_available_devices())
 
-            return available_devices
+            # Filter unique devices as flashers could list same devices
+            return list({dev["target_id"]: dev for dev in available_devices}.values())
 
         if isinstance(target, list) and len(target) == 1:
             target = target[0]
@@ -70,8 +71,8 @@ class Common(object):
             if index > 0:
                 self.logger.warning("Did not find %s, trying again (%d)", target, index)
 
-            devices = get_devices()
             try:
+                devices = get_devices()
                 for target_id in [device["target_id"] for device in devices]:
                     if target in target_id:
                         return devices

@@ -20,6 +20,9 @@ To install the flasher in development mode:
 
 `python setup.py develop`
 
+To use JLink flashing, additional package needs to be installed from [here](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack).
+JLinkExe must be found from PATH for flasher to be able to use it.
+
 ## Usage
 
 This tool has been tested and verified to work with Windows 7 and Ubuntu (14.04 LTS) Linux.
