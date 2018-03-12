@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 from distutils import spawn
+import os
 try:
     import queue
 except ImportError:
@@ -93,8 +94,16 @@ class FlasherJLink(FlasherBase):
         :return: 0 when flashing success
         """
 
-        cmd_script = tempfile.NamedTemporaryFile()
+        cmd_script = tempfile.NamedTemporaryFile(delete=False)
         FlasherJLink._write_file_contents(cmd_script, source, no_reset)
+        cmd_script.close()
+
+        def remove_commander_script():
+            """
+            Removes the temporary file. Cannot use delete=True for NamedTemporaryFile
+            since Windows doesn't allow another program to read it while not closed.
+            """
+            os.remove(cmd_script.name)
 
         try:
             args = [
@@ -106,7 +115,7 @@ class FlasherJLink(FlasherBase):
                 "-commanderscript", cmd_script.name
             ]
         except KeyError:
-            cmd_script.close()
+            remove_commander_script()
             self.logger.exception("Invalid target")
             return EXIT_CODE_FLASH_FAILED
 
@@ -117,7 +126,7 @@ class FlasherJLink(FlasherBase):
             self.logger.error("No returncode from JLinkExe")
             return EXIT_CODE_FLASH_FAILED
         finally:
-            cmd_script.close()
+            remove_commander_script()
 
         if returncode != 0:
             self.logger.error("Flash of {} failed, with returncode {}"
