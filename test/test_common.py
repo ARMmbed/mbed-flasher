@@ -20,9 +20,8 @@ limitations under the License.
 import unittest
 import mock
 
-from mbed_flasher.common import Common, MountVerifier
-from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_CONFLICT
-from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT
+from mbed_flasher.common import Common, retry, DEFAULT_RETRY_AMOUNT
+
 
 # pylint: disable=too-few-public-methods
 class Flasher(object):
@@ -107,51 +106,59 @@ class CommonTestCase(unittest.TestCase):
         self.assertEqual(flasher.call_count, 1)
 
 
-class MountVerifierTestCase(unittest.TestCase):
-    @mock.patch("mbed_flasher.common.check_output")
+class RetryTestCase(unittest.TestCase):
+    def setUp(self):
+        self.call_count = 0
+
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_check_serial_duplicates_succeeds(self, logger, mock_check_output):
-        mock_check_output.return_value = b'test_target_id /testTTY'
-        mount_verifier = MountVerifier(logger)
-        target = {'target_id': 'test_target_id',
-                  'serial_port': '/testTTY'}
-        # pylint: disable=protected-access
-        return_value = mount_verifier._check_serial_point_duplicates(
-            target=target, new_target={})
+    def test_retries_on_condition(self, logger):
+        def func():
+            self.call_count += 1
+            return 1
 
-        self.assertEqual(return_value, None)
+        return_code = retry(logger=logger, func=func, func_args=(), conditions=[1])
+        self.assertEqual(return_code, 1)
+        self.assertEqual(self.call_count, DEFAULT_RETRY_AMOUNT)
 
-        mock_check_output.return_value = b'test_target_id /testTTY1'
-        # pylint: disable=protected-access
-        return_value = mount_verifier._check_serial_point_duplicates(
-            target=target, new_target={})
-
-        self.assertEqual(return_value, None)
-
-    @mock.patch("mbed_flasher.common.check_output")
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_check_serial_duplicates_finds(self, logger, mock_check_output):
-        mock_check_output.return_value = b'test_target_id /testTTY1\ntest_target_id /testTTY1'
-        mount_verifier = MountVerifier(logger)
-        target = {'target_id': 'test_target_id',
-                  'serial_port': '/testTTY'}
-        # pylint: disable=protected-access
-        return_value = mount_verifier._check_serial_point_duplicates(
-            target=target, new_target={})
+    def test_retry_returns_last_return_code(self, logger):
+        def func():
+            self.call_count += 1
+            return self.call_count
 
-        self.assertEqual(return_value, EXIT_CODE_TARGET_ID_CONFLICT)
+        return_code = retry(logger=logger, func=func, func_args=(), conditions=[1, 2])
+        self.assertEqual(return_code, 3)
+        self.assertEqual(self.call_count, DEFAULT_RETRY_AMOUNT)
 
-    @mock.patch("mbed_flasher.common.check_output")
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_check_serial_duplicates_timeouts(self, logger, mock_check_output):
-        mock_check_output.return_value = b''
-        MountVerifier.SERIAL_POINT_TIMEOUT = 1
-        mount_verifier = MountVerifier(logger)
-        # pylint: disable=protected-access
-        return_value = mount_verifier._check_serial_point_duplicates(
-            target={'target_id': 'test'}, new_target={})
+    def test_retry_breaks_when_condition_doesnt_match(self, logger):
+        def func():
+            self.call_count += 1
+            return self.call_count
 
-        self.assertEqual(return_value, EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT)
+        return_code = retry(logger=logger, func=func, func_args=(), conditions=[1])
+        self.assertEqual(return_code, 2)
+        self.assertEqual(self.call_count, 2)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_retry_has_no_condition_by_default(self, logger):
+        def func():
+            self.call_count += 1
+            return self.call_count
+
+        return_code = retry(logger=logger, func=func, func_args=())
+        self.assertEqual(return_code, 1)
+        self.assertEqual(self.call_count, 1)
+
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_retries_amount_can_be_changed(self, logger):
+        def func():
+            self.call_count += 1
+            return 1
+
+        return_code = retry(logger=logger, func=func, func_args=(), conditions=[1], retries=5)
+        self.assertEqual(return_code, 1)
+        self.assertEqual(self.call_count, 5)
 
 
 if __name__ == '__main__':

@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # pylint:disable=missing-docstring
+# pylint:disable=too-few-public-methods
 
 import logging
 import unittest
@@ -110,12 +111,12 @@ class FlashTestCase(unittest.TestCase):
 
     # pylint: disable=unused-argument
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.refresh_target')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
-    def test_run_with_uppercase_HTM(self, mock_popen, mock_verifier, mock_copy_file):
-        mock_verifier.return_value = {'target_id':'123',
-                                      'platform_name': 'K64F',
-                                      'mount_point': 'path/'}
+    def test_run_with_uppercase_HTM(self, mock_popen, mock_refresh_target, mock_copy_file):
+        mock_refresh_target.return_value = {'target_id': '123',
+                                            'platform_name': 'K64F',
+                                            'mount_point': 'path/'}
 
         mock_stdout = mock.Mock()
         mock_out = mock.Mock(side_effect=[b"no-htm", b"test.HTM", b"no-htm"])
@@ -148,12 +149,12 @@ class FlashTestCase(unittest.TestCase):
         mock_system.assert_called_once_with(should_be)
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    @mock.patch('mbed_flasher.common.MountVerifier.check_points_unchanged')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.refresh_target')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
-    def test_run_with_lowercase_HTM(self, mock_popen, mock_verifier, mock_copy_file):
-        mock_verifier.return_value = {'target_id': '123',
-                                      'platform_name': 'K64F',
-                                      'mount_point': 'path/'}
+    def test_run_with_lowercase_HTM(self, mock_popen, mock_refresh_target, mock_copy_file):
+        mock_refresh_target.return_value = {'target_id': '123',
+                                            'platform_name': 'K64F',
+                                            'mount_point': 'path/'}
 
         mock_stdout = mock.Mock()
         mock_out = mock.Mock(side_effect=[b"no-htm", b"test.htm", b"no-htm"])
@@ -310,16 +311,42 @@ class FlashTestCase(unittest.TestCase):
         if mock_stdout:
             pass
 
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.mbed_lstools.create')
+    def test_refresh_target_returns_target(self, mock_mbed_lstools_create):
+        class MockLS(object):
+            def __init__(self):
+                pass
+
+            def list_mbeds(self, filter_function=None):
+                return [{"target_id": "test_id"}]
+
+        mock_mbed_lstools_create.return_value = MockLS()
+
+        target = {"target_id": "test_id"}
+        self.assertEqual(target, FlasherMbed.refresh_target(target["target_id"]))
+
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.mbed_lstools.create')
+    def test_refresh_target_returns_empty_list_when_no_devices(self, mock_mbed_lstools_create):
+        class MockLS(object):
+            def __init__(self):
+                pass
+
+            def list_mbeds(self, filter_function=None):
+                return []
+
+        mock_mbed_lstools_create.return_value = MockLS()
+
+        FlasherMbed.REFRESH_TARGET_SLEEP = 0.01
+        target = {"target_id": "test_id"}
+        self.assertEqual(None, FlasherMbed.refresh_target(target["target_id"]))
+
 
 class FlashVerify(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherMbed.isfile')
     def test_verify_flash_success_ok(self, mock_isfile):
         mock_isfile.return_value = False
 
-        new_target = {"mount_point": ""}
-        return_value = FlasherMbed().verify_flash_success(
-            new_target=new_target, target={}, tail="")
-
+        return_value = FlasherMbed().verify_flash_success(target={"mount_point": ""}, tail="")
         self.assertEqual(return_value, EXIT_CODE_SUCCESS)
 
     # test with name longer than 30, disable the warning here
@@ -335,11 +362,8 @@ class FlashVerify(unittest.TestCase):
         mock_isfile.side_effect = isfile_function
         mock_read_file.return_value = ""
 
-        new_target = {"mount_point": ""}
-        target = {"target_id": ""}
-        return_value = FlasherMbed().verify_flash_success(
-            new_target=new_target, target=target, tail="")
-
+        target = {"target_id": "", "mount_point": ""}
+        return_value = FlasherMbed().verify_flash_success(target=target, tail="")
         self.assertEqual(return_value, EXIT_CODE_FLASH_FAILED)
 
     # test with name longer than 30, disable the warning here
@@ -353,13 +377,11 @@ class FlashVerify(unittest.TestCase):
             return False
 
         mock_isfile.side_effect = isfile_function
-        new_target = {"mount_point": ""}
-        target = {"target_id": ""}
+        target = {"target_id": "", "mount_point": ""}
 
         def check(reason, code):
             mock_read_file.return_value = reason
-            return_value = FlasherMbed().verify_flash_success(
-                new_target=new_target, target=target, tail="")
+            return_value = FlasherMbed().verify_flash_success(target=target, tail="")
             self.assertEqual(return_value, code)
 
         check("An internal error has occurred", EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
@@ -435,11 +457,8 @@ error: File sent out of order by PC. Target might not be programmed correctly.
 error type: transient, user
         """
 
-        new_target = {"mount_point": ""}
-        target = {"target_id": ""}
-        return_value = FlasherMbed().verify_flash_success(
-            new_target=new_target, target=target, tail="")
-
+        target = {"target_id": "", "mount_point": ""}
+        return_value = FlasherMbed().verify_flash_success(target=target, tail="")
         self.assertEqual(return_value, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._read_file')
@@ -457,11 +476,8 @@ An error occurred during the transfer.
 error type: transient, user
         """
 
-        new_target = {"mount_point": ""}
-        target = {"target_id": ""}
-        return_value = FlasherMbed().verify_flash_success(
-            new_target=new_target, target=target, tail="")
-
+        target = {"target_id": "", "mount_point": ""}
+        return_value = FlasherMbed().verify_flash_success(target=target, tail="")
         self.assertEqual(return_value, EXIT_CODE_FLASH_FAILED)
 
 if __name__ == '__main__':

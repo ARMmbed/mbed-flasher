@@ -193,7 +193,6 @@ class Flash(object):
         for item in device_mapping_table:
             self.logger.info(item['target_id'])
 
-        i = 1
         for device in device_mapping_table:
             ret = self.flash(build=build,
                              target_id=device['target_id'],
@@ -201,12 +200,8 @@ class Flash(object):
                              device_mapping_table=device_mapping_table,
                              method=method,
                              no_reset=no_reset)
-            if ret == EXIT_CODE_SUCCESS:
-                self.logger.debug("dev#%i -> SUCCESS", i)
-            else:
-                self.logger.warning("dev#%i -> FAIL", i)
+            if ret != EXIT_CODE_SUCCESS:
                 return ret
-            i += 1
 
         return EXIT_CODE_SUCCESS
 
@@ -219,6 +214,7 @@ class Flash(object):
         :param platform_name: platform_name, to flash multiple devices of same type
         :param device_mapping_table: individual devices mapping table
         :param method: method for flashing i.e. simple, pyocd or edbg
+        :param no_reset: whether to reset the board after flash
         """
 
         k64f_target_id_length = 48
@@ -229,24 +225,18 @@ class Flash(object):
         if not isfile(build):
             self.logger.error("Given file does not exist")
             return EXIT_CODE_FILE_DOES_NOT_EXIST
-        if isinstance(target_id, list):
-            return self.flash_multiple(build=build,
-                                       platform_name=platform_name,
-                                       method=method,
-                                       target_ids_or_prefix=target_id,
-                                       no_reset=no_reset)
-        else:
-            if target_id.lower() == 'all':
-                return self.flash_multiple(build=build,
-                                           platform_name=platform_name,
-                                           method=method,
-                                           no_reset=no_reset)
-            elif len(target_id) < k64f_target_id_length and device_mapping_table is None:
-                return self.flash_multiple(build=build,
-                                           platform_name=platform_name,
-                                           method=method,
-                                           target_ids_or_prefix=target_id,
-                                           no_reset=no_reset)
+
+        if (isinstance(target_id, list) or
+                target_id.lower() == 'all' or
+                (len(target_id) < k64f_target_id_length and device_mapping_table is None)):
+            if isinstance(target_id, str) and target_id.lower() == 'all':
+                target_id = ''
+            return self.flash_multiple(
+                build=build,
+                platform_name=platform_name,
+                method=method,
+                target_ids_or_prefix=target_id,
+                no_reset=no_reset)
 
         device_mapping_table = self._refine__device_mapping_table(
             device_mapping_table, target_id)
@@ -266,23 +256,29 @@ class Flash(object):
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name, target_mbed)
+        retcode = self._do_flash(flasher=flasher,
+                                 build=build,
+                                 target=target_mbed,
+                                 method=method,
+                                 no_reset=no_reset)
+        if retcode == EXIT_CODE_SUCCESS:
+            self.logger.info("%s flash success", target_mbed["target_id"])
+        else:
+            self.logger.warning("%s flash fails with code %d",
+                                target_mbed["target_id"], retcode)
+
+        return retcode
+
+    def _do_flash(self, flasher, build, target, method, no_reset):
         try:
-            retcode = flasher.flash(source=build,
-                                    target=target_mbed,
-                                    method=method,
-                                    no_reset=no_reset)
+            return flasher.flash(
+                source=build, target=target, method=method, no_reset=no_reset)
         except KeyboardInterrupt:
             self.logger.error("Aborted by user")
             return EXIT_CODE_KEYBOARD_INTERRUPT
         except SystemExit:
             self.logger.error("Aborted by SystemExit event")
             return EXIT_CODE_SYSTEM_INTERRUPT
-
-        if retcode == 0:
-            self.logger.info("flash ready")
-        else:
-            self.logger.info("flash fails")
-        return retcode
 
     def _refine__device_mapping_table(self, device_mapping_table, target):
         """

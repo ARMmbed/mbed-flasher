@@ -27,7 +27,7 @@ import six
 
 import mbed_lstools
 
-from mbed_flasher.common import MountVerifier
+from mbed_flasher.common import retry
 from mbed_flasher.daplink_errors import DAPLINK_ERRORS
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -38,6 +38,8 @@ from mbed_flasher.return_codes import EXIT_CODE_PYOCD_NOT_INSTALLED
 from mbed_flasher.return_codes import EXIT_CODE_EGDB_NOT_SUPPORTED
 from mbed_flasher.return_codes import EXIT_CODE_OS_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
+from mbed_flasher.return_codes import EXIT_CODE_IO_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 
 
 class FlasherMbed(object):
@@ -46,6 +48,8 @@ class FlasherMbed(object):
     """
     name = "mbed"
     supported_targets = None
+    REFRESH_TARGET_RETRIES = 20
+    REFRESH_TARGET_SLEEP = 1
     FLASHING_VERIFICATION_TIMEOUT = 100
 
     def __init__(self, logger=None):
@@ -78,12 +82,30 @@ class FlasherMbed(object):
     @staticmethod
     def can_flash(target):
         """
-        Check if target should be flasher by drag and drop method.
+        Check if target should be flashed by drag and drop method.
         Currently there is no reason not to try it.
         :param target: target board
         :return: True
         """
         return True
+
+    @staticmethod
+    def refresh_target(target_id):
+        """
+        Refresh target with help of mbedls.
+        :param target_id: target_id to be searched for
+        :return: target or None
+        """
+        mbedls = mbed_lstools.create()
+
+        for _ in range(FlasherMbed.REFRESH_TARGET_RETRIES):
+            mbeds = mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)
+            if mbeds:
+                return mbeds[0]
+
+            sleep(FlasherMbed.REFRESH_TARGET_SLEEP)
+
+        return None
 
     def reset_board(self, serial_port):
         """
@@ -157,10 +179,6 @@ class FlasherMbed(object):
         if not isinstance(source, six.string_types):
             return
 
-        mount_point = os.path.abspath(target['mount_point'])
-        (_, tail) = os.path.split(os.path.abspath(source))
-        destination = abspath(join(mount_point, tail))
-
         if method == 'pyocd':
             self.logger.debug("pyOCD selected for flashing")
             return self.try_pyocd_flash(source, target)
@@ -169,45 +187,11 @@ class FlasherMbed(object):
             self.logger.debug("edbg is not supported for Mbed devices")
             return EXIT_CODE_EGDB_NOT_SUPPORTED
 
-        try:
-            if 'serial_port' in target and not no_reset:
-                self.reset_board(target['serial_port'])
-                sleep(0.1)
-
-            copy_file_success = self.copy_file(source, destination)
-            if copy_file_success == EXIT_CODE_FILE_COULD_NOT_BE_READ:
-                return EXIT_CODE_FILE_COULD_NOT_BE_READ
-
-            self.logger.debug("copy finished")
-            sleep(4)
-
-            new_target = MountVerifier(self.logger).check_points_unchanged(target)
-
-            if isinstance(new_target, int):
-                return new_target
-
-            thread = Thread(target=self.runner,
-                            args=([target['mount_point'], tail],))
-            thread.start()
-            while thread.is_alive():
-                thread.join(2.5)
-
-            if not no_reset:
-                if 'serial_port' in new_target:
-                    self.reset_board(new_target['serial_port'])
-                else:
-                    self.reset_board(target['serial_port'])
-                sleep(0.4)
-
-            # verify flashing went as planned
-            self.logger.debug("verifying flash")
-            return self.verify_flash_success(new_target, target, tail)
-        except IOError as err:
-            self.logger.error(err)
-            raise err
-        except OSError as err:
-            self.logger.error("Write failed due to OSError: %s", err)
-            return EXIT_CODE_OS_ERROR
+        return retry(
+            logger=self.logger,
+            func=self.try_drag_and_drop_flash,
+            func_args=(source, target, no_reset),
+            conditions=[EXIT_CODE_OS_ERROR])
 
     def try_pyocd_flash(self, source, target):
         """
@@ -239,34 +223,79 @@ class FlasherMbed(object):
                               err, target["target_id"])
             return EXIT_CODE_FLASH_FAILED
 
+    def try_drag_and_drop_flash(self, source, target, no_reset):
+        """
+        Try to flash the target using drag and drop method.
+        :param source: file to be flashed
+        :param target: target board to be flashed
+        :param no_reset: whether to reset the board after flash
+        :return: 0 if success
+        """
+
+        target = FlasherMbed.refresh_target(target["target_id"])
+        if not target:
+            return EXIT_CODE_TARGET_ID_MISSING
+
+        mount_point = os.path.abspath(target['mount_point'])
+        (_, tail) = os.path.split(os.path.abspath(source))
+        destination = abspath(join(mount_point, tail))
+
+        try:
+            if 'serial_port' in target and not no_reset:
+                self.reset_board(target['serial_port'])
+                sleep(0.1)
+
+            copy_file_success = self.copy_file(source, destination)
+            if copy_file_success == EXIT_CODE_FILE_COULD_NOT_BE_READ:
+                return EXIT_CODE_FILE_COULD_NOT_BE_READ
+
+            self.logger.debug("copy finished")
+            sleep(4)
+
+            target = FlasherMbed.refresh_target(target["target_id"])
+            if not target:
+                return EXIT_CODE_TARGET_ID_MISSING
+
+            thread = Thread(target=self.runner,
+                            args=([target['mount_point'], tail],))
+            thread.start()
+            while thread.is_alive():
+                thread.join(2.5)
+
+            if not no_reset:
+                self.reset_board(target['serial_port'])
+                sleep(0.4)
+
+            # verify flashing went as planned
+            self.logger.debug("verifying flash")
+            return self.verify_flash_success(target, tail)
+        except IOError as err:
+            self.logger.error("Write failed due to IOError: %s", err)
+            return EXIT_CODE_IO_ERROR
+        except OSError as err:
+            self.logger.error("Write failed due to OSError: %s", err)
+            return EXIT_CODE_OS_ERROR
+
     def copy_file(self, source, destination):
         """
         copy file from os
         """
-        if platform.system() == 'Windows':
+        self.logger.debug('read source file')
+        with open(source, 'rb') as source_file:
+            aux_source = source_file.read()
 
-            with open(source, 'rb') as source_file:
-                aux_source = source_file.read()
-                self.logger.debug("SHA1: %s",
-                                  hashlib.sha1(aux_source).hexdigest())
+        if not aux_source:
+            self.logger.error("File couldn't be read")
+            return EXIT_CODE_FILE_COULD_NOT_BE_READ
+
+        self.logger.debug("SHA1: %s", hashlib.sha1(aux_source).hexdigest())
+
+        if platform.system() == 'Windows':
             self.logger.debug("copying file: \"%s\" to \"%s\"",
                               source, destination)
             os.system("copy \"%s\" \"%s\"" % (os.path.abspath(source), destination))
         else:
-            self.logger.debug('read source file')
-            with open(source, 'rb') as source_file:
-                aux_source = source_file.read()
-
-            if not aux_source:
-                self.logger.error("File couldn't be read")
-                return EXIT_CODE_FILE_COULD_NOT_BE_READ
-
-            self.logger.debug("SHA1: %s",
-                              hashlib.sha1(aux_source).hexdigest())
-            self.logger.debug("writing binary: %s (size=%i bytes)",
-                              destination,
-                              len(aux_source))
-
+            self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
             new_file = self.get_file(destination)
             os.write(new_file, aux_source)
             os.close(new_file)
@@ -290,15 +319,11 @@ class FlasherMbed(object):
         with open(join(path, file_name), 'r') as fault:
             return fault.read().strip()
 
-    def verify_flash_success(self, new_target, target, tail):
+    def verify_flash_success(self, target, tail):
         """
         verify flash went well
         """
-        if 'mount_point' in new_target:
-            mount = new_target['mount_point']
-        else:
-            mount = target['mount_point']
-
+        mount = target['mount_point']
         if isfile(join(mount, 'FAIL.TXT')):
             fault = FlasherMbed._read_file(mount, "FAIL.TXT")
             self.logger.error("Flashing failed: %s. tid=%s",

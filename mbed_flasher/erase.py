@@ -24,7 +24,8 @@ import platform
 from subprocess import PIPE, Popen
 import six
 
-from mbed_flasher.common import Common, Logger, MountVerifier
+from mbed_flasher.flashers.FlasherMbed import FlasherMbed
+from mbed_flasher.common import Common, Logger
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_OPEN_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_RESET_FAILED
@@ -234,12 +235,12 @@ class Erase(object):
         while auto_thread.is_alive():
             auto_thread.join(0.5)
 
-        new_target = MountVerifier(self.logger).check_points_unchanged(target)
-        if isinstance(new_target, int):
-            return new_target
+        target = FlasherMbed.refresh_target(target["target_id"])
+        if not target:
+            return EXIT_CODE_TARGET_ID_MISSING
 
         auto_thread = Thread(target=self.runner,
-                             args=(new_target["mount_point"], 'ERASE.ACT'))
+                             args=(target["mount_point"], 'ERASE.ACT'))
         auto_thread.start()
         while auto_thread.is_alive():
             auto_thread.join(0.5)
