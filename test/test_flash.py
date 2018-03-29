@@ -112,19 +112,10 @@ class FlashTestCase(unittest.TestCase):
     # pylint: disable=unused-argument
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.refresh_target')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
-    def test_run_with_uppercase_HTM(self, mock_popen, mock_refresh_target, mock_copy_file):
+    def test_run_with_uppercase_HTM(self, mock_refresh_target, mock_copy_file):
         mock_refresh_target.return_value = {'target_id': '123',
                                             'platform_name': 'K64F',
                                             'mount_point': 'path/'}
-
-        mock_stdout = mock.Mock()
-        mock_out = mock.Mock(side_effect=[b"no-htm", b"test.HTM", b"no-htm"])
-        mock_stdout.read = mock_out
-        mock_popen.return_value.stdout = mock_stdout
-
-        mock_popen.return_value.communicate.return_value = ('', '')
-
         flasher = Flash()
         ret = flasher.flash(build=self.bin_path,
                             target_id='123',
@@ -137,7 +128,6 @@ class FlashTestCase(unittest.TestCase):
                             method='simple',
                             no_reset=True)
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
-        self.assertEqual(2, mock_out.call_count)
 
     # pylint: disable=no-self-use
     @unittest.skipIf(platform.system() != 'Windows', 'require windows')
@@ -150,19 +140,10 @@ class FlashTestCase(unittest.TestCase):
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.refresh_target')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.Popen')
-    def test_run_with_lowercase_HTM(self, mock_popen, mock_refresh_target, mock_copy_file):
+    def test_run_with_lowercase_HTM(self, mock_refresh_target, mock_copy_file):
         mock_refresh_target.return_value = {'target_id': '123',
                                             'platform_name': 'K64F',
                                             'mount_point': 'path/'}
-
-        mock_stdout = mock.Mock()
-        mock_out = mock.Mock(side_effect=[b"no-htm", b"test.htm", b"no-htm"])
-        mock_stdout.read = mock_out
-        mock_popen.return_value.stdout = mock_stdout
-
-        mock_popen.return_value.communicate.return_value = ('', '')
-
         flasher = Flash()
         ret = flasher.flash(build=self.bin_path,
                             target_id='123',
@@ -175,7 +156,6 @@ class FlashTestCase(unittest.TestCase):
                             method='simple',
                             no_reset=True)
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
-        self.assertEqual(2, mock_out.call_count)
 
     @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_run_with_file_with_one_target_id_wrong_platform(self):

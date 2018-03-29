@@ -18,10 +18,8 @@ import logging
 from os.path import join, abspath, isfile
 import os
 import platform
-from time import sleep, time
-from threading import Thread
+from time import sleep
 import hashlib
-from subprocess import PIPE, Popen
 from serial.serialutil import SerialException
 import six
 
@@ -48,9 +46,8 @@ class FlasherMbed(object):
     """
     name = "mbed"
     supported_targets = None
-    REFRESH_TARGET_RETRIES = 20
+    REFRESH_TARGET_RETRIES = 100
     REFRESH_TARGET_SLEEP = 1
-    FLASHING_VERIFICATION_TIMEOUT = 100
 
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
@@ -140,34 +137,6 @@ class FlasherMbed(object):
                 self.logger.info("reset failed")
         port.close()
 
-    def runner(self, drive):
-        """
-        Runner
-        """
-        start_time = time()
-        while True:
-            sleep(2)
-            if platform.system() == 'Windows':
-                proc = Popen(["dir", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
-            else:
-                proc = Popen(["ls", drive[0]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-
-            # todo: replace read() -> "(stdout, stderr) = proc.communicate()"
-            # see: https://docs.python.org/2/library/subprocess.html#subprocess.Popen.kill
-            # "Use communicate() rather than .stdin.write, .stdout.read or .stderr.read to
-            # avoid deadlocks due to any of the other OS pipe buffers filling up and blocking
-            # the child process."
-            out = proc.stdout.read()
-            proc.communicate()
-
-            if out.lower().find(b'.htm') != -1:
-                if out.find(drive[1].encode()) == -1:
-                    break
-
-            if time() - start_time > FlasherMbed.FLASHING_VERIFICATION_TIMEOUT:
-                self.logger.debug("re-mount check timed out for %s", drive[0])
-                break
-
     # pylint: disable=too-many-return-statements, duplicate-except
     def flash(self, source, target, method, no_reset):
         """copy file to the destination
@@ -250,17 +219,11 @@ class FlasherMbed(object):
                 return EXIT_CODE_FILE_COULD_NOT_BE_READ
 
             self.logger.debug("copy finished")
-            sleep(4)
+            sleep(6)
 
             target = FlasherMbed.refresh_target(target["target_id"])
             if not target:
                 return EXIT_CODE_TARGET_ID_MISSING
-
-            thread = Thread(target=self.runner,
-                            args=([target['mount_point'], tail],))
-            thread.start()
-            while thread.is_alive():
-                thread.join(2.5)
 
             if not no_reset:
                 self.reset_board(target['serial_port'])
