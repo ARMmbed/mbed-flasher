@@ -105,6 +105,7 @@ def unittest(String pythonVersion) {
                 if (pythonVersion == "py3") {
                     // create python 3 venv
                     sh """
+                        set -e
                         python3 -m venv .py3venv --without-pip
                         . .py3venv/bin/activate
                         curl https://bootstrap.pypa.io/get-pip.py | python
@@ -120,6 +121,7 @@ def unittest(String pythonVersion) {
                 } else {
                     // create python2 venv, do installation and run tests
                     sh """
+                        set -e
                         virtualenv --python=../usr/bin/python .py2venv --no-site-packages
                         . .py2venv/bin/activate
                         id
@@ -200,31 +202,38 @@ def winTest(String pythonVersion) {
                     // create python 3 venv
                     echo 'hello windows py3 starts'
                     bat """
-                        c:\\Python36\\python.exe -m venv py3venv
+                        c:\\Python36\\python.exe -m venv py3venv || goto :error
                         echo "Activating venv"
-                        call py3venv\\Scripts\\activate.bat
-                        pip install coverage mock
-                        pip freeze
-                        python setup.py install
-                        coverage run -m unittest discover -s test -vvv
+                        call py3venv\\Scripts\\activate.bat || goto :error
+                        pip install coverage mock || goto :error
                         if %errorlevel% neq 0 exit /b %errorlevel%
-                        coverage html & coverage xml
+                        pip freeze
+                        python setup.py install  || goto :error
+                        coverage run -m unittest discover -s test -vvv || goto :error
+                        coverage html & coverage xml || goto :error
                         deactivate
+
+                        :error
+                        echo "Failed with error %errorlevel%"
+                        exit /b %errorlevel%
                     """
                 } else {
                     // create python2 venv, do installation and run tests
                     echo 'hello windows py2 starts'
                     bat """
-                        virtualenv --python=c:\\Python27\\python.exe py2venv --no-site-packages
+                        virtualenv --python=c:\\Python27\\python.exe py2venv --no-site-packages || goto :error
                         echo "Activating venv"
-                        call py2venv\\Scripts\\activate.bat
-                        pip install coverage mock
+                        call py2venv\\Scripts\\activate.bat || goto :error
+                        pip install coverage mock || goto :error
                         pip freeze
-                        python setup.py install
-                        coverage run -m unittest discover -s test -vvv
-                        if %errorlevel% neq 0 exit /b %errorlevel%
-                        coverage html & coverage xml
+                        python setup.py install || goto :error
+                        coverage run -m unittest discover -s test -vvv || goto :error
+                        coverage html & coverage xml || goto :error
                         deactivate
+
+                        :error
+                        echo "Failed with error %errorlevel%"
+                        exit /b %errorlevel%
                     """
                 }
                 setBuildStatus('SUCCESS', "${buildName}", "test done")
