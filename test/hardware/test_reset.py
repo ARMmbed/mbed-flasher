@@ -18,21 +18,13 @@ limitations under the License.
 
 import logging
 import unittest
-try:
-    from StringIO import StringIO
-except ImportError:
-    # python 3 compatible import
-    from io import StringIO
-from test.test_helper import Helper
-import mock
+from test.hardware.test_helper import Helper
 import mbed_lstools
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
-from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 
 
-class ResetTestCase(unittest.TestCase):
+class ResetTestCaseHW(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
     mbeds = mbed_lstools.create()
@@ -44,37 +36,11 @@ class ResetTestCase(unittest.TestCase):
     def tearDown(self):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
-    def test_reset_with_none(self):
-        resetter = Reset()
-        ret = resetter.reset(target_id=None, method='simple')
-        self.assertEqual(ret, EXIT_CODE_TARGET_ID_MISSING)
-
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_wrong_target_id(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='555', method='simple')
-        self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-        if mock_stdout:
-            self.assertEqual(mock_stdout.getvalue(),
-                             'Could not map given target_id(s) to available devices\n')
-
-    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all_no_devices(self, mock_stdout):
-        resetter = Reset()
-        ret = resetter.reset(target_id='all', method='simple')
-        self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-        if mock_stdout:
-            self.assertEqual(mock_stdout.getvalue(),
-                             'Could not map given target_id(s) to available devices\n')
-
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_reset_with_all(self):
         resetter = Reset()
         ret = resetter.reset(target_id='all', method='simple')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_reset_with_target_id(self):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
@@ -86,7 +52,6 @@ class ResetTestCase(unittest.TestCase):
                 break
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
     def test_reset_with_target_id_list(self):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
@@ -97,14 +62,6 @@ class ResetTestCase(unittest.TestCase):
                 ret = resetter.reset(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
-
-    #For some reason a bunch of tracebacks on usb.core langid problems.
-    # @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    # @mock.patch('sys.stdout', new_callable=StringIO)
-    # def test_reset_with_all_pyocd(self, mock_stdout):
-    #     resetter = Reset()
-    #     ret = resetter.reset(target_id='all', method='pyocd')
-    #     self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
 
 if __name__ == '__main__':

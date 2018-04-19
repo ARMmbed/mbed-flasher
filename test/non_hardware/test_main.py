@@ -19,8 +19,6 @@ limitations under the License.
 import os
 import logging
 import unittest
-from test.test_helper import Helper
-import six
 try:
     from StringIO import StringIO
 except ImportError:
@@ -35,7 +33,6 @@ from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 
 FLASHER_VERSION = '0.7.2'
 
@@ -54,10 +51,6 @@ class MainTestCase(unittest.TestCase):
         # Mock logging
         # pylint: disable=no-member
         mock_logging.disable(logging.CRITICAL)
-        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
-
-    def tearDown(self):
-        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_parser_invalid(self):
         with self.assertRaises(SystemExit) as context:
@@ -111,12 +104,13 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), EXIT_CODE_TARGET_ID_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
-    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_wrong_tid(self, mock_stdout):
+    def test_wrong_tid(self, mock_stdout, mock_device_mapping):
         bin_path = os.path.join('test', 'helloworld.bin')
         fcli = FlasherCLI(["flash", "-i", bin_path,
                            "--tid", "555", "-t", "K64F"])
+        mock_device_mapping.return_value = []
         self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
@@ -126,32 +120,21 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), EXIT_CODE_TARGET_ID_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
-    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_wrong_tid(self, mock_stdout):
+    def test_reset_wrong_tid(self, mock_stdout, mock_device_mapping):
         fcli = FlasherCLI(["reset", "--tid", "555"])
+        mock_device_mapping.return_value = []
         self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
-    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_all(self, mock_stdout):
+    def test_reset_all(self, mock_stdout, mock_device_mapping):
         fcli = FlasherCLI(["reset", "--tid", "all"])
+        mock_device_mapping.return_value = []
         self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
-
-    # test name is meaningful
-    # pylint: disable=invalid-name
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_wrong_tid_with_device(self, mock_stdout):
-        fcli = FlasherCLI(["reset", "--tid", "555"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_COULD_NOT_MAP_DEVICE)
-        six.assertRegex(self, mock_stdout.getvalue(),
-                        r"Could not find given target_id from attached devices"
-                        r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
-                        r"(,\su?\'[0-9a-fA-F]+\')*\]",
-                        "Regex match failed")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_erase_tid_missing(self, mock_stdout):
@@ -159,23 +142,14 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(fcli.execute(), EXIT_CODE_TARGET_ID_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
-    @unittest.skipIf(mbeds.list_mbeds() != [], "hardware attached")
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_erase_wrong_tid(self, mock_stdout):
+    def test_erase_wrong_tid(self, mock_stdout, mock_device_mapping):
         fcli = FlasherCLI(["erase", "--tid", "555"])
+        mock_device_mapping.return_value = []
         self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
-    @unittest.skipIf(mbeds.list_mbeds() == [], "no hardware attached")
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_erase_wrong_tid_with_device(self, mock_stdout):
-        fcli = FlasherCLI(["erase", "--tid", "555"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_COULD_NOT_MAP_DEVICE)
-        six.assertRegex(self, mock_stdout.getvalue(),
-                        r"Could not find given target_id from attached devices"
-                        r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
-                        r"(,\su?\'[0-9a-fA-F]+\')*\]",
-                        "Regex match failed")
 
 if __name__ == '__main__':
     unittest.main()

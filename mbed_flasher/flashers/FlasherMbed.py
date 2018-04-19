@@ -90,6 +90,11 @@ class FlasherMbed(object):
 
     @staticmethod
     def refresh_target_once(target_id):
+        """
+        Refresh target once with help of mbedls.
+        :param target_id: target_id to be searched for
+        :return: list of targets
+        """
         mbedls = mbed_lstools.create()
         return mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)
 
@@ -213,6 +218,12 @@ class FlasherMbed(object):
             return EXIT_CODE_TARGET_ID_MISSING
 
         def get_destination(mount_point, source_file):
+            """
+            Form absolute path from mount point and file name
+            :param mount_point: mount point
+            :param source_file: source file name
+            :return: absolute path
+            """
             mount_point = os.path.abspath(mount_point)
             (_, tail) = os.path.split(os.path.abspath(source_file))
             return abspath(join(mount_point, tail))
