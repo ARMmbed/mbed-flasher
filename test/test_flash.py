@@ -51,12 +51,14 @@ class FlashTestCase(unittest.TestCase):
     """
     mbeds = mbed_lstools.create()
     bin_path = os.path.join('test', 'helloworld.bin')
+    original_refresh_target_sleep = FlasherMbed.REFRESH_TARGET_SLEEP
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def tearDown(self):
+        FlasherMbed.REFRESH_TARGET_SLEEP = FlashTestCase.original_refresh_target_sleep
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_run_file_does_not_exist(self):
@@ -326,7 +328,7 @@ class FlashVerify(unittest.TestCase):
     def test_verify_flash_success_ok(self, mock_isfile):
         mock_isfile.return_value = False
 
-        return_value = FlasherMbed().verify_flash_success(target={"mount_point": ""}, tail="")
+        return_value = FlasherMbed().verify_flash_success(target={"mount_point": ""}, file_path="")
         self.assertEqual(return_value, EXIT_CODE_SUCCESS)
 
     # test with name longer than 30, disable the warning here
@@ -343,7 +345,7 @@ class FlashVerify(unittest.TestCase):
         mock_read_file.return_value = ""
 
         target = {"target_id": "", "mount_point": ""}
-        return_value = FlasherMbed().verify_flash_success(target=target, tail="")
+        return_value = FlasherMbed().verify_flash_success(target=target, file_path="")
         self.assertEqual(return_value, EXIT_CODE_FLASH_FAILED)
 
     # test with name longer than 30, disable the warning here
@@ -361,7 +363,7 @@ class FlashVerify(unittest.TestCase):
 
         def check(reason, code):
             mock_read_file.return_value = reason
-            return_value = FlasherMbed().verify_flash_success(target=target, tail="")
+            return_value = FlasherMbed().verify_flash_success(target=target, file_path="")
             self.assertEqual(return_value, code)
 
         check("An internal error has occurred", EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
@@ -438,7 +440,7 @@ error type: transient, user
         """
 
         target = {"target_id": "", "mount_point": ""}
-        return_value = FlasherMbed().verify_flash_success(target=target, tail="")
+        return_value = FlasherMbed().verify_flash_success(target=target, file_path="")
         self.assertEqual(return_value, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._read_file')
@@ -457,7 +459,7 @@ error type: transient, user
         """
 
         target = {"target_id": "", "mount_point": ""}
-        return_value = FlasherMbed().verify_flash_success(target=target, tail="")
+        return_value = FlasherMbed().verify_flash_success(target=target, file_path="")
         self.assertEqual(return_value, EXIT_CODE_FLASH_FAILED)
 
 if __name__ == '__main__':

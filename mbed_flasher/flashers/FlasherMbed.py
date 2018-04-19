@@ -48,6 +48,8 @@ class FlasherMbed(object):
     supported_targets = None
     REFRESH_TARGET_RETRIES = 100
     REFRESH_TARGET_SLEEP = 1
+    CHECK_BINARY_DISAPPEAR_RETRIES = 60
+    CHECK_BINARY_DISAPPEAR_SLEEP = 1
 
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
@@ -85,6 +87,11 @@ class FlasherMbed(object):
         :return: True
         """
         return True
+
+    @staticmethod
+    def refresh_target_once(target_id):
+        mbedls = mbed_lstools.create()
+        return mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)
 
     @staticmethod
     def refresh_target(target_id):
@@ -205,9 +212,12 @@ class FlasherMbed(object):
         if not target:
             return EXIT_CODE_TARGET_ID_MISSING
 
-        mount_point = os.path.abspath(target['mount_point'])
-        (_, tail) = os.path.split(os.path.abspath(source))
-        destination = abspath(join(mount_point, tail))
+        def get_destination(mount_point, source_file):
+            mount_point = os.path.abspath(mount_point)
+            (_, tail) = os.path.split(os.path.abspath(source_file))
+            return abspath(join(mount_point, tail))
+
+        destination = get_destination(target["mount_point"], source)
 
         try:
             if 'serial_port' in target and not no_reset:
@@ -219,11 +229,23 @@ class FlasherMbed(object):
                 return EXIT_CODE_FILE_COULD_NOT_BE_READ
 
             self.logger.debug("copy finished")
-            sleep(6)
 
-            target = FlasherMbed.refresh_target(target["target_id"])
-            if not target:
-                return EXIT_CODE_TARGET_ID_MISSING
+            # Wait for flashed binary to disappear from the mount point.
+            for _ in range(FlasherMbed.CHECK_BINARY_DISAPPEAR_RETRIES):
+                try:
+                    target = FlasherMbed.refresh_target_once(target["target_id"])[0]
+                except IndexError:
+                    # This is entered when mbedls fails to find the board,
+                    # most likely due to remount in progress.
+                    sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
+                    continue
+
+                if not isfile(get_destination(target["mount_point"], source)):
+                    # Flashed file is no more found from the mount point,
+                    # ready to progress further.
+                    break
+
+                sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
 
             if not no_reset:
                 self.reset_board(target['serial_port'])
@@ -231,7 +253,8 @@ class FlasherMbed(object):
 
             # verify flashing went as planned
             self.logger.debug("verifying flash")
-            return self.verify_flash_success(target, tail)
+            return self.verify_flash_success(
+                target, get_destination(target["mount_point"], source))
         except IOError as err:
             self.logger.error("Write failed due to IOError: %s", err)
             return EXIT_CODE_IO_ERROR
@@ -282,7 +305,7 @@ class FlasherMbed(object):
         with open(join(path, file_name), 'r') as fault:
             return fault.read().strip()
 
-    def verify_flash_success(self, target, tail):
+    def verify_flash_success(self, target, file_path):
         """
         verify flash went well
         """
@@ -309,7 +332,7 @@ class FlasherMbed(object):
                               fault, target)
             return EXIT_CODE_FLASH_FAILED
 
-        if isfile(join(mount, tail)):
+        if isfile(file_path):
             self.logger.error("Flashing failed: File still present "
                               "in mount point. tid info: %s", target)
             return EXIT_CODE_FILE_STILL_PRESENT
