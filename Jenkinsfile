@@ -45,18 +45,26 @@ def baseBuild() {
         env.GIT_COMMIT_HASH = scmVars.GIT_COMMIT
 
         if (isUnix()) {
-            unittest("py2")
-
-            unittest("py3")
-
-            linux_pylint_check()
-
-            postBuild()
+            stage("py2") {
+                unittest("py2")
+            }
+            stage("py3") {
+                unittest("py3")
+            }
+            stage("pylint") {
+                linux_pylint_check()
+            }
+            stage("postBuild") {
+                postBuild()
+            }
         }
         else {
-            winTest("py2")
-
-            winTest("py3")
+            stage("py2") {
+                winTest("py2")
+            }
+            stage("py3") {
+                winTest("py3")
+            }
         }
     }
 }
