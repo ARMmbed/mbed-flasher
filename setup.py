@@ -26,7 +26,7 @@ LICENSE = open("LICENSE").read()
 DESCRIPTION = "mbed-flasher"
 OWNER_NAMES = "Jussi Vatjus-Anttila"
 OWNER_EMAILS = "Jussi.Vatjus-Anttila@arm.com"
-VERSION = "0.7.3"
+VERSION = "0.7.4"
 
 # Utility function to cat in a file (used for the README)
 def read(fname):
