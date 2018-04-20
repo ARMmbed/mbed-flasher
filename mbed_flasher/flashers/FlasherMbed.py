@@ -116,6 +116,48 @@ class FlasherMbed(object):
 
         return None
 
+    @staticmethod
+    def _wait_for_binary_disappear(target, source):
+        """
+        Wait for flashed binary to disappear from the mount point.
+        :param target: target object
+        :param source: binary name
+        :return: target object
+        """
+        for _ in range(FlasherMbed.CHECK_BINARY_DISAPPEAR_RETRIES):
+            try:
+                target = FlasherMbed.refresh_target_once(target["target_id"])[0]
+            except IndexError:
+                # This is entered when mbedls fails to find the board,
+                # most likely due to remount in progress.
+                sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
+                continue
+
+            if not isfile(FlasherMbed._get_binary_destination(target["mount_point"], source)):
+                # Flashed file is no more found from the mount point,
+                # ready to progress further.
+                # Even though the mount point is accessible it does not seem
+                # to guarantee that files in it are. Continue looping until mbed.htm is found.
+                for file_name in os.listdir(target["mount_point"]):
+                    if file_name.lower() == "mbed.htm":
+                        return target
+
+            sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
+
+        return target
+
+    @staticmethod
+    def _get_binary_destination(mount_point, source_file):
+        """
+        Form absolute path from mount point and file name
+        :param mount_point: mount point
+        :param source_file: source file name
+        :return: absolute path
+        """
+        mount_point = os.path.abspath(mount_point)
+        (_, tail) = os.path.split(os.path.abspath(source_file))
+        return abspath(join(mount_point, tail))
+
     def reset_board(self, serial_port):
         """
         Reset board
@@ -217,18 +259,7 @@ class FlasherMbed(object):
         if not target:
             return EXIT_CODE_TARGET_ID_MISSING
 
-        def get_destination(mount_point, source_file):
-            """
-            Form absolute path from mount point and file name
-            :param mount_point: mount point
-            :param source_file: source file name
-            :return: absolute path
-            """
-            mount_point = os.path.abspath(mount_point)
-            (_, tail) = os.path.split(os.path.abspath(source_file))
-            return abspath(join(mount_point, tail))
-
-        destination = get_destination(target["mount_point"], source)
+        destination = FlasherMbed._get_binary_destination(target["mount_point"], source)
 
         try:
             if 'serial_port' in target and not no_reset:
@@ -241,22 +272,7 @@ class FlasherMbed(object):
 
             self.logger.debug("copy finished")
 
-            # Wait for flashed binary to disappear from the mount point.
-            for _ in range(FlasherMbed.CHECK_BINARY_DISAPPEAR_RETRIES):
-                try:
-                    target = FlasherMbed.refresh_target_once(target["target_id"])[0]
-                except IndexError:
-                    # This is entered when mbedls fails to find the board,
-                    # most likely due to remount in progress.
-                    sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
-                    continue
-
-                if not isfile(get_destination(target["mount_point"], source)):
-                    # Flashed file is no more found from the mount point,
-                    # ready to progress further.
-                    break
-
-                sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
+            target = FlasherMbed._wait_for_binary_disappear(target, source)
 
             if not no_reset:
                 self.reset_board(target['serial_port'])
@@ -265,7 +281,7 @@ class FlasherMbed(object):
             # verify flashing went as planned
             self.logger.debug("verifying flash")
             return self.verify_flash_success(
-                target, get_destination(target["mount_point"], source))
+                target, FlasherMbed._get_binary_destination(target["mount_point"], source))
         except IOError as err:
             self.logger.error("Write failed due to IOError: %s", err)
             return EXIT_CODE_IO_ERROR
