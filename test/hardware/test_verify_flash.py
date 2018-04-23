@@ -20,7 +20,7 @@ import logging
 import unittest
 import time
 import os
-from test.test_helper import Helper
+from test.hardware.test_helper import Helper
 
 import serial
 import six
@@ -29,7 +29,6 @@ import mbed_lstools
 from mbed_flasher.flash import Flash
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
-
 
 
 def verify_output_per_device(serial_port, command, output):
@@ -62,21 +61,11 @@ def verify_output_per_device(serial_port, command, output):
         return False
 
 
-def check_three_binaries_exist():
-    count = 0
-    for _, _, files in os.walk('test/'):
-        for name in files:
-            if str(name).endswith('.bin'):
-                count += 1
-
-    return bool(count == 3)
-
 # this is not a const
 # pylint: disable=invalid-name
 mbed = mbed_lstools.create()
 
 
-@unittest.skipIf(mbed.list_mbeds() == [], "no hardware attached")
 class FlashVerifyTestCase(unittest.TestCase):
     """
     Flash verification with Hardware, three step verification for all attached devices:
@@ -94,8 +83,6 @@ class FlashVerifyTestCase(unittest.TestCase):
     def tearDown(self):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
-    @unittest.skipIf(check_three_binaries_exist() is False,
-                     "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
@@ -131,8 +118,6 @@ class FlashVerifyTestCase(unittest.TestCase):
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
-    @unittest.skipIf(check_three_binaries_exist() is False,
-                     "binaries missing or too many binaries in test-folder")
     def test_verify_hw_flash_no_reset(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()

@@ -22,7 +22,6 @@ import unittest
 import mbed_lstools
 
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
-from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 
 
@@ -43,19 +42,8 @@ class ApiTests(unittest.TestCase):
         self.bin_hello_world = os.path.join('test', 'helloworld.bin')
         self.bin_corrupted = os.path.join('test', 'corrupted.bin')
 
-    def test_help(self):
-        parameters = ['--help']
-        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
-
-    def test_misuse_cmd(self):
-        parameters = ['a']
-        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_MISUSE_CMD)
-
     def test_flash_success_no_reset(self):
         first_or_default = self.find_platform('K64F')
-        if not first_or_default:
-            self.skipTest('No any k64f devices connected')
-            return
         filename = self.bin_hello_world
         target_id = first_or_default['target_id']
         parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]
@@ -63,9 +51,6 @@ class ApiTests(unittest.TestCase):
 
     def test_flash_success_with_reset(self):
         first_or_default = self.find_platform('K64F')
-        if not first_or_default:
-            self.skipTest('No any k64f devices connected')
-            return
         filename = self.bin_hello_world
         target_id = first_or_default['target_id']
         parameters = ['flash', '-i', filename, '--tid', target_id]
@@ -73,9 +58,6 @@ class ApiTests(unittest.TestCase):
 
     def test_flash_user_error_k64f(self):
         first_or_default = self.find_platform('K64F')
-        if not first_or_default:
-            self.skipTest('No any k64f devices connected')
-            return
         filename = self.bin_corrupted
         target_id = first_or_default['target_id']
         parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]

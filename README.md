@@ -126,12 +126,22 @@ Required pre-installed packages: coverage, mock
 sudo pip install coverage mock
 ```
 
-To execute the tests:
+Execute all tests:
 ```
 coverage run -m unittest discover -s test
 ```
+Execute hardware tests:
+```
+coverage run -m unittest discover -s test.hardware
+```
+Execute non-hardware tests:
+```
+coverage run -m unittest discover -s test.non_hardware
+```
 
-To generate a coverage report:
+
+
+Generate a coverage report:
 
 ```
 coverage html
