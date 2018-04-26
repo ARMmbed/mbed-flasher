@@ -22,6 +22,7 @@ import unittest
 
 import mock
 
+from mbed_flasher.common import FlashError
 from mbed_flasher.flashers.FlasherBase import FlasherBase
 from mbed_flasher.flashers.FlasherJLink import FlasherJLink
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
@@ -110,12 +111,16 @@ class FlasherJLinkTest(unittest.TestCase):
         jlink = FlasherJLink(logger)
 
         target = {"target_id": "test_target_id"}
-        returncode = jlink.flash("test_source", target, "", False)
-        self.assertEqual(returncode, EXIT_CODE_FLASH_FAILED)
+        with self.assertRaises(FlashError) as cm:
+            jlink.flash("test_source", target, "", False)
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FLASH_FAILED)
 
         target = {"jlink_device_name": "test_jlink"}
-        returncode = jlink.flash("test_source", target, "", False)
-        self.assertEqual(returncode, EXIT_CODE_FLASH_FAILED)
+        with self.assertRaises(FlashError) as cm:
+            jlink.flash("test_source", target, "", False)
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FLASH_FAILED)
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_flash_returns_non_zero_when_process_fails(self, logger):
@@ -129,8 +134,10 @@ class FlasherJLinkTest(unittest.TestCase):
         jlink._start_and_wait_flash = mock_start
 
         target = {"jlink_device_name": "test_jlink", "target_id": "test_target_id"}
-        returncode = jlink.flash("test_source", target, "", False)
-        self.assertEqual(returncode, EXIT_CODE_FLASH_FAILED)
+        with self.assertRaises(FlashError) as cm:
+            jlink.flash("test_source", target, "", False)
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FLASH_FAILED)
 
     def test_write_file_contents(self):
         class MockFile(object):

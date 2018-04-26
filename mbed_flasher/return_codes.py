@@ -18,6 +18,7 @@ limitations under the License.
 
 # basic exit codes
 EXIT_CODE_SUCCESS = 0
+EXIT_CODE_UNHANDLED_EXCEPTION = 1
 EXIT_CODE_MISUSE_CMD = 2
 
 # generic failures
@@ -30,7 +31,6 @@ EXIT_CODE_RESET_FAIL = 15
 EXIT_CODE_FILE_DOES_NOT_EXIST = 16
 EXIT_CODE_FILE_COULD_NOT_BE_READ = 17
 EXIT_CODE_TARGET_ID_CONFLICT = 18
-EXIT_CODE_IO_ERROR = 19
 
 # device mapping related failure codes
 EXIT_CODE_TARGET_ID_MISSING = 20
@@ -68,41 +68,3 @@ EXIT_CODE_DAPLINK_TRANSIENT_ERROR = 101
 EXIT_CODE_DAPLINK_USER_ERROR = 102
 EXIT_CODE_DAPLINK_TARGET_ERROR = 103
 EXIT_CODE_DAPLINK_INTERFACE_ERROR = 104
-
-FAILURE_RETURN_CODE_MAPPING_TABLE = {
-    EXIT_CODE_MISUSE_CMD: 'misuse cmd',
-    EXIT_CODE_IMPLEMENTATION_MISSING: 'implementation missing',
-    EXIT_CODE_OS_ERROR: 'os error',
-    EXIT_CODE_KEYBOARD_INTERRUPT: 'keyboard interrupt',
-    EXIT_CODE_SYSTEM_INTERRUPT: 'system interrupt',
-    EXIT_CODE_FLASH_FAILED: 'flash failed',
-    EXIT_CODE_RESET_FAIL: 'reset fail',
-    EXIT_CODE_FILE_DOES_NOT_EXIST: 'file does not exists',
-    EXIT_CODE_FILE_COULD_NOT_BE_READ: 'file could not be read',
-    EXIT_CODE_TARGET_ID_CONFLICT: 'target id conflict',
-    EXIT_CODE_TARGET_ID_MISSING: 'target id missing',
-    EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE: 'could not map target id to device',
-    EXIT_CODE_COULD_NOT_MAP_DEVICE: 'could not map device',
-    EXIT_CODE_COULD_NOT_MAP_ALL_DEVICE: 'could not map all device',
-    EXIT_CODE_FILE_MISSING: 'file missing',
-    EXIT_CODE_NOT_SUPPORTED_PLATFORM: 'not supported platform',
-    EXIT_CODE_PLATFORM_REQUIRED: 'platform required',
-    EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST: 'requested flashed does not exists',
-    EXIT_CODE_DEVICES_MISSING: 'devices missing',
-    EXIT_CODE_SERIAL_PORT_OPEN_FAILED: 'serial port open failed',
-    EXIT_CODE_SERIAL_RESET_FAILED: 'serial reset failed',
-    EXIT_CODE_SERIAL_PORT_MISSING: 'serial port missing',
-    EXIT_CODE_SERIAL_PORT_REAPPEAR_TIMEOUT: 'serial port reappear timeout',
-    EXIT_CODE_MOUNT_POINT_MISSING: 'mount point missing',
-    EXIT_CODE_FILE_STILL_PRESENT: 'file still present',
-    EXIT_CODE_PYOCD_MISSING: 'pyocd missing',
-    EXIT_CODE_PYOCD_ERASE_FAILED: 'pyocd erase failed',
-    EXIT_CODE_PYOCD_RESET_FAILED: 'pyocd reset failed',
-    EXIT_CODE_PYOCD_NOT_INSTALLED: 'pyocd not installed',
-    EXIT_CODE_EGDB_NOT_SUPPORTED: 'egdb  not supported',
-    EXIT_CODE_DAPLINK_SOFTWARE_ERROR: 'daplink software error',
-    EXIT_CODE_DAPLINK_TRANSIENT_ERROR: 'daplink transient error',
-    EXIT_CODE_DAPLINK_USER_ERROR: 'daplink user error',
-    EXIT_CODE_DAPLINK_TARGET_ERROR: 'daplink target error',
-    EXIT_CODE_DAPLINK_INTERFACE_ERROR: 'daplink interface error'
-}

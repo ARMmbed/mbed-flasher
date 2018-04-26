@@ -16,7 +16,7 @@ limitations under the License.
 
 from os.path import isfile
 
-from mbed_flasher.common import Common, Logger
+from mbed_flasher.common import Common, Logger, FlashError
 from mbed_flasher.flashers import AvailableFlashers
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
@@ -97,7 +97,8 @@ class Flash(object):
             if available_flasher.name.lower() == flasher.lower():
                 return available_flasher
 
-        return EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST
+        raise FlashError(message="Requested flasher does not exist",
+                         return_code=EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST)
 
     def __get_flasher(self, platform_name, target):
         """
@@ -117,6 +118,7 @@ class Flash(object):
         for target in target_list:
             if target_id == target['target_id']:
                 return target
+
         raise KeyError("target_id: %s not found" % target_id)
 
     @staticmethod
@@ -129,9 +131,11 @@ class Flash(object):
         for target in target_list:
             if platform_name == target['platform_name']:
                 return target
+
         raise KeyError("platform_name: %s not found" % platform_name)
 
-    def _verify_platform_coherence(self, device_mapping_table):
+    @staticmethod
+    def _verify_platform_coherence(device_mapping_table):
         """
         Verify platform is same across devices.
         :param device_mapping_table: list of devices to verify
@@ -142,10 +146,10 @@ class Flash(object):
             if not found_platform:
                 found_platform = item['platform_name']
             elif item['platform_name'] != found_platform:
-                self.logger.error('Multiple devices and platforms found,'
-                                  'please specify preferred platform with'
-                                  ' -t <platform>.')
-                return EXIT_CODE_PLATFORM_REQUIRED
+                msg = "Multiple devices and platforms found, please specify " \
+                      "preferred platform with -t <platform>."
+                raise FlashError(message=msg,
+                                 return_code=EXIT_CODE_PLATFORM_REQUIRED)
 
     # pylint: disable=too-many-arguments
     def flash_multiple(self, build, platform_name,
@@ -161,9 +165,7 @@ class Flash(object):
         device_mapping_table = Common(self.logger).get_available_device_mapping(self._flashers)
 
         if not platform_name:
-            return_code = self._verify_platform_coherence(device_mapping_table)
-            if return_code:
-                return return_code
+            Flash._verify_platform_coherence(device_mapping_table)
 
         if isinstance(target_ids_or_prefix, list):
             aux_device_mapping_table = Flash._map_by_target_id(
@@ -184,8 +186,8 @@ class Flash(object):
             device_mapping_table = aux_device_mapping_table
 
         if not device_mapping_table:
-            self.logger.error('no devices to flash')
-            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+            raise FlashError(message="no devices to flash",
+                             return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         self.logger.debug(device_mapping_table)
 
@@ -194,14 +196,12 @@ class Flash(object):
             self.logger.info(item['target_id'])
 
         for device in device_mapping_table:
-            ret = self.flash(build=build,
-                             target_id=device['target_id'],
-                             platform_name=None,
-                             device_mapping_table=device_mapping_table,
-                             method=method,
-                             no_reset=no_reset)
-            if ret != EXIT_CODE_SUCCESS:
-                return ret
+            self.flash(build=build,
+                       target_id=device['target_id'],
+                       platform_name=None,
+                       device_mapping_table=device_mapping_table,
+                       method=method,
+                       no_reset=no_reset)
 
         return EXIT_CODE_SUCCESS
 
@@ -223,8 +223,8 @@ class Flash(object):
             raise SyntaxError("target_id or target_name is required")
 
         if not isfile(build):
-            self.logger.error("Given file does not exist")
-            return EXIT_CODE_FILE_DOES_NOT_EXIST
+            raise FlashError(message="Given file does not exist",
+                             return_code=EXIT_CODE_FILE_DOES_NOT_EXIST)
 
         if (isinstance(target_id, list) or
                 target_id.lower() == 'all' or
@@ -248,19 +248,19 @@ class Flash(object):
                 target_mbed = self.__find_by_platform_name(platform_name,
                                                            device_mapping_table)
         except KeyError as err:
-            self.logger.error(err)
-            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+            raise FlashError(message=err,
+                             return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         platform_name = self._get_platform_name(platform_name, target_mbed)
 
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         flasher = self.__get_flasher(platform_name, target_mbed)
-        retcode = self._do_flash(flasher=flasher,
-                                 build=build,
-                                 target=target_mbed,
-                                 method=method,
-                                 no_reset=no_reset)
+        retcode = Flash._do_flash(flasher=flasher,
+                                  build=build,
+                                  target=target_mbed,
+                                  method=method,
+                                  no_reset=no_reset)
         if retcode == EXIT_CODE_SUCCESS:
             self.logger.info("%s flash success", target_mbed["target_id"])
         else:
@@ -269,16 +269,17 @@ class Flash(object):
 
         return retcode
 
-    def _do_flash(self, flasher, build, target, method, no_reset):
+    @staticmethod
+    def _do_flash(flasher, build, target, method, no_reset):
         try:
             return flasher.flash(
                 source=build, target=target, method=method, no_reset=no_reset)
         except KeyboardInterrupt:
-            self.logger.error("Aborted by user")
-            return EXIT_CODE_KEYBOARD_INTERRUPT
+            raise FlashError(message="Aborted by user",
+                             return_code=EXIT_CODE_KEYBOARD_INTERRUPT)
         except SystemExit:
-            self.logger.error("Aborted by SystemExit event")
-            return EXIT_CODE_SYSTEM_INTERRUPT
+            raise FlashError(message="Aborted by SystemExit event",
+                             return_code=EXIT_CODE_SYSTEM_INTERRUPT)
 
     def _refine__device_mapping_table(self, device_mapping_table, target):
         """

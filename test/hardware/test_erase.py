@@ -20,6 +20,8 @@ import logging
 import unittest
 from test.hardware.test_helper import Helper
 import mbed_lstools
+
+from mbed_flasher.common import EraseError
 from mbed_flasher.erase import Erase
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
@@ -63,6 +65,7 @@ class EraseTestCaseHW(unittest.TestCase):
             if item['target_id']:
                 ret = eraser.erase(target_id=item['target_id'], method='simple')
                 break
+
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     # test func name is larger than 30, but is meaningful
@@ -70,12 +73,13 @@ class EraseTestCaseHW(unittest.TestCase):
     def test_erase_failed_non_supported_method(self):
         devices = EraseTestCaseHW.erase_allowed_devices
         eraser = Erase()
-        ret = None
         for item in devices:
             if item['target_id']:
-                ret = eraser.erase(target_id=item['target_id'], method='unknown')
+                with self.assertRaises(EraseError) as cm:
+                    eraser.erase(target_id=item['target_id'], method='unknown')
+
+                self.assertEqual(cm.exception.return_code, EXIT_CODE_MISUSE_CMD)
                 break
-        self.assertEqual(ret, EXIT_CODE_MISUSE_CMD)
 
     # test func name is larger than 30, but is meaningful
     # pylint: disable=invalid-name

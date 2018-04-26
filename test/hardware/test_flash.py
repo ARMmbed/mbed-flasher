@@ -16,6 +16,7 @@ limitations under the License.
 """
 # pylint:disable=missing-docstring
 # pylint:disable=too-few-public-methods
+# pylint:disable=unused-argument
 
 import logging
 import unittest
@@ -32,6 +33,7 @@ import platform
 import mock
 import mbed_lstools
 
+from mbed_flasher.common import FlashError
 from mbed_flasher.flash import Flash
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -135,24 +137,23 @@ class FlashTestCaseHW(unittest.TestCase):
                     target_to_test = target
                     mount_point = target['mount_point']
                     break
-        if target_to_test:
+
+        with open(fail_txt_path, 'w') as new_file:
+            new_file.write("0000000000000000000000000000000000")
+
+        with self.assertRaises(FlashError) as cm:
             flasher = FlasherMbed()
-            flasher.FLASHING_VERIFICATION_TIMEOUT = 2
-            with open(fail_txt_path, 'w') as new_file:
-                new_file.write("0000000000000000000000000000000000")
-            ret = flasher.flash(source=fail_txt_path,
-                                target=target_to_test,
-                                method='simple',
-                                no_reset=False)
-            if platform.system() == 'Windows':
-                os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
-                os.system('del %s' % os.path.join(os.getcwd(), fail_txt_path))
-            else:
-                os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
-                os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
-            self.assertEqual(ret, EXIT_CODE_FILE_STILL_PRESENT)
-        if mock_stdout:
-            pass
+            flasher.flash(source=fail_txt_path, target=target_to_test,
+                          method='simple', no_reset=False)
+
+        if platform.system() == 'Windows':
+            os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
+            os.system('del %s' % os.path.join(os.getcwd(), fail_txt_path))
+        else:
+            os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
+            os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_STILL_PRESENT)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_fail_binary(self, mock_stdout):
@@ -168,25 +169,23 @@ class FlashTestCaseHW(unittest.TestCase):
                     mount_point = target['mount_point']
                     break
 
-        if target_id:
-            flasher = Flash()
-            with open(fail_bin_path, 'w') as new_file:
-                new_file.write("0000000000000000000000000000000000")
-            ret = flasher.flash(build=fail_bin_path,
-                                target_id=target_id,
-                                platform_name='K64F',
-                                device_mapping_table=None,
-                                method='simple')
-            if platform.system() == 'Windows':
-                os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
-                os.system('del %s' % os.path.join(os.getcwd(), fail_bin_path))
-            else:
-                os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
-                os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
+        with open(fail_bin_path, 'w') as new_file:
+            new_file.write("0000000000000000000000000000000000")
 
-            self.assertEqual(ret, EXIT_CODE_DAPLINK_USER_ERROR)
-        if mock_stdout:
-            pass
+        with self.assertRaises(FlashError) as cm:
+            flasher = Flash()
+            flasher.flash(build=fail_bin_path, target_id=target_id,
+                          platform_name='K64F', device_mapping_table=None,
+                          method='simple')
+
+        if platform.system() == 'Windows':
+            os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
+            os.system('del %s' % os.path.join(os.getcwd(), fail_bin_path))
+        else:
+            os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
+            os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
 
 if __name__ == '__main__':

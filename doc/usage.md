@@ -617,6 +617,16 @@ C:\>mbedflash -vvv reset --tid all
 C:\>
 ```
 
+## Flash retry
+
+Flashing is retried on some specific conditions when it is known that it could be helpful.
+
+The reasons include:
+
+    * Python OSError
+    * Daplink transient error
+    * Daplink software error
+
 ## Exit codes
 
 `0` exit code means success and other failures.

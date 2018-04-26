@@ -19,9 +19,10 @@ limitations under the License.
 
 from serial.serialutil import SerialException
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
-from mbed_flasher.common import Common, Logger
+from mbed_flasher.common import Common, Logger, ResetError
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_RESET_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
@@ -68,8 +69,12 @@ class Reset(object):
             # SerialException.message is type "string"
             # pylint: disable=no-member
             if err.message.find('could not open port') != -1:
-                print('Reset could not be given. Close your Serial connection to device.')
-            return EXIT_CODE_SERIAL_PORT_OPEN_FAILED
+                self.logger.error(
+                    "Reset could not be given. Close your Serial connection to device.")
+
+            raise ResetError(message="Reset failed",
+                             return_code=EXIT_CODE_SERIAL_PORT_OPEN_FAILED)
+
         port.baudrate = 115200
         port.timeout = 1
         port.xonxoff = False
@@ -83,8 +88,9 @@ class Reset(object):
             if result:
                 self.logger.info("reset completed")
             else:
-                self.logger.error("reset failed")
-                return EXIT_CODE_SERIAL_RESET_FAILED
+                raise ResetError(message="Reset failed",
+                                 return_code=EXIT_CODE_SERIAL_RESET_FAILED)
+
         port.close()
 
     def reset(self, target_id=None, method=None):
@@ -93,7 +99,8 @@ class Reset(object):
         :param method: method for reset i.e. simple, pyocd or edbg
         """
         if target_id is None:
-            return EXIT_CODE_TARGET_ID_MISSING
+            raise ResetError(message="Target ID is missing",
+                             return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         self.logger.info("Starting reset for target_id %s", target_id)
         self.logger.info("Method for reset: %s", method)
@@ -103,8 +110,9 @@ class Reset(object):
         targets_to_reset = self.prepare_target_to_reset(target_id, available_devices)
 
         if len(targets_to_reset) <= 0:
-            print("Could not map given target_id(s) to available devices")
-            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+            msg = "Could not map given target_id(s) to available devices"
+            print(msg)
+            raise ResetError(message=msg, return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         for item in targets_to_reset:
             if method == 'simple' and 'serial_port' in item:
@@ -112,10 +120,11 @@ class Reset(object):
             elif method == 'pyocd':
                 return self.try_pyocd_reset(item)
             elif method == 'edbg':
-                print("Not supported yet")
+                raise ResetError(message="egdb not supported",
+                                 return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
             else:
-                print("Selected method %s not supported" % method)
-                return EXIT_CODE_MISUSE_CMD
+                raise ResetError(message="Selected method {} not supported".format(method),
+                                 return_code=EXIT_CODE_MISUSE_CMD)
 
         return EXIT_CODE_SUCCESS
 
@@ -150,8 +159,8 @@ class Reset(object):
         try:
             from pyOCD.board import MbedBoard
         except ImportError:
-            print('pyOCD missing, install it\n')
-            return EXIT_CODE_PYOCD_MISSING
+            raise ResetError(message="pyOCD is not installed",
+                             return_code=EXIT_CODE_PYOCD_MISSING)
 
         try:
             with MbedBoard.chooseBoard(board_id=item["target_id"]) \
@@ -164,4 +173,4 @@ class Reset(object):
         except AttributeError as err:
             self.logger.error("reset failed: %s.", err)
             self.logger.error("tid=%s", item["target_id"])
-            return EXIT_CODE_PYOCD_RESET_FAILED
+            raise ResetError(message=err, return_code=EXIT_CODE_PYOCD_RESET_FAILED)
