@@ -107,14 +107,53 @@ def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None
     :param conditions: conditions on when to retry
     :return: latest return code
     """
-    return_code = None
+    return_value = None
     if conditions is None:
         conditions = []
+
     for index in range(retries):
-        return_code = func(*func_args)
-        if return_code not in conditions:
-            break
+        try:
+            return func(*func_args)
+        except FlashError as error:
+            return_value = error
+            if error.return_code not in conditions:
+                raise error
 
         logger.info("Starting retry round {}".format(str(index + 1)))
 
-    return return_code
+    # pylint: disable=raising-bad-type
+    if isinstance(return_value, Exception):
+        raise return_value
+    else:
+        return return_value
+
+
+class FlashError(Exception):
+    """
+    Exception class for flash errors.
+    Should be raised when flashing cannot be continued further.
+    """
+    def __init__(self, message, return_code):
+        super(FlashError, self).__init__(message)
+        self.message = message
+        self.return_code = return_code
+
+
+class EraseError(FlashError):
+    """
+    Exception class for erase errors.
+    Should be raised when erasing cannot be continued further.
+    """
+
+
+class ResetError(FlashError):
+    """
+    Exception class for reset errors.
+    Should be raised when resetting cannot be continued further.
+    """
+
+
+class GeneralFatalError(FlashError):
+    """
+    Exception class for general errors which should make the program quit immediately.
+    """

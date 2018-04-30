@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # pylint:disable=missing-docstring
+# pylint:disable=invalid-name
+# pylint:disable=unused-argument
 
 import os
 import logging
@@ -26,6 +28,8 @@ except ImportError:
     from io import StringIO
 import mock
 import mbed_lstools
+
+from mbed_flasher.common import FlashError, EraseError, ResetError, GeneralFatalError
 from mbed_flasher.main import FlasherCLI
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -55,15 +59,15 @@ class MainTestCase(unittest.TestCase):
     def test_parser_invalid(self):
         with self.assertRaises(SystemExit) as context:
             FlasherCLI()
+
         self.assertEqual(context.exception.code, EXIT_CODE_MISUSE_CMD)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main(self, mock_stdout):
         with self.assertRaises(SystemExit) as context:
             FlasherCLI([])
+
         self.assertEqual(context.exception.code, EXIT_CODE_MISUSE_CMD)
-        if mock_stdout:
-            pass
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main_version(self, mock_stdout):
@@ -81,27 +85,39 @@ class MainTestCase(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_file_does_not_exist(self, mock_stdout):
         fcli = FlasherCLI(["flash", "-i", "None", "--tid", "target"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_FILE_MISSING)
+        with self.assertRaises(FlashError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
         self.assertEqual(mock_stdout.getvalue(), 'Could not find given file: None\n')
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_file_not_given(self, mock_stdout):
         fcli = FlasherCLI(["flash", "-i", None, "--tid", "target"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_FILE_MISSING)
+        with self.assertRaises(FlashError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
         self.assertEqual(mock_stdout.getvalue(), 'File is missing\n')
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_wrong_platform(self, mock_stdout):
         bin_path = os.path.join('test', 'helloworld.bin')
         fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K65G", "--tid", "target"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_NOT_SUPPORTED_PLATFORM)
+        with self.assertRaises(FlashError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_NOT_SUPPORTED_PLATFORM)
         self.assertIn("Not supported platform: K65G", mock_stdout.getvalue())
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_tid_missing(self, mock_stdout):
         bin_path = os.path.join('test', 'helloworld.bin')
         fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K64F"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_TARGET_ID_MISSING)
+        with self.assertRaises(FlashError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_TARGET_ID_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
     @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
@@ -111,13 +127,19 @@ class MainTestCase(unittest.TestCase):
         fcli = FlasherCLI(["flash", "-i", bin_path,
                            "--tid", "555", "-t", "K64F"])
         mock_device_mapping.return_value = []
-        self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
+        with self.assertRaises(FlashError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_tid_missing(self, mock_stdout):
         fcli = FlasherCLI(["reset"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_TARGET_ID_MISSING)
+        with self.assertRaises(ResetError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_TARGET_ID_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
     @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
@@ -125,7 +147,10 @@ class MainTestCase(unittest.TestCase):
     def test_reset_wrong_tid(self, mock_stdout, mock_device_mapping):
         fcli = FlasherCLI(["reset", "--tid", "555"])
         mock_device_mapping.return_value = []
-        self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
+        with self.assertRaises(GeneralFatalError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
     @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
@@ -133,13 +158,19 @@ class MainTestCase(unittest.TestCase):
     def test_reset_all(self, mock_stdout, mock_device_mapping):
         fcli = FlasherCLI(["reset", "--tid", "all"])
         mock_device_mapping.return_value = []
-        self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
+        with self.assertRaises(GeneralFatalError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_erase_tid_missing(self, mock_stdout):
         fcli = FlasherCLI(["erase"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_TARGET_ID_MISSING)
+        with self.assertRaises(EraseError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_TARGET_ID_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Target_id is missing\n")
 
     @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
@@ -147,7 +178,10 @@ class MainTestCase(unittest.TestCase):
     def test_erase_wrong_tid(self, mock_stdout, mock_device_mapping):
         fcli = FlasherCLI(["erase", "--tid", "555"])
         mock_device_mapping.return_value = []
-        self.assertEqual(fcli.execute(), EXIT_CODE_DEVICES_MISSING)
+        with self.assertRaises(GeneralFatalError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DEVICES_MISSING)
         self.assertEqual(mock_stdout.getvalue(), "Could not find any connected device\n")
 
 

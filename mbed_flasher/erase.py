@@ -25,7 +25,7 @@ from subprocess import PIPE, Popen
 import six
 
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
-from mbed_flasher.common import Common, Logger
+from mbed_flasher.common import Common, Logger, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_OPEN_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_RESET_FAILED
@@ -74,16 +74,20 @@ class Erase(object):
         """
         from mbed_flasher.flashers.enhancedserial import EnhancedSerial
         from serial.serialutil import SerialException
+
         try:
             port = EnhancedSerial(serial_port)
         except SerialException as err:
-            self.logger.info("reset could not be sent")
             self.logger.error(err)
             # SerialException.message is type "string", it has 'find'
             #  pylint: disable=no-member
             if err.message.find('could not open port') != -1:
-                print('Reset could not be given. Close your Serial connection to device.')
-            return EXIT_CODE_SERIAL_PORT_OPEN_FAILED
+                self.logger.error(
+                    'Reset could not be given. Close your Serial connection to device.')
+
+            raise EraseError(message="reset could not be sent",
+                             return_code=EXIT_CODE_SERIAL_PORT_OPEN_FAILED)
+
         port.baudrate = 115200
         port.timeout = 1
         port.xonxoff = False
@@ -96,8 +100,9 @@ class Erase(object):
             if result:
                 self.logger.info("reset completed")
             else:
-                self.logger.error("reset failed")
-                return EXIT_CODE_SERIAL_RESET_FAILED
+                raise EraseError(message="reset failed",
+                                 return_code=EXIT_CODE_SERIAL_RESET_FAILED)
+
         port.close()
         return EXIT_CODE_SUCCESS
 
@@ -112,6 +117,7 @@ class Erase(object):
                 proc = Popen(["dir", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
             else:
                 proc = Popen(["ls", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+
             err = proc.stderr.read()
             proc.communicate()
 
@@ -135,6 +141,7 @@ class Erase(object):
                 proc = Popen(["dir", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
             else:
                 proc = Popen(["ls", mount_point], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+
             out = proc.stdout.read()
             proc.communicate()
             if out.find(b'.HTM') != -1:
@@ -153,7 +160,8 @@ class Erase(object):
         :param method: method for erase i.e. simple, pyocd or edbg
         """
         if target_id is None:
-            return EXIT_CODE_TARGET_ID_MISSING
+            raise EraseError(message="target id is missing",
+                             return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         self.logger.info("Starting erase for given target_id %s", target_id)
         self.logger.info("method used for reset: %s", method)
@@ -163,8 +171,9 @@ class Erase(object):
         targets_to_erase = self.prepare_target_to_erase(target_id, available_devices)
 
         if len(targets_to_erase) <= 0:
-            self.logger.error("Could not map given target_id(s) to available devices")
-            return EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+            msg = "Could not map given target_id(s) to available devices"
+            raise EraseError(message=msg,
+                             return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         for item in targets_to_erase:
             if method == 'simple':
@@ -172,15 +181,13 @@ class Erase(object):
             elif method == 'pyocd':
                 erase_fnc = self._erase_board_with_pyocd
             elif method == 'edbg':
-                self.logger.error("Not supported yet")
-                return EXIT_CODE_IMPLEMENTATION_MISSING
+                raise EraseError(message="egdb not supported",
+                                 return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
             else:
-                self.logger.error("Selected method %s not supported", method)
-                return EXIT_CODE_MISUSE_CMD
+                raise EraseError(message="Selected method {} not supported".format(method),
+                                 return_code=EXIT_CODE_MISUSE_CMD)
 
-            code = erase_fnc(target=item, no_reset=no_reset)
-            if code is not EXIT_CODE_SUCCESS:
-                return code
+            erase_fnc(target=item, no_reset=no_reset)
 
         return EXIT_CODE_SUCCESS
 
@@ -192,14 +199,17 @@ class Erase(object):
         :return: exit code
         """
         if 'mount_point' not in target:
-            return EXIT_CODE_MOUNT_POINT_MISSING
+            raise EraseError(message="mount point missing from target",
+                             return_code=EXIT_CODE_MOUNT_POINT_MISSING)
         if 'serial_port' not in target:
-            return EXIT_CODE_SERIAL_PORT_MISSING
+            raise EraseError(message="serial port missing from target",
+                             return_code=EXIT_CODE_SERIAL_PORT_MISSING)
+
         automation_activated = False
         daplink_version = 0
         if not isfile(join(target["mount_point"], 'DETAILS.TXT')):
-            self.logger.error("No DETAILS.TXT found")
-            return EXIT_CODE_IMPLEMENTATION_MISSING
+            raise EraseError(message="No DETAILS.TXT found",
+                             return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
 
         self.logger.debug(join(target["mount_point"], 'DETAILS.TXT'))
         with open(join(target["mount_point"], 'DETAILS.TXT'), 'rb') as new_file:
@@ -213,18 +223,18 @@ class Erase(object):
                         else:
                             daplink_version = int(line.decode('utf-8').split(' ')[-1])
                     except (IndexError, ValueError):
-                        self.logger.error("Failed to parse DAPLINK version from DETAILS.TXT")
-                        return EXIT_CODE_IMPLEMENTATION_MISSING
+                        raise EraseError(message="Failed to parse DAPLINK version from DETAILS.TXT",
+                                         return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
 
         if not automation_activated:
-            self.logger.error("Selected device does not have automation activated in DAPLINK")
-            return EXIT_CODE_IMPLEMENTATION_MISSING
+            msg = "Selected device does not have automation activated in DAPLINK"
+            raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
 
         if daplink_version < ERASE_DAPLINK_SUPPORT_VERSION:
-            msg = "Selected device has Daplink version %s," \
-                  "erasing supported from version %s onwards"
-            self.logger.error(msg, daplink_version, ERASE_DAPLINK_SUPPORT_VERSION)
-            return EXIT_CODE_IMPLEMENTATION_MISSING
+            msg = "Selected device has Daplink version {}," \
+                  "erasing supported from version {} onwards".\
+                format(daplink_version, ERASE_DAPLINK_SUPPORT_VERSION)
+            raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
 
         with open(join(target["mount_point"], 'ERASE.ACT'), 'wb'):
             pass
@@ -237,7 +247,8 @@ class Erase(object):
 
         target = FlasherMbed.refresh_target(target["target_id"])
         if not target:
-            return EXIT_CODE_TARGET_ID_MISSING
+            raise EraseError(message="target id is missing",
+                             return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         auto_thread = Thread(target=self.runner,
                              args=(target["mount_point"], 'ERASE.ACT'))
@@ -248,8 +259,7 @@ class Erase(object):
         if not no_reset:
             success = self.reset_board(target["serial_port"])
             if success != 0:
-                self.logger.error("erase failed")
-                return success
+                raise EraseError(message="erase failed", return_code=success)
 
         self.logger.info("erase %s completed", target['target_id'])
         return EXIT_CODE_SUCCESS
@@ -259,8 +269,9 @@ class Erase(object):
             from pyOCD.board import MbedBoard
             from pyOCD.pyDAPAccess import DAPAccessIntf
         except ImportError:
-            self.logger.error("pyOCD missing, install it")
-            return EXIT_CODE_PYOCD_MISSING
+            raise EraseError(message="pyOCD is not installed",
+                             return_code=EXIT_CODE_PYOCD_MISSING)
+
         target_id = target["target_id"]
         board = MbedBoard.chooseBoard(board_id=target_id)
         self.logger.info("erasing device: %s", target_id)
@@ -271,8 +282,8 @@ class Erase(object):
             if not no_reset:
                 ocd_target.reset()
         except DAPAccessIntf.TransferFaultError as error:
-            self.logger.error(error)
-            return EXIT_CODE_PYOCD_ERASE_FAILED
+            raise EraseError(message=error, return_code=EXIT_CODE_PYOCD_ERASE_FAILED)
+
         self.logger.info("erase completed for target: %s", target_id)
         return EXIT_CODE_SUCCESS
 

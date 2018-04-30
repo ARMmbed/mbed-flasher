@@ -25,6 +25,7 @@ import tempfile
 
 import mbed_lstools
 
+from mbed_flasher.common import FlashError
 from mbed_flasher.flashers.FlasherBase import FlasherBase
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
@@ -116,23 +117,20 @@ class FlasherJLink(FlasherBase):
             ]
         except KeyError:
             remove_commander_script()
-            self.logger.exception("Invalid target")
-            return EXIT_CODE_FLASH_FAILED
+            raise FlashError(message="Invalid target", return_code=EXIT_CODE_FLASH_FAILED)
 
         try:
             self.logger.info("Flashing {} with command {}".format(target["target_id"], args))
             returncode, output = self._start_and_wait_flash(args, FlasherJLink.executable)
         except queue.Empty:
-            self.logger.error("No returncode from JLinkExe")
-            return EXIT_CODE_FLASH_FAILED
+            raise FlashError(message="No returncode from JLinkExe",
+                             return_code=EXIT_CODE_FLASH_FAILED)
         finally:
             remove_commander_script()
 
         if returncode != 0:
-            self.logger.error("Flash of {} failed, with returncode {}"
-                              .format(target["target_id"], returncode))
-            self.logger.error(output)
-            return EXIT_CODE_FLASH_FAILED
+            msg = "Flash of {} failed, with returncode {}".format(target["target_id"], returncode)
+            raise FlashError(message=msg, return_code=EXIT_CODE_FLASH_FAILED)
 
         self.logger.info("Flash of {} succeeded".format(target["target_id"]))
         self.logger.debug(output)

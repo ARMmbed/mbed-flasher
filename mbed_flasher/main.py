@@ -26,12 +26,12 @@ from os.path import isdir, isfile, join
 import json
 import time
 
-from mbed_flasher.common import Common
+from mbed_flasher.common import Common, FlashError, EraseError, ResetError, GeneralFatalError
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
-from mbed_flasher.return_codes import FAILURE_RETURN_CODE_MAPPING_TABLE
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
@@ -40,6 +40,7 @@ from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
 
 LOGS_TTL = 172800 # 2 days, when log file is older it will be deleted
+
 
 def get_subparser(subparsers, name, func, **kwargs):
     """
@@ -58,6 +59,7 @@ def get_subparser(subparsers, name, func, **kwargs):
     tmp_parser.set_defaults(func=func)
     return tmp_parser
 
+
 def get_resource_subparser(subparsers, name, func, **kwargs):
     """
     Create a resource specific subcmd parser for command "name".
@@ -75,6 +77,7 @@ def get_resource_subparser(subparsers, name, func, **kwargs):
     """
     tmp_parser = get_subparser(subparsers, name, func=func, **kwargs)
     return tmp_parser
+
 
 class FlasherCLI(object):
     """
@@ -130,7 +133,6 @@ class FlasherCLI(object):
                 except OSError as err:
                     print(err)
 
-
     def execute(self):
         """
         :return: 0 or args.func()
@@ -149,7 +151,6 @@ class FlasherCLI(object):
         parser = argparse.ArgumentParser('mbedflash',
                                          description="For specific command help, "
                                                      "run: mbedflash <command> --help")
-
 
         parser.add_argument('-v', '--verbose',
                             dest="verbose",
@@ -287,27 +288,33 @@ class FlasherCLI(object):
         flash command handler
         """
         if not args.tid:
-            print("Target_id is missing")
-            return EXIT_CODE_TARGET_ID_MISSING
+            msg = "Target_id is missing"
+            print(msg)
+            raise FlashError(message=msg,
+                             return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         if args.input:
             if not isfile(args.input):
-                print("Could not find given file: %s" % args.input)
-                return EXIT_CODE_FILE_MISSING
+                msg = "Could not find given file: {}".format(args.input)
+                print(msg)
+                raise FlashError(message=msg,
+                                 return_code=EXIT_CODE_FILE_MISSING)
         else:
-            print("File is missing")
-            return EXIT_CODE_FILE_MISSING
+            msg = "File is missing"
+            print(msg)
+            raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
 
         flasher = Flash()
         available = Common(self.logger).get_available_device_mapping(
             flasher.get_all_flashers(), args.tid)
         available_target_ids = []
-        retcode = 0
+        retcode = EXIT_CODE_SUCCESS
         if args.platform_name:
             if args.platform_name not in flasher.get_supported_targets():
                 print("Not supported platform: %s" % args.platform_name)
                 print("Supported platforms: %s" % flasher.get_supported_targets())
-                return EXIT_CODE_NOT_SUPPORTED_PLATFORM
+                raise FlashError(message="Platform {} not supported".format(args.platform_name),
+                                 return_code=EXIT_CODE_NOT_SUPPORTED_PLATFORM)
 
         if 'all' in args.tid:
             retcode = flasher.flash(build=args.input, target_id='all',
@@ -315,8 +322,9 @@ class FlasherCLI(object):
                                     method=args.method, no_reset=args.no_reset)
 
         if len(available) <= 0:
-            print("Could not find any connected device")
-            return EXIT_CODE_DEVICES_MISSING
+            msg = "Could not find any connected device"
+            print(msg)
+            raise FlashError(message=msg, return_code=EXIT_CODE_DEVICES_MISSING)
 
         available_platforms, target_ids_to_flash = \
             self.prepare_platforms_and_targets(available, args.tid, available_target_ids)
@@ -325,7 +333,8 @@ class FlasherCLI(object):
             print("Could not find given target_id from attached devices")
             print("Available target_ids:")
             print(available_target_ids)
-            return EXIT_CODE_COULD_NOT_MAP_DEVICE
+            raise FlashError(message="Could not map device",
+                             return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
 
         elif len(available_platforms) > 1:
             if not args.platform_name:
@@ -333,9 +342,9 @@ class FlasherCLI(object):
                 print("Please specify the platform with -t <PLATFORM_NAME>")
                 print("Found platforms:")
                 print(available_platforms)
-                return EXIT_CODE_PLATFORM_REQUIRED
+                raise FlashError(message="More than one platform detected for given target id",
+                                 return_code=EXIT_CODE_PLATFORM_REQUIRED)
         else:
-            #print(target_ids_to_flash)
             retcode = flasher.flash(build=args.input,
                                     target_id=target_ids_to_flash,
                                     platform_name=available_platforms[0],
@@ -389,8 +398,9 @@ class FlasherCLI(object):
             else:
                 retcode = resetter.reset(target_id=ids, method=args.method)
         else:
-            print("Target_id is missing")
-            return EXIT_CODE_TARGET_ID_MISSING
+            msg = "Target_id is missing"
+            print(msg)
+            raise ResetError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         return retcode
 
@@ -408,8 +418,9 @@ class FlasherCLI(object):
                                        no_reset=args.no_reset,
                                        method=args.method)
         else:
-            print("Target_id is missing")
-            return EXIT_CODE_TARGET_ID_MISSING
+            msg = "Target_id is missing"
+            print(msg)
+            raise EraseError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         return retcode
 
@@ -456,8 +467,10 @@ class FlasherCLI(object):
         target_ids = []
         available_target_ids = []
         if not available:
-            print("Could not find any connected device")
-            return EXIT_CODE_DEVICES_MISSING
+            msg = "Could not find any connected device"
+            print(msg)
+            raise GeneralFatalError(message=msg, return_code=EXIT_CODE_DEVICES_MISSING)
+
         if 'all' in tid:
             for device in available:
                 target_ids.append(device['target_id'])
@@ -473,12 +486,14 @@ class FlasherCLI(object):
             print("Could not find given target_id from attached devices")
             print("Available target_ids:")
             print(available_target_ids)
-            return EXIT_CODE_COULD_NOT_MAP_DEVICE
+            raise GeneralFatalError(message="Could not map device",
+                                    return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
 
         if len(target_ids) == 1:
             return target_ids[0]
 
         return target_ids
+
 
 def mbedflash_main():
     """
@@ -490,13 +505,21 @@ def mbedflash_main():
     """
 
     cli = FlasherCLI()
-    retcode = cli.execute()
-    if retcode:
-        try:
-            cli.logger.error("Failed: %s", FAILURE_RETURN_CODE_MAPPING_TABLE[retcode])
-        except KeyError:
-            cli.logger.error("Failed with unknown reason: %s", str(retcode))
-    exit(retcode)
+    # Catch all exceptions to be able to set specific error format.
+    # pylint: disable=broad-except
+    try:
+        retcode = cli.execute()
+        if retcode:
+            cli.logger.error("Failed with return code: %s", str(retcode))
+
+        exit(retcode)
+    except (FlashError, EraseError, ResetError, GeneralFatalError) as error:
+        cli.logger.error("Failed: %s", error.message)
+        exit(error.return_code)
+    except Exception as error:
+        cli.logger.error("Failed with unknown reason: %s", str(error))
+        exit(EXIT_CODE_UNHANDLED_EXCEPTION)
+
 
 if __name__ == '__main__':
     mbedflash_main()

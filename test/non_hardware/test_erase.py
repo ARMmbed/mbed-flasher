@@ -15,10 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # pylint:disable=missing-docstring
+# pylint:disable=invalid-name
 
 import logging
 import unittest
 import mock
+
+from mbed_flasher.common import EraseError
 from mbed_flasher.erase import Erase
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
@@ -36,20 +39,26 @@ class EraseTestCase(unittest.TestCase):
 
     def test_erase_with_none(self):
         eraser = Erase()
-        ret = eraser.erase(target_id=None, method='simple')
-        self.assertEqual(ret, EXIT_CODE_TARGET_ID_MISSING)
+        with self.assertRaises(EraseError) as cm:
+            eraser.erase(target_id=None, method='simple')
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_TARGET_ID_MISSING)
 
     def test_erase_with_wrong_target_id(self):
         eraser = Erase()
-        ret = eraser.erase(target_id='555', method='simple')
-        self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
+        with self.assertRaises(EraseError) as cm:
+            eraser.erase(target_id='555', method='simple')
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     def test_erase_with_all_no_devices(self):
         with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
             mocked_get.return_value = []
             eraser = Erase()
-            ret = eraser.erase(target_id='all', method='simple')
-            self.assertEqual(ret, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
+            with self.assertRaises(EraseError) as cm:
+                eraser.erase(target_id='all', method='simple')
+
+            self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
@@ -62,12 +71,13 @@ class EraseTestCase(unittest.TestCase):
                         "serial_port": "/dev/uart"}]
             mocked_get.return_value = devices
             eraser = Erase()
-            ret = None
             for item in devices:
                 if item['target_id']:
-                    ret = eraser.erase(target_id=item['target_id'], method='simple')
+                    with self.assertRaises(EraseError) as cm:
+                        eraser.erase(target_id=item['target_id'], method='simple')
+
+                    self.assertEqual(cm.exception.return_code, EXIT_CODE_IMPLEMENTATION_MISSING)
                     break
-            self.assertEqual(ret, EXIT_CODE_IMPLEMENTATION_MISSING)
 
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
@@ -79,12 +89,13 @@ class EraseTestCase(unittest.TestCase):
                         "serial_port": "/dev/uart"}]
             mocked_get.return_value = devices
             eraser = Erase()
-            ret = None
             for item in devices:
                 if item['target_id']:
-                    ret = eraser.erase(target_id=item['target_id'], method='simple')
+                    with self.assertRaises(EraseError) as cm:
+                        eraser.erase(target_id=item['target_id'], method='simple')
+
+                    self.assertEqual(cm.exception.return_code, EXIT_CODE_MOUNT_POINT_MISSING)
                     break
-            self.assertEqual(ret, EXIT_CODE_MOUNT_POINT_MISSING)
 
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
@@ -96,12 +107,13 @@ class EraseTestCase(unittest.TestCase):
                         "mount_point": "/mnt/k64f"}]
             mocked_get.return_value = devices
             eraser = Erase()
-            ret = None
             for item in devices:
                 if item['target_id']:
-                    ret = eraser.erase(target_id=item['target_id'], method='simple')
+                    with self.assertRaises(EraseError) as cm:
+                        eraser.erase(target_id=item['target_id'], method='simple')
+
+                    self.assertEqual(cm.exception.return_code, EXIT_CODE_SERIAL_PORT_MISSING)
                     break
-            self.assertEqual(ret, EXIT_CODE_SERIAL_PORT_MISSING)
 
 
 if __name__ == '__main__':

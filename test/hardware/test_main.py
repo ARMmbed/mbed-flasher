@@ -27,6 +27,8 @@ except ImportError:
     from io import StringIO
 import mock
 import mbed_lstools
+
+from mbed_flasher.common import GeneralFatalError
 from mbed_flasher.main import FlasherCLI
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
@@ -61,7 +63,10 @@ class MainTestCaseHW(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_wrong_tid_with_device(self, mock_stdout):
         fcli = FlasherCLI(["reset", "--tid", "555"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_COULD_NOT_MAP_DEVICE)
+        with self.assertRaises(GeneralFatalError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
         six.assertRegex(self, mock_stdout.getvalue(),
                         r"Could not find given target_id from attached devices"
                         r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
@@ -71,7 +76,10 @@ class MainTestCaseHW(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_erase_wrong_tid_with_device(self, mock_stdout):
         fcli = FlasherCLI(["erase", "--tid", "555"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_COULD_NOT_MAP_DEVICE)
+        with self.assertRaises(GeneralFatalError) as cm:
+            fcli.execute()
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
         six.assertRegex(self, mock_stdout.getvalue(),
                         r"Could not find given target_id from attached devices"
                         r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
