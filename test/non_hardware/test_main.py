@@ -38,7 +38,7 @@ from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
 
-FLASHER_VERSION = '0.7.4'
+FLASHER_VERSION = '0.8.0'
 
 
 class MainTestCase(unittest.TestCase):
