@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 import logging
-from time import sleep
+import time
 import six
 
 
@@ -74,7 +74,7 @@ class Common(object):
                 self.logger.exception("Invalid device listing from flasher")
                 return []
 
-            sleep(Common.GET_DEVICES_RETRY_INTERVAL)
+            time.sleep(Common.GET_DEVICES_RETRY_INTERVAL)
 
         self.logger.warning("Did not find %s giving up", target)
         return devices
@@ -119,7 +119,11 @@ def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None
             if error.return_code not in conditions:
                 raise error
 
-        logger.info("Starting retry round {}".format(str(index + 1)))
+        index_from_one = index + 1
+        retry_interval = index_from_one ** 2
+        logger.info("Starting retry round {} after {} sleep"
+                    .format(index_from_one, retry_interval))
+        time.sleep(retry_interval)
 
     # pylint: disable=raising-bad-type
     if isinstance(return_value, Exception):

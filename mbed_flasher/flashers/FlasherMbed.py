@@ -49,6 +49,7 @@ class FlasherMbed(object):
     supported_targets = None
     REFRESH_TARGET_RETRIES = 100
     REFRESH_TARGET_SLEEP = 1
+    DRAG_AND_DROP_FLASH_RETRIES = 5
     CHECK_BINARY_DISAPPEAR_RETRIES = 60
     CHECK_BINARY_DISAPPEAR_SLEEP = 1
 
@@ -222,6 +223,7 @@ class FlasherMbed(object):
             logger=self.logger,
             func=self.try_drag_and_drop_flash,
             func_args=(source, target, no_reset),
+            retries=FlasherMbed.DRAG_AND_DROP_FLASH_RETRIES,
             conditions=[EXIT_CODE_OS_ERROR,
                         EXIT_CODE_DAPLINK_TRANSIENT_ERROR,
                         EXIT_CODE_DAPLINK_SOFTWARE_ERROR])

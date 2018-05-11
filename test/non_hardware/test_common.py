@@ -16,6 +16,7 @@ limitations under the License.
 """
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
+# pylint: disable=unused-argument
 
 import unittest
 import mock
@@ -111,8 +112,9 @@ class RetryTestCase(unittest.TestCase):
     def setUp(self):
         self.call_count = 0
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retry_succeeds_first_try(self, logger):
+    def test_retry_succeeds_first_try(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             return 0
@@ -122,8 +124,9 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(return_code, 0)
         self.assertEqual(self.call_count, 1)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retries_on_condition(self, logger):
+    def test_retries_on_condition(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             raise FlashError(message="", return_code=1)
@@ -134,8 +137,9 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, 1)
         self.assertEqual(self.call_count, DEFAULT_RETRY_AMOUNT)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retry_returns_last_return_code(self, logger):
+    def test_retry_returns_last_return_code(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             raise FlashError(message="", return_code=self.call_count)
@@ -146,8 +150,9 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, 3)
         self.assertEqual(self.call_count, DEFAULT_RETRY_AMOUNT)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retry_breaks_when_condition_doesnt_match(self, logger):
+    def test_retry_breaks_when_condition_doesnt_match(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             raise FlashError(message="", return_code=self.call_count)
@@ -158,8 +163,9 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, 2)
         self.assertEqual(self.call_count, 2)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retry_has_no_condition_by_default(self, logger):
+    def test_retry_has_no_condition_by_default(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             raise FlashError(message="", return_code=self.call_count)
@@ -170,8 +176,9 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, 1)
         self.assertEqual(self.call_count, 1)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retries_amount_can_be_changed(self, logger):
+    def test_retries_amount_can_be_changed(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             raise FlashError(message="", return_code=1)
@@ -182,8 +189,9 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, 1)
         self.assertEqual(self.call_count, 5)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_retry_raises_at_last_try(self, logger):
+    def test_retry_raises_at_last_try(self, logger, mock_sleep):
         def func():
             self.call_count += 1
             raise FlashError(message="", return_code=1)
@@ -193,6 +201,25 @@ class RetryTestCase(unittest.TestCase):
 
         self.assertEqual(cm.exception.return_code, 1)
         self.assertEqual(self.call_count, 5)
+
+    @mock.patch("time.sleep", return_value=None)
+    @mock.patch("mbed_flasher.flash.Logger")
+    def test_sleep_is_called_on_retries(self, logger, mock_sleep):
+        def func():
+            self.call_count += 1
+            raise FlashError(message="", return_code=1)
+
+        with self.assertRaises(FlashError) as cm:
+            retry(logger=logger, func=func, func_args=(), conditions=[1], retries=5)
+
+        self.assertEqual(cm.exception.return_code, 1)
+        self.assertEqual(self.call_count, 5)
+        # Check that sleep is called with expected time in correct order
+        self.assertEqual(mock_sleep.call_args_list[0][0][0], 1 ** 2)
+        self.assertEqual(mock_sleep.call_args_list[1][0][0], 2 ** 2)
+        self.assertEqual(mock_sleep.call_args_list[2][0][0], 3 ** 2)
+        self.assertEqual(mock_sleep.call_args_list[3][0][0], 4 ** 2)
+        self.assertEqual(mock_sleep.call_args_list[4][0][0], 5 ** 2)
 
 
 class FlashErrorTestCase(unittest.TestCase):
