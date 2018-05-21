@@ -21,6 +21,7 @@ limitations under the License.
 import os
 import logging
 import unittest
+import re
 try:
     from StringIO import StringIO
 except ImportError:
@@ -37,8 +38,6 @@ from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
-
-FLASHER_VERSION = '0.8.0'
 
 
 class MainTestCase(unittest.TestCase):
@@ -73,8 +72,9 @@ class MainTestCase(unittest.TestCase):
     def test_main_version(self, mock_stdout):
         fcli = FlasherCLI(["version"])
         self.assertEqual(fcli.execute(), EXIT_CODE_SUCCESS)
-        self.assertEqual(mock_stdout.getvalue(), FLASHER_VERSION + '\n')
-        #self.assertRegexpMatches(mock_stdout.getvalue(), r"^\d+\.\d+\.\d+$")
+        r_match = re.compile(r"^\d+\.\d+\.\d+$")
+        value = mock_stdout.getvalue()
+        self.assertTrue(r_match.match(value))
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_main_verboses(self, mock_stdout):
