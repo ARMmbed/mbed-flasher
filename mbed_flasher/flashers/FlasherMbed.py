@@ -303,10 +303,11 @@ class FlasherMbed(object):
         copy file from os
         """
         self.logger.debug('read source file')
-        with open(source, 'rb') as source_file:
-            aux_source = source_file.read()
-
-        if not aux_source:
+        try:
+            with open(source, 'rb') as source_file:
+                aux_source = source_file.read()
+        except (IOError, OSError):
+            self.logger.exception("File couldn't be read")
             raise FlashError(message="File couldn't be read",
                              return_code=EXIT_CODE_FILE_COULD_NOT_BE_READ)
 

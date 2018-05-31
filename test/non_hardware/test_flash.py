@@ -136,6 +136,34 @@ class FlashTestCase(unittest.TestCase):
         should_be = 'copy "%s" "tar get"' % __file__
         mock_system.assert_called_once_with(should_be)
 
+    def test_copy_file_unable_to_read(self):
+        flasher = FlasherMbed()
+        with self.assertRaises(FlashError):
+            flasher.copy_file("not-existing-file", "target")
+
+    # pylint: disable=no-self-use
+    @unittest.skipIf(platform.system() != 'Windows', 'require windows')
+    @mock.patch('os.system')
+    def test_copy_empty_file_windows(self, mock_system):
+        flasher = FlasherMbed()
+        file_path = os.path.join(os.getcwd(), "empty_file")
+        with open(file_path, 'a'):
+            os.utime(file_path, None)
+        flasher.copy_file(file_path, "target")
+        os.remove(file_path)
+        should_be = 'copy "%s" "target"' % file_path
+        mock_system.assert_called_once_with(should_be)
+
+    @unittest.skipIf(platform.system() != 'Linux', 'require linux')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.get_file')
+    def test_copy_empty_file_linux(self, mock_get_file):
+        flasher = FlasherMbed()
+        with open("empty_file", 'a'):
+            os.utime("empty_file", None)
+        flasher.copy_file("empty_file", "target")
+        os.remove("empty_file")
+        mock_get_file.assert_called_once_with("target")
+
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.refresh_target')
     def test_run_with_lowercase_HTM(self, mock_refresh_target, mock_copy_file):
