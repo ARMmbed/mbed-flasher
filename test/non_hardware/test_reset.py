@@ -26,10 +26,11 @@ except ImportError:
     from io import StringIO
 import mock
 
-from mbed_flasher.common import ResetError
+from mbed_flasher.common import ResetError, GeneralFatalError
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 
 
 class ResetTestCase(unittest.TestCase):
@@ -45,27 +46,31 @@ class ResetTestCase(unittest.TestCase):
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_TARGET_ID_MISSING)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_wrong_target_id(self, mock_stdout):
+    def test_reset_with_wrong_target_id(self, mock_stdout, mock_sleep):
         resetter = Reset()
-        with self.assertRaises(ResetError) as cm:
+        with self.assertRaises(GeneralFatalError) as cm:
             resetter.reset(target_id='555', method='simple')
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-        self.assertEqual(mock_stdout.getvalue(),
-                         'Could not map given target_id(s) to available devices\n')
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
 
-    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
+    @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all_no_devices(self, mock_stdout, mock_device_mapping):
+    def test_reset_with_all_no_devices(self, mock_stdout, mock_mbed_lstools_create):
+        class MockLS(object):
+            def __init__(self):
+                pass
+
+            def list_mbeds(self, filter_function=None):
+                return []
+
+        mock_mbed_lstools_create.return_value = MockLS()
         resetter = Reset()
-        mock_device_mapping.return_value = []
         with self.assertRaises(ResetError) as cm:
             resetter.reset(target_id='all', method='simple')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-        self.assertEqual(mock_stdout.getvalue(),
-                         'Could not map given target_id(s) to available devices\n')
 
 
 if __name__ == '__main__':

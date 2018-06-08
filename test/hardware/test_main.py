@@ -67,11 +67,6 @@ class MainTestCaseHW(unittest.TestCase):
             fcli.execute()
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
-        six.assertRegex(self, mock_stdout.getvalue(),
-                        r"Could not find given target_id from attached devices"
-                        r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
-                        r"(,\su?\'[0-9a-fA-F]+\')*\]",
-                        "Regex match failed")
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_erase_wrong_tid_with_device(self, mock_stdout):
@@ -80,11 +75,6 @@ class MainTestCaseHW(unittest.TestCase):
             fcli.execute()
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
-        six.assertRegex(self, mock_stdout.getvalue(),
-                        r"Could not find given target_id from attached devices"
-                        r"\nAvailable target_ids:\n\[u?(\'[0-9a-fA-F]+\')"
-                        r"(,\su?\'[0-9a-fA-F]+\')*\]",
-                        "Regex match failed")
 
 if __name__ == '__main__':
     unittest.main()

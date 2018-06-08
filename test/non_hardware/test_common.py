@@ -23,6 +23,8 @@ import mock
 
 from mbed_flasher.common import Common, retry, DEFAULT_RETRY_AMOUNT,\
     FlashError, EraseError, ResetError, GeneralFatalError
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
 
 
 # pylint: disable=too-few-public-methods
@@ -65,11 +67,14 @@ class CommonTestCase(unittest.TestCase):
         self.assertEqual(results, [{"target_id": "asd"}])
         self.assertEqual(flasher.call_count, 1)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_get_available_device_mapping_returns_with_target_not_matching(self, logger):
+    def test_get_available_device_mapping_raises_with_target_not_matching(self, logger, mock_sleep):
         flasher = Flasher([{"target_id": "asd"}])
-        results = Common(logger).get_available_device_mapping([flasher], "dsd")
-        self.assertEqual(results, [{"target_id": "asd"}])
+        with self.assertRaises(GeneralFatalError) as cm:
+            Common(logger).get_available_device_mapping([flasher], "dsd")
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
         self.assertEqual(flasher.call_count, 5)
 
     @mock.patch("mbed_flasher.flash.Logger")
@@ -87,17 +92,21 @@ class CommonTestCase(unittest.TestCase):
         self.assertEqual(flasher.call_count, 1)
 
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_get_available_device_mapping_returns_empty_with_invalid_listing(self, logger):
+    def test_get_available_device_mapping_raises_with_invalid_listing(self, logger):
         flasher = Flasher([{"target": "asd"}])
-        results = Common(logger).get_available_device_mapping([flasher], "as")
-        self.assertEqual(results, [])
+        with self.assertRaises(GeneralFatalError) as cm:
+            Common(logger).get_available_device_mapping([flasher], "as")
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_UNHANDLED_EXCEPTION)
         self.assertEqual(flasher.call_count, 1)
 
     @mock.patch("mbed_flasher.flash.Logger")
-    def test_get_available_device_mapping_returns_empty_with_invalid_listing_2(self, logger):
+    def test_get_available_device_mapping_raises_with_invalid_listing_2(self, logger):
         flasher = Flasher("asd")
-        results = Common(logger).get_available_device_mapping([flasher], "as")
-        self.assertEqual(results, [])
+        with self.assertRaises(GeneralFatalError) as cm:
+            Common(logger).get_available_device_mapping([flasher], "as")
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_UNHANDLED_EXCEPTION)
         self.assertEqual(flasher.call_count, 1)
 
     @mock.patch("mbed_flasher.flash.Logger")

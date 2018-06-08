@@ -15,22 +15,21 @@ limitations under the License.
 """
 
 import logging
-from os.path import join, abspath, isfile
+from os.path import join, isfile
 import os
 import platform
 from time import sleep
 import hashlib
-from serial.serialutil import SerialException
 import six
 
 import mbed_lstools
 
 from mbed_flasher.common import retry, FlashError
+from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.daplink_errors import DAPLINK_ERRORS
-from mbed_flasher.flashers.enhancedserial import EnhancedSerial
+from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
-from mbed_flasher.return_codes import EXIT_CODE_RESET_FAIL
 from mbed_flasher.return_codes import EXIT_CODE_FILE_COULD_NOT_BE_READ
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_NOT_INSTALLED
 from mbed_flasher.return_codes import EXIT_CODE_EGDB_NOT_SUPPORTED
@@ -47,11 +46,7 @@ class FlasherMbed(object):
     """
     name = "mbed"
     supported_targets = None
-    REFRESH_TARGET_RETRIES = 100
-    REFRESH_TARGET_SLEEP = 1
     DRAG_AND_DROP_FLASH_RETRIES = 5
-    CHECK_BINARY_DISAPPEAR_RETRIES = 60
-    CHECK_BINARY_DISAPPEAR_SLEEP = 1
 
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
@@ -89,116 +84,6 @@ class FlasherMbed(object):
         :return: True
         """
         return True
-
-    @staticmethod
-    def refresh_target_once(target_id):
-        """
-        Refresh target once with help of mbedls.
-        :param target_id: target_id to be searched for
-        :return: list of targets
-        """
-        mbedls = mbed_lstools.create()
-        return mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)
-
-    @staticmethod
-    def refresh_target(target_id):
-        """
-        Refresh target with help of mbedls.
-        :param target_id: target_id to be searched for
-        :return: target or None
-        """
-        mbedls = mbed_lstools.create()
-
-        for _ in range(FlasherMbed.REFRESH_TARGET_RETRIES):
-            mbeds = mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)
-            if mbeds:
-                return mbeds[0]
-
-            sleep(FlasherMbed.REFRESH_TARGET_SLEEP)
-
-        return None
-
-    @staticmethod
-    def _wait_for_binary_disappear(target, source):
-        """
-        Wait for flashed binary to disappear from the mount point.
-        :param target: target object
-        :param source: binary name
-        :return: target object
-        """
-        for _ in range(FlasherMbed.CHECK_BINARY_DISAPPEAR_RETRIES):
-            try:
-                target = FlasherMbed.refresh_target_once(target["target_id"])[0]
-            except IndexError:
-                # This is entered when mbedls fails to find the board,
-                # most likely due to remount in progress.
-                sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
-                continue
-
-            if not isfile(FlasherMbed._get_binary_destination(target["mount_point"], source)):
-                # Flashed file is no more found from the mount point,
-                # ready to progress further.
-                # Even though the mount point is accessible it does not seem
-                # to guarantee that files in it are.
-                # Continue looping until any .htm file is found.
-                try:
-                    for file_name in os.listdir(target["mount_point"]):
-                        if file_name.lower().endswith("htm"):
-                            return target
-                # Windows might raise WinError 21 when opening mount point too quickly.
-                except OSError:
-                    pass
-
-            sleep(FlasherMbed.CHECK_BINARY_DISAPPEAR_SLEEP)
-
-        return target
-
-    @staticmethod
-    def _get_binary_destination(mount_point, source_file):
-        """
-        Form absolute path from mount point and file name
-        :param mount_point: mount point
-        :param source_file: source file name
-        :return: absolute path
-        """
-        mount_point = os.path.abspath(mount_point)
-        (_, tail) = os.path.split(os.path.abspath(source_file))
-        return abspath(join(mount_point, tail))
-
-    def reset_board(self, serial_port):
-        """
-        Reset board
-        """
-        try:
-            port = EnhancedSerial(serial_port)
-        except SerialException as err:
-            self.logger.exception("reset could not be sent")
-            # SerialException.message is type "string"
-            # pylint: disable=no-member
-            if err.message.find('could not open port') != -1:
-                # python 3 compatibility
-                # pylint: disable=superfluous-parens
-                self.logger.error(
-                    "Reset could not be given. Close your Serial connection to device.")
-
-            raise FlashError(message="Reset failed", return_code=EXIT_CODE_RESET_FAIL)
-
-        port.baudrate = 115200
-        port.timeout = 1
-        port.xonxoff = False
-        port.rtscts = False
-        port.flushInput()
-        port.flushOutput()
-
-        if port:
-            self.logger.info("sendBreak to device to reboot")
-            result = port.safe_send_break()
-            if result:
-                self.logger.info("reset completed")
-            else:
-                self.logger.info("reset failed")
-
-        port.close()
 
     # pylint: disable=too-many-return-statements, duplicate-except
     def flash(self, source, target, method, no_reset):
@@ -267,31 +152,31 @@ class FlasherMbed(object):
         :return: 0 if success
         """
 
-        target = FlasherMbed.refresh_target(target["target_id"])
+        target = MbedCommon.refresh_target(target["target_id"])
         if not target:
             raise FlashError(message="Target ID is missing",
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        destination = FlasherMbed._get_binary_destination(target["mount_point"], source)
+        destination = MbedCommon.get_binary_destination(target["mount_point"], source)
 
         try:
             if 'serial_port' in target and not no_reset:
-                self.reset_board(target['serial_port'])
+                Reset(logger=self.logger).reset_board(target["serial_port"])
                 sleep(0.1)
 
             self.copy_file(source, destination)
             self.logger.debug("copy finished")
 
-            target = FlasherMbed._wait_for_binary_disappear(target, source)
+            target = MbedCommon.wait_for_file_disappear(target, source)
 
             if not no_reset:
-                self.reset_board(target['serial_port'])
+                Reset(logger=self.logger).reset_board(target["serial_port"])
                 sleep(0.4)
 
             # verify flashing went as planned
             self.logger.debug("verifying flash")
             return self.verify_flash_success(
-                target, FlasherMbed._get_binary_destination(target["mount_point"], source))
+                target, MbedCommon.get_binary_destination(target["mount_point"], source))
         # In python3 IOError is just an alias for OSError
         except (OSError, IOError) as err:
             msg = "Write failed due to OSError: {}".format(err)
@@ -314,8 +199,7 @@ class FlasherMbed(object):
         self.logger.debug("SHA1: %s", hashlib.sha1(aux_source).hexdigest())
 
         if platform.system() == 'Windows':
-            self.logger.debug("copying file: \"%s\" to \"%s\"",
-                              source, destination)
+            self.logger.debug('copying file: "%s" to "%s"'.format(source, destination))
             os.system("copy \"%s\" \"%s\"" % (os.path.abspath(source), destination))
         else:
             self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))

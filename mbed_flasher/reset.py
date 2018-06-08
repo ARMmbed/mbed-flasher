@@ -17,9 +17,11 @@ limitations under the License.
 # python 3 compatibility
 # pylint: disable=superfluous-parens
 
+import logging
+
 from serial.serialutil import SerialException
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
-from mbed_flasher.common import Common, Logger, ResetError
+from mbed_flasher.common import Common, ResetError, GeneralFatalError
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
@@ -36,9 +38,8 @@ class Reset(object):
     """
     _flashers = []
 
-    def __init__(self):
-        logger = Logger('mbed-flasher')
-        self.logger = logger.logger
+    def __init__(self, logger=None):
+        self.logger = logger if logger else logging.getLogger("mbed-flasher")
         self._flashers = self.__get_flashers()
 
     def get_available_device_mapping(self):
@@ -111,7 +112,7 @@ class Reset(object):
 
         if len(targets_to_reset) <= 0:
             msg = "Could not map given target_id(s) to available devices"
-            print(msg)
+            self.logger.error(msg)
             raise ResetError(message=msg, return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         for item in targets_to_reset:

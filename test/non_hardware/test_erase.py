@@ -44,76 +44,69 @@ class EraseTestCase(unittest.TestCase):
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_TARGET_ID_MISSING)
 
-    def test_erase_with_wrong_target_id(self):
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
+    def test_erase_with_wrong_target_id(self, mock_device_mapping):
+        mock_device_mapping.return_value = []
         eraser = Erase()
         with self.assertRaises(EraseError) as cm:
             eraser.erase(target_id='555', method='simple')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
-    def test_erase_with_all_no_devices(self):
-        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
-            mocked_get.return_value = []
-            eraser = Erase()
-            with self.assertRaises(EraseError) as cm:
-                eraser.erase(target_id='all', method='simple')
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
+    def test_erase_with_all_no_devices(self, mock_device_mapping):
+        mock_device_mapping.return_value = []
+        eraser = Erase()
+        with self.assertRaises(EraseError) as cm:
+            eraser.erase(target_id='all', method='simple')
 
-            self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
     # pylint: disable=invalid-name
-    def test_erase_failed_non_supported_devices(self, _):
-        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
-            devices = [{"target_id": "123",
-                        "platform_name": "K64F",
-                        "mount_point": "/mnt/k64f",
-                        "serial_port": "/dev/uart"}]
-            mocked_get.return_value = devices
-            eraser = Erase()
-            for item in devices:
-                if item['target_id']:
-                    with self.assertRaises(EraseError) as cm:
-                        eraser.erase(target_id=item['target_id'], method='simple')
+    def test_erase_failed_non_supported_devices(self, _, mock_device_mapping):
+        devices = [{"target_id": "123",
+                    "platform_name": "K64F",
+                    "mount_point": "/mnt/k64f",
+                    "serial_port": "/dev/uart"}]
+        mock_device_mapping.return_value = devices
+        eraser = Erase()
+        with self.assertRaises(EraseError) as cm:
+            eraser.erase(target_id="123", method='simple')
 
-                    self.assertEqual(cm.exception.return_code, EXIT_CODE_IMPLEMENTATION_MISSING)
-                    break
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_IMPLEMENTATION_MISSING)
 
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
     # pylint: disable=invalid-name
-    def test_erase_failed_mount_point_missing(self, _):
-        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
-            devices = [{"target_id": "123",
-                        "platform_name": "K64F",
-                        "serial_port": "/dev/uart"}]
-            mocked_get.return_value = devices
-            eraser = Erase()
-            for item in devices:
-                if item['target_id']:
-                    with self.assertRaises(EraseError) as cm:
-                        eraser.erase(target_id=item['target_id'], method='simple')
+    def test_erase_failed_mount_point_missing(self, _, mock_device_mapping):
+        devices = [{"target_id": "123",
+                    "platform_name": "K64F",
+                    "serial_port": "/dev/uart"}]
+        mock_device_mapping.return_value = devices
+        eraser = Erase()
+        with self.assertRaises(EraseError) as cm:
+            eraser.erase(target_id="123", method='simple')
 
-                    self.assertEqual(cm.exception.return_code, EXIT_CODE_MOUNT_POINT_MISSING)
-                    break
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_MOUNT_POINT_MISSING)
 
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch("os.path.isfile", return_value=True)
     # test func name is larger than 30, but is meaningful
     # pylint: disable=invalid-name
-    def test_erase_failed_serial_port_missing(self, _):
-        with mock.patch.object(FlasherMbed, "get_available_devices") as mocked_get:
-            devices = [{"target_id": "123",
-                        "platform_name": "K64F",
-                        "mount_point": "/mnt/k64f"}]
-            mocked_get.return_value = devices
-            eraser = Erase()
-            for item in devices:
-                if item['target_id']:
-                    with self.assertRaises(EraseError) as cm:
-                        eraser.erase(target_id=item['target_id'], method='simple')
+    def test_erase_failed_serial_port_missing(self, _, mock_device_mapping):
+        devices = [{"target_id": "123",
+                    "platform_name": "K64F",
+                    "mount_point": "/mnt/k64f"}]
+        mock_device_mapping.return_value = devices
+        eraser = Erase()
+        with self.assertRaises(EraseError) as cm:
+            eraser.erase(target_id="123", method='simple')
 
-                    self.assertEqual(cm.exception.return_code, EXIT_CODE_SERIAL_PORT_MISSING)
-                    break
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_SERIAL_PORT_MISSING)
 
 
 if __name__ == '__main__':

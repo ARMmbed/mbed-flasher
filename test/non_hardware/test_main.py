@@ -100,8 +100,10 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
         self.assertEqual(mock_stdout.getvalue(), 'File is missing\n')
 
+    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_wrong_platform(self, mock_stdout):
+    def test_wrong_platform(self, mock_stdout, mock_device_mapping):
+        mock_device_mapping.return_value = []
         bin_path = os.path.join('test', 'helloworld.bin')
         fcli = FlasherCLI(["flash", "-i", bin_path, "-t", "K65G", "--tid", "target"])
         with self.assertRaises(FlashError) as cm:

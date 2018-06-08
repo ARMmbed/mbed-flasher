@@ -391,38 +391,26 @@ class FlasherCLI(object):
         reset command handler
         """
         resetter = Reset()
-        if args.tid:
-            ids = self.parse_id_to_devices(args.tid)
-            if isinstance(ids, int):
-                retcode = ids
-            else:
-                retcode = resetter.reset(target_id=ids, method=args.method)
-        else:
+        if not args.tid:
             msg = "Target_id is missing"
             print(msg)
             raise ResetError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        return retcode
+        ids = self.parse_id_to_devices(args.tid)
+        return resetter.reset(target_id=ids, method=args.method)
 
     def subcmd_erase_handler(self, args):
         """
         erase command handler
         """
         eraser = Erase()
-        if args.tid:
-            ids = self.parse_id_to_devices(args.tid)
-            if isinstance(ids, int):
-                retcode = ids
-            else:
-                retcode = eraser.erase(target_id=ids,
-                                       no_reset=args.no_reset,
-                                       method=args.method)
-        else:
+        if not args.tid:
             msg = "Target_id is missing"
             print(msg)
             raise EraseError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        return retcode
+        ids = self.parse_id_to_devices(args.tid)
+        return eraser.erase(target_id=ids, no_reset=args.no_reset, method=args.method)
 
     # args not used, but the logic to call sub cmd handler is passing two args
     # pylint: disable=unused-argument
