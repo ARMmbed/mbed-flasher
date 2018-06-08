@@ -22,17 +22,17 @@ import argparse
 import logging
 import logging.handlers
 import os
-from os.path import isdir, isfile, join
+from os.path import isdir, join
 import json
 import time
 
-from mbed_flasher.common import Common, FlashError, EraseError, ResetError, GeneralFatalError
+from mbed_flasher.common import Common, FlashError, EraseError, ResetError, GeneralFatalError,\
+    check_is_file_flashable
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
-from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
@@ -293,16 +293,7 @@ class FlasherCLI(object):
             raise FlashError(message=msg,
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        if args.input:
-            if not isfile(args.input):
-                msg = "Could not find given file: {}".format(args.input)
-                print(msg)
-                raise FlashError(message=msg,
-                                 return_code=EXIT_CODE_FILE_MISSING)
-        else:
-            msg = "File is missing"
-            print(msg)
-            raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
+        check_is_file_flashable(args.input)
 
         flasher = Flash()
         available = Common(self.logger).get_available_device_mapping(

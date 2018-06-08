@@ -98,7 +98,7 @@ class MainTestCase(unittest.TestCase):
             fcli.execute()
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
-        self.assertEqual(mock_stdout.getvalue(), 'File is missing\n')
+        self.assertEqual(mock_stdout.getvalue(), 'File to be flashed was not given\n')
 
     @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
     @mock.patch('sys.stdout', new_callable=StringIO)

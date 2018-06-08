@@ -15,8 +15,12 @@ limitations under the License.
 """
 
 import logging
+import os
 import time
 import six
+
+from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 
 
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
@@ -24,6 +28,7 @@ from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
 
 
 DEFAULT_RETRY_AMOUNT = 3
+ALLOWED_FILE_EXTENSIONS = (".bin", ".hex", ".act", ".cfg")
 
 
 # pylint: disable=too-few-public-methods
@@ -137,6 +142,31 @@ def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None
         raise return_value
     else:
         return return_value
+
+
+def check_is_file_flashable(file_path):
+    """
+    Checks file existence and extension, raises if any of the checks fail.
+    :param file_path: file to be flashed (string)
+    :return: None on success, raise FlashError otherwise
+    """
+    if not file_path:
+        msg = "File to be flashed was not given"
+        # pylint: disable=superfluous-parens
+        print(msg)
+        raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
+
+    if not os.path.isfile(file_path):
+        msg = "Could not find given file: {}".format(file_path)
+        # pylint: disable=superfluous-parens
+        print(msg)
+        raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
+
+    if not file_path.lower().endswith(ALLOWED_FILE_EXTENSIONS):
+        msg = "File extension is not supported: {}".format(file_path)
+        # pylint: disable=superfluous-parens
+        print(msg)
+        raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
 
 
 class FlashError(Exception):

@@ -18,11 +18,19 @@ limitations under the License.
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
 
+import os
+try:
+    from StringIO import StringIO
+except ImportError:
+    # python 3 compatible import
+    from io import StringIO
 import unittest
 import mock
 
 from mbed_flasher.common import Common, retry, DEFAULT_RETRY_AMOUNT,\
-    FlashError, EraseError, ResetError, GeneralFatalError
+    FlashError, EraseError, ResetError, GeneralFatalError, check_is_file_flashable
+from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
 
@@ -229,6 +237,51 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(mock_sleep.call_args_list[2][0][0], 3 ** 2)
         self.assertEqual(mock_sleep.call_args_list[3][0][0], 4 ** 2)
         self.assertEqual(mock_sleep.call_args_list[4][0][0], 5 ** 2)
+
+
+class CheckIsFileFlashableTestCase(unittest.TestCase):
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_raises_when_file_path_is_invalid(self, mock_stdout):
+        with self.assertRaises(FlashError) as cm:
+            check_is_file_flashable("")
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
+
+        with self.assertRaises(FlashError) as cm:
+            check_is_file_flashable(None)
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
+
+    @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_allows_good_file_path(self, mock_stdout, mock_isfile):
+        self.assertEqual(check_is_file_flashable("./test.bin"), None)
+
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_raises_when_file_does_not_exist(self, mock_stdout):
+        with self.assertRaises(FlashError) as cm:
+            check_is_file_flashable("should/not/exist")
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
+
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_allows_existing_file(self, mock_stdout):
+        file_path = os.path.join("test", "helloworld.bin")
+        self.assertEqual(check_is_file_flashable(file_path), None)
+
+    @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_raises_when_file_has_bad_extension(self, mock_stdout, mock_isfile):
+        with self.assertRaises(FlashError) as cm:
+            check_is_file_flashable("test.heh")
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+
+    @mock.patch('os.path.isfile', return_value=True)
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    def test_allows_extensions(self, mock_stdout, mock_isfile):
+        for ext in ["bin", "hex", "act", "cfg", "BIN", "HEX", "ACT", "CFG"]:
+            self.assertEqual(check_is_file_flashable("test.{}".format(ext)), None)
 
 
 class FlashErrorTestCase(unittest.TestCase):

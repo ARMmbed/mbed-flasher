@@ -31,7 +31,7 @@ from mbed_flasher.flash import Flash
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_OS_ERROR
-from mbed_flasher.return_codes import EXIT_CODE_FILE_DOES_NOT_EXIST
+from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
@@ -66,7 +66,7 @@ class FlashTestCase(unittest.TestCase):
                           platform_name=False, device_mapping_table=None,
                           method='simple')
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_DOES_NOT_EXIST)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_flash_logger_created(self, mock_logger):  # pylint: disable=no-self-use
@@ -104,6 +104,17 @@ class FlashTestCase(unittest.TestCase):
                           method='simple')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
+
+    def test_raises_with_bad_file_extension(self):
+        flasher = Flash()
+        with self.assertRaises(FlashError) as cm:
+            flasher.flash(build=__file__,
+                          target_id='0240000029164e45002f0012706e0006f301000097969900',
+                          platform_name=False,
+                          device_mapping_table=None,
+                          method='simple')
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
     # pylint: disable=no-self-use
     @unittest.skipIf(platform.system() != 'Windows', 'require windows')

@@ -14,13 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from os.path import isfile
-
-from mbed_flasher.common import Common, Logger, FlashError
+from mbed_flasher.common import Common, Logger, FlashError, check_is_file_flashable
 from mbed_flasher.flashers import AvailableFlashers
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
-from mbed_flasher.return_codes import EXIT_CODE_FILE_DOES_NOT_EXIST
 from mbed_flasher.return_codes import EXIT_CODE_KEYBOARD_INTERRUPT
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_SYSTEM_INTERRUPT
@@ -222,9 +219,7 @@ class Flash(object):
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
-        if not isfile(build):
-            raise FlashError(message="Given file does not exist",
-                             return_code=EXIT_CODE_FILE_DOES_NOT_EXIST)
+        check_is_file_flashable(build)
 
         if (isinstance(target_id, list) or
                 target_id.lower() == 'all' or
