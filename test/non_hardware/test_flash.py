@@ -278,6 +278,7 @@ class FlashVerify(unittest.TestCase):
 
         exception = cm.exception
         self.assertEqual(exception.return_code, EXIT_CODE_FLASH_FAILED)
+        self.assertEqual(exception.message, "Error in FAIL.TXT is unknown: ")
 
     # test with name longer than 30, disable the warning here
     # pylint: disable=invalid-name
@@ -368,17 +369,20 @@ class FlashVerify(unittest.TestCase):
                 return True
             return False
 
-        mock_isfile.side_effect = isfile_function
-        mock_read_file.return_value = """
+        return_value = """
 error: File sent out of order by PC. Target might not be programmed correctly.
 error type: transient, user
         """
+
+        mock_isfile.side_effect = isfile_function
+        mock_read_file.return_value = return_value
 
         target = {"target_id": "", "mount_point": ""}
         with self.assertRaises(FlashError) as cm:
             FlasherMbed().verify_flash_success(target=target, file_path="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
+        self.assertEqual(cm.exception.message, return_value)
 
     @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._read_file')
     @mock.patch('mbed_flasher.flashers.FlasherMbed.isfile')
@@ -388,18 +392,22 @@ error type: transient, user
                 return True
             return False
 
-        mock_isfile.side_effect = isfile_function
-        mock_read_file.return_value = """
+        return_value = """
 error: File sent out of order by PC. Target might not be programmed correctly.
 An error occurred during the transfer.
 error type: transient, user
         """
+
+        mock_isfile.side_effect = isfile_function
+        mock_read_file.return_value = return_value
 
         target = {"target_id": "", "mount_point": ""}
         with self.assertRaises(FlashError) as cm:
             FlasherMbed().verify_flash_success(target=target, file_path="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_FLASH_FAILED)
+        expected_message = "Found multiple errors from FAIL.TXT: {}".format(return_value)
+        self.assertEqual(cm.exception.message, expected_message)
 
 
 if __name__ == '__main__':

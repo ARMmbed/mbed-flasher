@@ -20,7 +20,7 @@ limitations under the License.
 from os.path import join, isfile
 import six
 
-from mbed_flasher.common import Common, Logger, EraseError, GeneralFatalError
+from mbed_flasher.common import Common, Logger, EraseError
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS

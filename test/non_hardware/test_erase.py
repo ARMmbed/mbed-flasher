@@ -23,7 +23,6 @@ import mock
 
 from mbed_flasher.common import EraseError
 from mbed_flasher.erase import Erase
-from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING

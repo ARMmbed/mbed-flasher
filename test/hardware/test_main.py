@@ -15,11 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # pylint:disable=missing-docstring
+# pylint:disable=unused-argument
 
 import logging
 import unittest
 from test.hardware.test_helper import Helper
-import six
 try:
     from StringIO import StringIO
 except ImportError:

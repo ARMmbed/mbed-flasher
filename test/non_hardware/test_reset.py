@@ -16,6 +16,7 @@ limitations under the License.
 """
 # pylint:disable=missing-docstring
 # pylint:disable=invalid-name
+# pylint:disable=unused-argument
 
 import logging
 import unittest
@@ -58,10 +59,12 @@ class ResetTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_with_all_no_devices(self, mock_stdout, mock_mbed_lstools_create):
+        # pylint:disable=too-few-public-methods
         class MockLS(object):
             def __init__(self):
                 pass
 
+            # pylint:disable=no-self-use
             def list_mbeds(self, filter_function=None):
                 return []
 

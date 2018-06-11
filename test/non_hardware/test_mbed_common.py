@@ -36,10 +36,12 @@ class MbedCommonTestCase(unittest.TestCase):
 
     @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
     def test_refresh_target_returns_target(self, mock_mbed_lstools_create):
+        # pylint:disable=too-few-public-methods
         class MockLS(object):
             def __init__(self):
                 pass
 
+            # pylint:disable=no-self-use
             def list_mbeds(self, filter_function=None):
                 return [{"target_id": "test_id"}]
 
@@ -52,10 +54,12 @@ class MbedCommonTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
     def test_refresh_target_returns_empty_list_when_no_devices(
             self, mock_mbed_lstools_create, mock_sleep):
+        # pylint:disable=too-few-public-methods
         class MockLS(object):
             def __init__(self):
                 pass
 
+            # pylint:disable=no-self-use
             def list_mbeds(self, filter_function=None):
                 return []
 

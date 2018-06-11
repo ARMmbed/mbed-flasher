@@ -199,7 +199,7 @@ class FlasherMbed(object):
         self.logger.debug("SHA1: %s", hashlib.sha1(aux_source).hexdigest())
 
         if platform.system() == 'Windows':
-            self.logger.debug('copying file: "%s" to "%s"'.format(source, destination))
+            self.logger.debug('copying file: "{}" to "{}"'.format(source, destination))
             os.system("copy \"%s\" \"%s\"" % (os.path.abspath(source), destination))
         else:
             self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
@@ -238,14 +238,14 @@ class FlasherMbed(object):
 
             try:
                 errors = [error for error in DAPLINK_ERRORS if error in fault]
-                assert len(errors) == 1
+                assert len(errors) <= 1
                 raise FlashError(message=fault, return_code=DAPLINK_ERRORS[errors[0]])
             except AssertionError:
-                msg = "Expected to find exactly one error in fault: {}".format(fault)
+                msg = "Found multiple errors from FAIL.TXT: {}".format(fault)
                 self.logger.exception(msg)
                 raise FlashError(message=msg, return_code=EXIT_CODE_FLASH_FAILED)
-            except KeyError:
-                msg = "Did not find error with key {}".format(fault)
+            except IndexError:
+                msg = "Error in FAIL.TXT is unknown: {}".format(fault)
                 self.logger.exception(msg)
                 raise FlashError(message=msg, return_code=EXIT_CODE_FLASH_FAILED)
 

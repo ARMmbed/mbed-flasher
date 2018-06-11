@@ -21,7 +21,7 @@ import logging
 
 from serial.serialutil import SerialException
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
-from mbed_flasher.common import Common, ResetError, GeneralFatalError
+from mbed_flasher.common import Common, ResetError
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
