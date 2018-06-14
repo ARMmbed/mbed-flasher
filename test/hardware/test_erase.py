@@ -52,6 +52,7 @@ class EraseTestCaseHW(unittest.TestCase):
         count_eraseable = len(list_mbeds_eraseable(devices))
         self.assertEqual(count_eraseable, len(EraseTestCaseHW.erase_allowed_devices))
 
+    @unittest.skip("target_id 'all' will use Jlink boards, on Linux-nuc, which don't support erase")
     def test_erase_with_all(self):
         eraser = Erase()
         ret = eraser.erase(target_id='all', method='simple')

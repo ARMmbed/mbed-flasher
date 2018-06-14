@@ -9,22 +9,24 @@ properties ([
             daysToKeepStr: '30',
             numToKeepStr: '100'
         )
-    )
+    ),
+    disableConcurrentBuilds()
 ])
 
 
 parallelSteps = [:]
-parallelSteps['linux'] = streamStep('linux')
-parallelSteps['windows'] = streamStep('windows')
+parallelSteps['Rpi3'] = streamStep('Rpi3', 'mbed-flasher-linux')
+parallelSteps['linux-nuc'] = streamStep('linux-nuc', 'oul_ext_lin_nuc')
+parallelSteps['windows'] = streamStep('windows', 'mbed-flasher-windows')
 
 
-def streamStep(nodeType) {
+def streamStep(nodeType, nodeName) {
     return {
-        node("mbed-flasher-${nodeType}") {
+        node(nodeName) {
             deleteDir()
 
             try {
-                baseBuild()
+                baseBuild(nodeType)
             } catch(err) {
                 throw err
             } finally {
@@ -36,7 +38,7 @@ def streamStep(nodeType) {
 }
 
 
-def baseBuild() {
+def baseBuild(nodeType) {
     dir('mbed-flasher') {
         // checkout scm
         echo "checkout scm start"
@@ -45,11 +47,9 @@ def baseBuild() {
         env.GIT_COMMIT_HASH = scmVars.GIT_COMMIT
 
         if (isUnix()) {
-            unittest("py2")
+            unittest(nodeType, "py2")
 
-            unittest("py3")
-
-            linux_pylint_check()
+            unittest(nodeType, "py3")
 
             postBuild()
         }
@@ -57,6 +57,10 @@ def baseBuild() {
             winTest("py2")
 
             winTest("py3")
+        }
+
+        if (nodeType =='linux-nuc'){
+            linux_pylint_check()
         }
     }
 }
@@ -95,20 +99,34 @@ def setBuildStatus(String state, String context, String message) {
 }
 
 
-def unittest(String pythonVersion) {
+def unittest(nodeType, String pythonVersion) {
     catchError {
-        stage ("linux ${pythonVersion}") {
+        stage ("${nodeType} ${pythonVersion}") {
             echo "set ${pythonVersion} github status"
-            String buildName = "linux ${pythonVersion} test"
+            String buildName = "${nodeType} ${pythonVersion} test"
             setBuildStatus('PENDING', "${buildName}", 'test start')
             try {
                 if (pythonVersion == "py3") {
                     // create python 3 venv
+                    if (nodeType=="Rpi3") {
+                        sh """
+                            set -e
+                            python3 -m venv .py3venv --without-pip
+                            . .py3venv/bin/activate
+                            curl https://bootstrap.pypa.io/get-pip.py | python
+                            deactivate
+                        """
+                    } else {
+                        sh """
+                            set -e
+                            python3 -m venv .py3venv
+                        """
+                    }
+
+                    // create python 3 venv
                     sh """
                         set -e
-                        python3 -m venv .py3venv --without-pip
                         . .py3venv/bin/activate
-                        curl https://bootstrap.pypa.io/get-pip.py | python
                         pip install coverage mock astroid==1.5.3 pylint==1.7.2
                         id
                         pip freeze
@@ -178,6 +196,8 @@ def linux_pylint_check() {
                     pattern: '**/pylint.log'
                 ]
             ],
+            unstableTotalAll: '0',
+            failedTotalAll: '0',
             parserConfigurations: [
                 [
                     parserName: 'PyLint',

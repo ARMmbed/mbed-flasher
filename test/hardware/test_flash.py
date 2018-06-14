@@ -116,8 +116,8 @@ class FlashTestCaseHW(unittest.TestCase):
     def test_run_with_file_with_prefix(self, mock_stdout):
         flasher = Flash()
         ret = flasher.flash(build=self.bin_path,
-                            target_id='0',
-                            platform_name=None,
+                            target_id='02',
+                            platform_name='K64F',
                             device_mapping_table=None,
                             method='simple')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
