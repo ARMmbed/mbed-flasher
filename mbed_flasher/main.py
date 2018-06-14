@@ -130,8 +130,8 @@ class FlasherCLI(object):
             for filename in files_to_be_removed:
                 try:
                     os.remove(filename)
-                except OSError as err:
-                    print(err)
+                except OSError:
+                    self.logger.exception("Failed to remove log file: %s", filename)
 
     def execute(self):
         """
@@ -289,11 +289,10 @@ class FlasherCLI(object):
         """
         if not args.tid:
             msg = "Target_id is missing"
-            print(msg)
             raise FlashError(message=msg,
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        check_is_file_flashable(args.input)
+        check_is_file_flashable(self.logger, args.input)
 
         flasher = Flash()
         available = Common(self.logger).get_available_device_mapping(
@@ -302,8 +301,8 @@ class FlasherCLI(object):
         retcode = EXIT_CODE_SUCCESS
         if args.platform_name:
             if args.platform_name not in flasher.get_supported_targets():
-                print("Not supported platform: %s" % args.platform_name)
-                print("Supported platforms: %s" % flasher.get_supported_targets())
+                self.logger.error("Not supported platform: %s", args.platform_name)
+                self.logger.error("Supported platforms: %s", flasher.get_supported_targets())
                 raise FlashError(message="Platform {} not supported".format(args.platform_name),
                                  return_code=EXIT_CODE_NOT_SUPPORTED_PLATFORM)
 
@@ -314,25 +313,21 @@ class FlasherCLI(object):
 
         if len(available) <= 0:
             msg = "Could not find any connected device"
-            print(msg)
             raise FlashError(message=msg, return_code=EXIT_CODE_DEVICES_MISSING)
 
         available_platforms, target_ids_to_flash = \
             self.prepare_platforms_and_targets(available, args.tid, available_target_ids)
 
         if not target_ids_to_flash:
-            print("Could not find given target_id from attached devices")
-            print("Available target_ids:")
-            print(available_target_ids)
+            self.logger.error("Could not find given target_id from attached devices")
+            self.logger.error("Available target_ids: %s", available_target_ids)
             raise FlashError(message="Could not map device",
                              return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
-
         elif len(available_platforms) > 1:
             if not args.platform_name:
-                print("More than one platform detected for given target_id")
-                print("Please specify the platform with -t <PLATFORM_NAME>")
-                print("Found platforms:")
-                print(available_platforms)
+                self.logger.error("More than one platform detected for given target_id")
+                self.logger.error("Please specify the platform with -t <PLATFORM_NAME>")
+                self.logger.error("Found platforms: %s", available_platforms)
                 raise FlashError(message="More than one platform detected for given target id",
                                  return_code=EXIT_CODE_PLATFORM_REQUIRED)
         else:
@@ -372,7 +367,7 @@ class FlasherCLI(object):
                         target_ids_to_flash.append(device['target_id'])
 
                     if 'platform_name' in device and \
-                                    device['platform_name'] not in available_platforms:
+                            device['platform_name'] not in available_platforms:
                         available_platforms.append(device['platform_name'])
 
         return available_platforms, target_ids_to_flash
@@ -384,7 +379,6 @@ class FlasherCLI(object):
         resetter = Reset()
         if not args.tid:
             msg = "Target_id is missing"
-            print(msg)
             raise ResetError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         ids = self.parse_id_to_devices(args.tid)
@@ -397,7 +391,6 @@ class FlasherCLI(object):
         eraser = Erase()
         if not args.tid:
             msg = "Target_id is missing"
-            print(msg)
             raise EraseError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         ids = self.parse_id_to_devices(args.tid)
@@ -447,7 +440,6 @@ class FlasherCLI(object):
         available_target_ids = []
         if not available:
             msg = "Could not find any connected device"
-            print(msg)
             raise GeneralFatalError(message=msg, return_code=EXIT_CODE_DEVICES_MISSING)
 
         if 'all' in tid:
@@ -462,9 +454,8 @@ class FlasherCLI(object):
                         if device['target_id'] not in target_ids:
                             target_ids.append(device['target_id'])
         if not target_ids:
-            print("Could not find given target_id from attached devices")
-            print("Available target_ids:")
-            print(available_target_ids)
+            self.logger.error("Could not find given target_id from attached devices")
+            self.logger.error("Available target_ids: %s", available_target_ids)
             raise GeneralFatalError(message="Could not map device",
                                     return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
 

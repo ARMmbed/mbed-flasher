@@ -178,7 +178,7 @@ class Erase(object):
         """
         Verify that ERASE.ACT is not present in the target mount point.
         :param destination: target mount point
-        :return: None on success, raises othwerwise
+        :return: None on success, raises otherwise
         """
         if isfile(destination):
             msg = "Erase failed: ERASE.ACT still present in mount point"
@@ -202,8 +202,10 @@ class Erase(object):
             flash.eraseAll()
             if not no_reset:
                 ocd_target.reset()
-        except DAPAccessIntf.TransferFaultError as error:
-            raise EraseError(message=error, return_code=EXIT_CODE_PYOCD_ERASE_FAILED)
+        except DAPAccessIntf.TransferFaultError:
+            msg = "PyOCD erase failed"
+            self.logger.exception(msg)
+            raise EraseError(message=msg, return_code=EXIT_CODE_PYOCD_ERASE_FAILED)
 
         self.logger.info("erase completed for target: %s", target_id)
         return EXIT_CODE_SUCCESS

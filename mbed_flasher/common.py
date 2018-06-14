@@ -144,28 +144,29 @@ def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None
         return return_value
 
 
-def check_is_file_flashable(file_path):
+def check_is_file_flashable(logger, file_path):
     """
     Checks file existence and extension, raises if any of the checks fail.
+    :param logger: logger object
     :param file_path: file to be flashed (string)
     :return: None on success, raise FlashError otherwise
     """
     if not file_path:
         msg = "File to be flashed was not given"
+        logger.error(msg)
         # pylint: disable=superfluous-parens
-        print(msg)
         raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
 
     if not os.path.isfile(file_path):
         msg = "Could not find given file: {}".format(file_path)
+        logger.error(msg)
         # pylint: disable=superfluous-parens
-        print(msg)
         raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
 
     if not file_path.lower().endswith(ALLOWED_FILE_EXTENSIONS):
         msg = "File extension is not supported: {}".format(file_path)
+        logger.error(msg)
         # pylint: disable=superfluous-parens
-        print(msg)
         raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
 
 

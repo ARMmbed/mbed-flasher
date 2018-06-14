@@ -116,7 +116,7 @@ class Flash(object):
             if target_id == target['target_id']:
                 return target
 
-        raise KeyError("target_id: %s not found" % target_id)
+        raise KeyError("target_id: %s not found", target_id)
 
     @staticmethod
     def __find_by_platform_name(platform_name, target_list):
@@ -129,7 +129,7 @@ class Flash(object):
             if platform_name == target['platform_name']:
                 return target
 
-        raise KeyError("platform_name: %s not found" % platform_name)
+        raise KeyError("platform_name: %s not found", platform_name)
 
     @staticmethod
     def _verify_platform_coherence(device_mapping_table):
@@ -219,7 +219,7 @@ class Flash(object):
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
-        check_is_file_flashable(build)
+        check_is_file_flashable(self.logger, build)
 
         if (isinstance(target_id, list) or
                 target_id.lower() == 'all' or
@@ -242,8 +242,10 @@ class Flash(object):
             else:
                 target_mbed = self.__find_by_platform_name(platform_name,
                                                            device_mapping_table)
-        except KeyError as err:
-            raise FlashError(message=err,
+        except KeyError:
+            msg = "Could not find required device"
+            self.logger.exception(msg)
+            raise FlashError(message=msg,
                              return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         platform_name = self._get_platform_name(platform_name, target_mbed)

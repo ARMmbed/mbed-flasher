@@ -129,7 +129,9 @@ class FlasherJLink(FlasherBase):
             remove_commander_script()
 
         if returncode != 0:
-            msg = "Flash of {} failed, with returncode {}".format(target["target_id"], returncode)
+            self.logger.error("Flash of {} failed, with returncode {}"
+                              .format(target["target_id"], returncode))
+            msg = "Flash failed with JLink return code: {}".format(returncode)
             raise FlashError(message=msg, return_code=EXIT_CODE_FLASH_FAILED)
 
         self.logger.info("Flash of {} succeeded".format(target["target_id"]))

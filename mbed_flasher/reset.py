@@ -172,6 +172,7 @@ class Reset(object):
                 self.logger.info("reset completed")
             return EXIT_CODE_SUCCESS
         except AttributeError as err:
-            self.logger.error("reset failed: %s.", err)
+            self.logger.error("PyOCD reset failed: %s.", err)
             self.logger.error("tid=%s", item["target_id"])
-            raise ResetError(message=err, return_code=EXIT_CODE_PYOCD_RESET_FAILED)
+            raise ResetError(message="PyOCD reset failed",
+                             return_code=EXIT_CODE_PYOCD_RESET_FAILED)

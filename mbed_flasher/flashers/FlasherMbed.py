@@ -141,7 +141,8 @@ class FlasherMbed(object):
         except AttributeError as err:
             msg = "Flashing failed: {}. tid={}".format(err, target["target_id"])
             self.logger.error(msg)
-            raise FlashError(message=msg, return_code=EXIT_CODE_FLASH_FAILED)
+            raise FlashError(message="PyOCD flash failed",
+                             return_code=EXIT_CODE_FLASH_FAILED)
 
     def try_drag_and_drop_flash(self, source, target, no_reset):
         """
@@ -178,10 +179,11 @@ class FlasherMbed(object):
             return self.verify_flash_success(
                 target, MbedCommon.get_binary_destination(target["mount_point"], source))
         # In python3 IOError is just an alias for OSError
-        except (OSError, IOError) as err:
-            msg = "Write failed due to OSError: {}".format(err)
-            self.logger.error(msg)
-            raise FlashError(message=msg, return_code=EXIT_CODE_OS_ERROR)
+        except (OSError, IOError) as error:
+            msg = "File copy failed due to: {}".format(str(error))
+            self.logger.exception(msg)
+            raise FlashError(message=msg,
+                             return_code=EXIT_CODE_OS_ERROR)
 
     def copy_file(self, source, destination):
         """
@@ -251,11 +253,13 @@ class FlasherMbed(object):
 
         if isfile(join(mount, 'ASSERT.TXT')):
             fault = FlasherMbed._read_file(mount, "ASSERT.TXT")
-            msg = "Flashing failed: {}. tid={}".format(fault, target)
+            msg = "Found ASSERT.TXT: {}".format(fault)
+            self.logger.error("{} found ASSERT.txt: {}".format(target["target_id"], fault))
             raise FlashError(message=msg, return_code=EXIT_CODE_FLASH_FAILED)
 
         if isfile(file_path):
-            msg = "Flashing failed: File still present in mount point. tid info: {}".format(target)
+            msg = "File still present in mount point"
+            self.logger.error("{} file still present in mount point".format(target["target_id"]))
             raise FlashError(message=msg, return_code=EXIT_CODE_FILE_STILL_PRESENT)
 
         self.logger.debug("ready")
