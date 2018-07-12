@@ -17,6 +17,7 @@ limitations under the License.
 
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed as mbed_flasher
 from mbed_flasher.flashers.FlasherJLink import FlasherJLink as jlink_flasher
+from mbed_flasher.flashers.FlasherST import FlasherSTLink as st_flasher
 
 # disable Invalid constant name warning, not a const
 # pylint: disable=C0103
@@ -25,4 +26,7 @@ AvailableFlashers = []
 # Order matters since JLinkExe flash is preferred for JLink boards
 if jlink_flasher.is_executable_installed():
     AvailableFlashers.append(jlink_flasher)
+
+if st_flasher.is_executable_installed():
+    AvailableFlashers.append(st_flasher)
 AvailableFlashers.append(mbed_flasher)
