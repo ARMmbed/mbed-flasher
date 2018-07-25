@@ -127,7 +127,7 @@ def unittest(nodeType, String pythonVersion) {
                     sh """
                         set -e
                         . .py3venv/bin/activate
-                        pip install coverage mock astroid==1.5.3 pylint==1.7.2
+                        pip install coverage mock astroid==1.5.3 pylint==1.7.2 setuptools --upgrade
                         id
                         pip freeze
                         python setup.py install

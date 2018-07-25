@@ -31,9 +31,9 @@ from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
 
 class FlasherSTLink(FlasherBase):
     """
-    Class FlasherJLink
+    Class FlasherSTLink
 
-    Target on flashing JLink boards with JLinkExe.
+    Target on flashing STLink boards with ST-LINK_CLI.exe
     """
     name = "stlink"
     executable = "ST-LINK_CLI.exe" if sys.platform.startswith("win") else "ST-LINK_CLI"
@@ -52,7 +52,7 @@ class FlasherSTLink(FlasherBase):
     @staticmethod
     def get_supported_targets():
         """
-        :return: supported JLink types
+        :return: supported STLink types
         """
         if not FlasherSTLink.supported_targets:
             mbeds = mbed_lstools.create()
@@ -74,7 +74,7 @@ class FlasherSTLink(FlasherBase):
     @staticmethod
     def can_flash(target):
         """
-        Check if target should be flashed by using JLinkExe.
+        Check if target should be flashed by using ST-LINK_CLI.exe.
         :param target: target board
         :return: boolean
         """
@@ -87,7 +87,7 @@ class FlasherSTLink(FlasherBase):
     @staticmethod
     def is_executable_installed():
         """
-        Check if JLinkExe can be found from path.
+        Check if ST-LINK_CLI.exe can be found from path.
         :return: boolean
         """
         return spawn.find_executable(FlasherSTLink.executable) is not None

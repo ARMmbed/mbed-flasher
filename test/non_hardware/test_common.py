@@ -236,7 +236,6 @@ class RetryTestCase(unittest.TestCase):
         self.assertEqual(mock_sleep.call_args_list[1][0][0], 2 ** 2)
         self.assertEqual(mock_sleep.call_args_list[2][0][0], 3 ** 2)
         self.assertEqual(mock_sleep.call_args_list[3][0][0], 4 ** 2)
-        self.assertEqual(mock_sleep.call_args_list[4][0][0], 5 ** 2)
 
 
 class CheckIsFileFlashableTestCase(unittest.TestCase):

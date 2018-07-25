@@ -119,7 +119,6 @@ def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None
     :param conditions: conditions on when to retry
     :return: latest return code
     """
-    return_value = None
     if conditions is None:
         conditions = []
 
@@ -127,21 +126,17 @@ def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None
         try:
             return func(*func_args)
         except FlashError as error:
-            return_value = error
             if error.return_code not in conditions:
                 raise error
 
-        index_from_one = index + 1
-        retry_interval = index_from_one ** 2
-        logger.info("Starting retry round {} after {} sleep"
-                    .format(index_from_one, retry_interval))
-        time.sleep(retry_interval)
+            index_from_one = index + 1
+            if index_from_one == retries:
+                raise error
 
-    # pylint: disable=raising-bad-type
-    if isinstance(return_value, Exception):
-        raise return_value
-    else:
-        return return_value
+            retry_interval = index_from_one ** 2
+            logger.info("Starting retry round {} after {} sleep"
+                        .format(index_from_one, retry_interval))
+            time.sleep(retry_interval)
 
 
 def check_is_file_flashable(logger, file_path):

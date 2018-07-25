@@ -67,6 +67,26 @@ Typically, mbed-flasher is used for:
 * Selecting the devices to flash.
 * Flashing the selected devices.
 
+#### Flash retry
+
+Mbed-flasher has a mechanism that will retry flashing on specific failure cases where retrying
+could be beneficial. The mechanism is only used by the FlasherMbed drag'n'drop flash. Other
+flashers do not have retry mechanism in mbed-flasher.
+
+Flash is tried at most five times with an exponential interval (1, 4, 9, 16 seconds) in between
+rounds.
+
+Flash is retried on these failure reasons:
+* Any python OSError or IOError
+* Any of the following errors reported by daplink through FAIL.TXT:
+  * An internal error has occurred
+  * End of stream has been reached
+  * End of stream is unknown
+  * An error occurred during the transfer
+  * Possible mismatch between file size and size programmed
+  * File sent out of order by PC. Target might not be programmed correctly.
+  * An error has occurred
+
 #### Flash setup
 
 To import the mbed-flasher module:
