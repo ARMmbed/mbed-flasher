@@ -47,20 +47,24 @@ def baseBuild(nodeType) {
         env.GIT_COMMIT_HASH = scmVars.GIT_COMMIT
 
         if (isUnix()) {
+            linux_venv_installation()
+
             unittest(nodeType, "py2")
 
             unittest(nodeType, "py3")
 
             postBuild()
+
+            if (nodeType =='linux-nuc'){
+                linux_pylint_check()
+            }
         }
         else {
+            win_venv_installation()
+
             winTest("py2")
 
             winTest("py3")
-        }
-
-        if (nodeType =='linux-nuc'){
-            linux_pylint_check()
         }
     }
 }
@@ -99,6 +103,66 @@ def setBuildStatus(String state, String context, String message) {
 }
 
 
+def linux_venv_installation() {
+    stage ("create linux venv") {
+        sh """
+            set -e
+            echo "linux python3 venv installation starts"
+            virtualenv --python=../usr/bin/python3 py3venv --no-site-packages
+            . py3venv/bin/activate
+            pip install coverage mock astroid==1.5.3 pylint==1.7.2 setuptools --upgrade
+            id
+            pip freeze
+            deactivate
+            echo "linux python3 venv installation success"
+
+            echo "linux python2 venv installation starts"
+            virtualenv --python=../usr/bin/python py2venv --no-site-packages
+            . py2venv/bin/activate
+            id
+            pip install coverage mock astroid==1.5.3 pylint==1.7.2
+            pip freeze
+            deactivate
+            echo "linux python2 venv installation success"
+        """
+    }
+}
+
+
+def win_venv_installation() {
+    stage ("create windows venv") {
+        bat """
+            echo "widnows python3 venv installation starts"
+            c:\\Python36\\python.exe -m venv py3venv || goto :error
+            echo "Activating venv"
+            call py3venv\\Scripts\\activate.bat || goto :error
+            pip install coverage mock || goto :error
+            if %errorlevel% neq 0 exit /b %errorlevel%
+            pip freeze
+            deactivate
+
+            :error
+            echo "Failed with error %errorlevel%"
+            exit /b %errorlevel%
+        """
+
+        bat """
+            echo "widnows python2 venv installation starts"
+            virtualenv --python=c:\\Python27\\python.exe py2venv --no-site-packages || goto :error
+            echo "Activating venv"
+            call py2venv\\Scripts\\activate.bat || goto :error
+            pip install coverage mock || goto :error
+            pip freeze
+            deactivate
+
+            :error
+            echo "Failed with error %errorlevel%"
+            exit /b %errorlevel%
+        """
+    }
+}
+
+
 def unittest(nodeType, String pythonVersion) {
     catchError {
         stage ("${nodeType} ${pythonVersion}") {
@@ -108,28 +172,10 @@ def unittest(nodeType, String pythonVersion) {
             try {
                 if (pythonVersion == "py3") {
                     // create python 3 venv
-                    if (nodeType=="Rpi3") {
-                        sh """
-                            set -e
-                            python3 -m venv .py3venv --without-pip
-                            . .py3venv/bin/activate
-                            curl https://bootstrap.pypa.io/get-pip.py | python
-                            deactivate
-                        """
-                    } else {
-                        sh """
-                            set -e
-                            python3 -m venv .py3venv
-                        """
-                    }
-
-                    // create python 3 venv
                     sh """
+                        echo "linux python3 test starts"
                         set -e
-                        . .py3venv/bin/activate
-                        pip install coverage mock astroid==1.5.3 pylint==1.7.2 setuptools --upgrade
-                        id
-                        pip freeze
+                        . py3venv/bin/activate
                         python setup.py install
                         coverage run -m unittest discover -s test -vvv
                         coverage html
@@ -139,12 +185,9 @@ def unittest(nodeType, String pythonVersion) {
                 } else {
                     // create python2 venv, do installation and run tests
                     sh """
+                    echo "linux python2 test starts"
                         set -e
-                        virtualenv --python=../usr/bin/python .py2venv --no-site-packages
-                        . .py2venv/bin/activate
-                        id
-                        pip install coverage mock astroid==1.5.3 pylint==1.7.2
-                        pip freeze
+                        . py2venv/bin/activate
                         python setup.py install
                         coverage run -m unittest discover -s test -vvv
                         coverage html --include='*mbed_flasher*' --directory=logs
@@ -168,7 +211,7 @@ def linux_pylint_check() {
         // execute pylint check shell (only linux)
         echo "python 2 pylint check started"
         sh """
-            . .py2venv/bin/activate
+            . py2venv/bin/activate
             pylint --version
             ./run_pylint.sh | tee logs/pylint.log
             deactivate
@@ -176,7 +219,7 @@ def linux_pylint_check() {
 
         echo "python3 pylint check started"
         sh """
-            . .py3venv/bin/activate
+            . py3venv/bin/activate
             pylint --version
             ./run_pylint.sh | tee logs/pylint3.log
             deactivate
@@ -220,14 +263,9 @@ def winTest(String pythonVersion) {
             try {
                 if (pythonVersion == "py3") {
                     // create python 3 venv
-                    echo 'hello windows py3 starts'
+                    echo 'hello windows python3 test starts'
                     bat """
-                        c:\\Python36\\python.exe -m venv py3venv || goto :error
-                        echo "Activating venv"
                         call py3venv\\Scripts\\activate.bat || goto :error
-                        pip install coverage mock || goto :error
-                        if %errorlevel% neq 0 exit /b %errorlevel%
-                        pip freeze
                         python setup.py install  || goto :error
                         coverage run -m unittest discover -s test -vvv || goto :error
                         coverage html & coverage xml || goto :error
@@ -239,13 +277,9 @@ def winTest(String pythonVersion) {
                     """
                 } else {
                     // create python2 venv, do installation and run tests
-                    echo 'hello windows py2 starts'
+                    echo 'hello windows python2 test starts'
                     bat """
-                        virtualenv --python=c:\\Python27\\python.exe py2venv --no-site-packages || goto :error
-                        echo "Activating venv"
                         call py2venv\\Scripts\\activate.bat || goto :error
-                        pip install coverage mock || goto :error
-                        pip freeze
                         python setup.py install || goto :error
                         coverage run -m unittest discover -s test -vvv || goto :error
                         coverage html & coverage xml || goto :error
