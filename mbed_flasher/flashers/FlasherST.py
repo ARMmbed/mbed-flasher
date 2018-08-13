@@ -37,14 +37,7 @@ class FlasherSTLink(FlasherBase):
     """
     name = "stlink"
     executable = "ST-LINK_CLI.exe" if sys.platform.startswith("win") else "ST-LINK_CLI"
-    # supported_targets = None
-    # workaround for IOTMORF-2205
-    supported_targets = ["NUCLEO_F401RE",
-                         "NUCLEO_F411RE",
-                         "NUCLEO_F429ZI",
-                         "NUCLEO_L476RG",
-                         "NUCLEO_F767ZI",
-                         "UBLOX_EVK_ODIN_W2"]
+    supported_targets = None
 
     def __init__(self, logger=None):
         FlasherBase.__init__(self, logger)
@@ -79,8 +72,7 @@ class FlasherSTLink(FlasherBase):
         :return: boolean
         """
         try:
-            return target.get("device_type") == FlasherSTLink.name or \
-                target['platform_name'] in FlasherSTLink.supported_targets # IOTMORF-2205
+            return target["device_type"] == FlasherSTLink.name
         except KeyError:
             return False
 

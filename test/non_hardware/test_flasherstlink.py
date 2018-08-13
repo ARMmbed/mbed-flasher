@@ -51,7 +51,6 @@ class FlasherSTLinkTest(unittest.TestCase):
     def test_can_flash_when_device_type_matches(self, logger):
         stlink = FlasherSTLink(logger)
         self.assertTrue(stlink.can_flash({"device_type": FlasherSTLink.name}))
-        self.assertTrue(stlink.can_flash({"platform_name": "NUCLEO_F401RE"}))
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_can_flash_returns_false(self, logger):
