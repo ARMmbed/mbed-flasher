@@ -17,6 +17,7 @@ limitations under the License.
 import logging
 from os.path import join, isfile
 import os
+import platform
 from time import sleep
 import hashlib
 import six
@@ -199,16 +200,28 @@ class FlasherMbed(object):
 
         self.logger.debug("SHA1: %s", hashlib.sha1(aux_source).hexdigest())
 
-        self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
-        try:
-            with open(destination, "wb", 0) as new_file:
-                new_file.write(aux_source)
-                new_file.flush()
-                os.fsync(new_file.fileno())
-        except (IOError, OSError):
-            self.logger.exception("File couldn't be copied")
-            raise FlashError(message="File couldn't be copied",
-                             return_code=EXIT_CODE_OS_ERROR)
+        if platform.system() == 'Windows':
+            self.logger.debug('copying file: "{}" to "{}"'.format(source, destination))
+            os.system("copy \"%s\" \"%s\"" % (os.path.abspath(source), destination))
+        else:
+            self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
+            new_file = self.get_file(destination)
+            os.write(new_file, aux_source)
+            os.close(new_file)
+
+    @staticmethod
+    def get_file(destination):
+        """
+        Get file
+        """
+        if platform.system() == 'Darwin':
+            return os.open(
+                destination,
+                os.O_CREAT | os.O_TRUNC | os.O_RDWR | os.O_SYNC)
+
+        return os.open(
+            destination,
+            os.O_CREAT | os.O_DIRECT | os.O_TRUNC | os.O_RDWR)
 
     @staticmethod
     def _read_file(path, file_name):

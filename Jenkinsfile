@@ -108,7 +108,7 @@ def linux_venv_installation() {
         sh """
             set -e
             echo "linux python3 venv installation starts"
-            virtualenv --python=/usr/bin/python3 py3venv --no-site-packages
+            virtualenv --python=../usr/bin/python3 py3venv --no-site-packages
             . py3venv/bin/activate
             pip install coverage mock astroid==1.5.3 pylint==1.7.2 setuptools --upgrade
             id
@@ -117,7 +117,7 @@ def linux_venv_installation() {
             echo "linux python3 venv installation success"
 
             echo "linux python2 venv installation starts"
-            virtualenv --python=/usr/bin/python py2venv --no-site-packages
+            virtualenv --python=../usr/bin/python py2venv --no-site-packages
             . py2venv/bin/activate
             id
             pip install coverage mock astroid==1.5.3 pylint==1.7.2
