@@ -26,7 +26,7 @@ LICENSE = open("LICENSE").read()
 DESCRIPTION = "mbed-flasher"
 OWNER_NAMES = "Jussi Vatjus-Anttila"
 OWNER_EMAILS = "Jussi.Vatjus-Anttila@arm.com"
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 
 # Utility function to cat in a file (used for the README)
 def read(fname):
@@ -56,7 +56,7 @@ setup(name="mbed-flasher",
           "mbed-ls==1.6.0",
           "six",
           "pyserial",
-          "pyOCD"
+          "pyOCD==0.12.0"
       ],
       classifiers=[
           "Development Status :: 5 - Production/Stable",
