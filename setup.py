@@ -39,6 +39,7 @@ setup(name="mbed-flasher",
       version=VERSION,
       description=DESCRIPTION,
       long_description=read("README.md"),
+      long_description_content_type='text/markdown',
       author=OWNER_NAMES,
       author_email=OWNER_EMAILS,
       maintainer=OWNER_NAMES,
@@ -56,7 +57,7 @@ setup(name="mbed-flasher",
           "mbed-ls>=1.5.1,==1.*",
           "six",
           "pyserial",
-          "pyOCD!=0.13.0"
+          "pyocd>=0.14.0"
       ],
       classifiers=[
           "Development Status :: 5 - Production/Stable",

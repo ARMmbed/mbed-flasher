@@ -1,5 +1,5 @@
 """
-Copyright 2016 ARM Limited
+Copyright 2016,2018 ARM Limited
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -117,7 +117,8 @@ class FlasherMbed(object):
         try pyOCD flash
         """
         try:
-            from pyOCD.board import MbedBoard
+            from pyocd.core.helpers import ConnectHelper
+            from pyocd.flash.loader import FileProgrammer
         except ImportError:
             # python 3 compatibility
             # pylint: disable=superfluous-parens
@@ -125,14 +126,14 @@ class FlasherMbed(object):
                              return_code=EXIT_CODE_PYOCD_NOT_INSTALLED)
 
         try:
-            with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
-                ocd_target = board.target
-                ocd_flash = board.flash
+            with ConnectHelper.session_with_chosen_probe(unique_id=target["target_id"]) as session:
+                ocd_target = session.target
                 self.logger.debug("resetting device: %s", target["target_id"])
                 sleep(0.5)  # small sleep for lesser HW ie raspberry
                 ocd_target.reset()
                 self.logger.debug("flashing device: %s", target["target_id"])
-                ocd_flash.flashBinary(source)
+                programmer = FileProgrammer(session)
+                programmer.program(source)
                 self.logger.debug("resetting device: %s", target["target_id"])
                 sleep(0.5)  # small sleep for lesser HW ie raspberry
                 ocd_target.reset()

@@ -1,5 +1,5 @@
 """
-Copyright 2016 ARM Limited
+Copyright 2016,2018 ARM Limited
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -158,17 +158,16 @@ class Reset(object):
         try pyOCD reset
         """
         try:
-            from pyOCD.board import MbedBoard
+            from pyocd.core.helpers import ConnectHelper
         except ImportError:
             raise ResetError(message="pyOCD is not installed",
                              return_code=EXIT_CODE_PYOCD_MISSING)
 
         try:
-            with MbedBoard.chooseBoard(board_id=item["target_id"]) \
-                    as board:
+            with ConnectHelper.session_with_chosen_probe(unique_id=item["target_id"]) \
+                    as session:
                 self.logger.info("resetting device")
-                ocd_target = board.target
-                ocd_target.reset()
+                session.target.reset()
                 self.logger.info("reset completed")
             return EXIT_CODE_SUCCESS
         except AttributeError as err:
