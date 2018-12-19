@@ -81,11 +81,23 @@ optional arguments:
                         targets can be given. Does not continue flashing
                         next device in case of failures. Short target_id
                         matches boards by prefix
+  --target_filename TARGET_FILENAME
+                        Custom target filename
   -t PLATFORM_NAME, --platform_name PLATFORM_NAME
                         Platform of the target device(s)
   --no-reset            Do not reset device before or after flashing
 
 ```
+
+`--target_filename TARGET_FILENAME` -option is used to select custom
+target filename when source file is copied to mbed target
+
+e.g.
+```
+$ mbedflash flash simple --tid 0240000032254e45000f800ab529001f3f31000097969900 -i setup.hex --target_filename asd.hex
+```
+input file in above example would be `setup.hex`, that must exists and filename
+that is created for target mount point would be `asd.hex`.
 
 **Erase help**
 

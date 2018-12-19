@@ -87,13 +87,14 @@ class FlasherMbed(object):
         """
         return True
 
-    # pylint: disable=too-many-return-statements, duplicate-except
-    def flash(self, source, target, method, no_reset):
+    # pylint: disable=too-many-return-statements, duplicate-except, too-many-arguments
+    def flash(self, source, target, method, no_reset, target_filename):
         """copy file to the destination
         :param source: binary to be flashed
         :param target: target to be flashed
         :param method: method to use when flashing
         :param no_reset: do not reset flashed board at all
+        :param target_filename: destination filename
         """
         if not isinstance(source, six.string_types):
             return
@@ -109,7 +110,7 @@ class FlasherMbed(object):
         return retry(
             logger=self.logger,
             func=self.try_drag_and_drop_flash,
-            func_args=(source, target, no_reset),
+            func_args=(source, target, target_filename, no_reset),
             retries=FlasherMbed.DRAG_AND_DROP_FLASH_RETRIES,
             conditions=[EXIT_CODE_OS_ERROR,
                         EXIT_CODE_DAPLINK_TRANSIENT_ERROR,
@@ -146,7 +147,7 @@ class FlasherMbed(object):
             raise FlashError(message="PyOCD flash failed",
                              return_code=EXIT_CODE_FLASH_FAILED)
 
-    def try_drag_and_drop_flash(self, source, target, no_reset):
+    def try_drag_and_drop_flash(self, source, target, target_filename, no_reset):
         """
         Try to flash the target using drag and drop method.
         :param source: file to be flashed
@@ -160,7 +161,7 @@ class FlasherMbed(object):
             raise FlashError(message="Target ID is missing",
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        destination = MbedCommon.get_binary_destination(target["mount_point"], source)
+        destination = MbedCommon.get_binary_destination(target["mount_point"], target_filename)
 
         try:
             if 'serial_port' in target and not no_reset:
@@ -170,7 +171,7 @@ class FlasherMbed(object):
             self.copy_file(source, destination)
             self.logger.debug("copy finished")
 
-            target = MbedCommon.wait_for_file_disappear(target, source)
+            target = MbedCommon.wait_for_file_disappear(target, target_filename)
 
             if not no_reset:
                 Reset(logger=self.logger).reset_board(target["serial_port"])
@@ -179,7 +180,7 @@ class FlasherMbed(object):
             # verify flashing went as planned
             self.logger.debug("verifying flash")
             return self.verify_flash_success(
-                target, MbedCommon.get_binary_destination(target["mount_point"], source))
+                target, MbedCommon.get_binary_destination(target["mount_point"], target_filename))
         # In python3 IOError is just an alias for OSError
         except (OSError, IOError) as error:
             msg = "File copy failed due to: {}".format(str(error))

@@ -27,7 +27,7 @@ import json
 import time
 
 from mbed_flasher.common import Common, FlashError, EraseError, ResetError, GeneralFatalError,\
-    check_is_file_flashable
+    check_file, check_file_extension, check_file_exists
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
@@ -196,6 +196,9 @@ class FlasherCLI(object):
                                        'also multiple targets can be given. '
                                        'Short target_id matches boards by prefix',
                                   default=None, metavar='TARGET_ID', action='append')
+        parser_flash.add_argument('--target_filename',
+                                  help='Custom target filename',
+                                  default=None, metavar='TARGET_FILENAME')
         parser_flash.add_argument('-t', '--platform_name',
                                   help='Platform of the target device(s)',
                                   default=None)
@@ -292,7 +295,11 @@ class FlasherCLI(object):
             raise FlashError(message=msg,
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        check_is_file_flashable(self.logger, args.input)
+        check_file(self.logger, args.target_filename or args.input)
+        check_file(self.logger, args.input)
+        check_file_exists(self.logger, args.input)
+        check_file_extension(self.logger, args.target_filename or args.input)
+
 
         flasher = Flash()
         available = Common(self.logger).get_available_device_mapping(
@@ -309,6 +316,7 @@ class FlasherCLI(object):
         if 'all' in args.tid:
             retcode = flasher.flash(build=args.input, target_id='all',
                                     platform_name=args.platform_name,
+                                    target_filename=args.target_filename,
                                     method=args.method, no_reset=args.no_reset)
 
         if len(available) <= 0:
@@ -333,6 +341,7 @@ class FlasherCLI(object):
         else:
             retcode = flasher.flash(build=args.input,
                                     target_id=target_ids_to_flash,
+                                    target_filename=args.target_filename,
                                     platform_name=available_platforms[0],
                                     method=args.method,
                                     no_reset=args.no_reset)

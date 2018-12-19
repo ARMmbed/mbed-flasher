@@ -71,7 +71,8 @@ class FlasherBase(object):
         """
         raise NotImplementedError
 
-    def flash(self, source, target, method, no_reset):
+    # pylint: disable=too-many-arguments
+    def flash(self, source, target, method, no_reset, target_filename=None):
         """flash device
         :param source: binary to be flashed
         :param target: target to be flashed

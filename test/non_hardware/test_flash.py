@@ -116,6 +116,18 @@ class FlashTestCase(unittest.TestCase):
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
+    def test_raises_with_bad_file_extension_in_target_filename(self):
+        flasher = Flash()
+        with self.assertRaises(FlashError) as cm:
+            flasher.flash(build=__file__,
+                          target_id='0240000029164e45002f0012706e0006f301000097969900',
+                          platform_name=False,
+                          device_mapping_table=None,
+                          method='simple',
+                          target_filename='test.jpg')
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+
     # pylint: disable=no-self-use
     @unittest.skipIf(platform.system() != 'Windows', 'require windows')
     @mock.patch('subprocess.check_call')
@@ -154,6 +166,29 @@ class FlashTestCase(unittest.TestCase):
         os.remove("empty_file")
         mock_copy_file.assert_called_once_with(b"", "target")
 
+    @mock.patch('mbed_flasher.mbed_common.MbedCommon.wait_for_file_disappear')
+    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
+    def test_flash_with_target_filename(self, copy_file, mock_refresh_target,
+                                        mock_wait_for_file_disappear):
+        flasher = FlasherMbed()
+        flasher.return_value = True
+        copy_file.return_value = True
+        target = {"target_id": "a", "mount_point": ""}
+        mock_refresh_target.return_value = target
+        flasher.verify_flash_success = mock.MagicMock()
+        flasher.verify_flash_success.return_value = EXIT_CODE_SUCCESS
+        mock_wait_for_file_disappear.return_value = {"target_id": "a", "mount_point": ""}
+        flasher.flash(source=__file__,
+                      target=target,
+                      method='simple',
+                      no_reset=True,
+                      target_filename="test.ext")
+
+        target_filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                       "../..", "test.ext"))
+        copy_file.assert_called_once_with(__file__, target_filename)
+
 
 class FlasherMbedRetry(unittest.TestCase):
     def setUp(self):
@@ -172,7 +207,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -190,7 +226,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -209,7 +246,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -228,7 +266,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -246,7 +285,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
         self.assertEqual(mock_copy_file.call_count, 1)

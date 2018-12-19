@@ -146,18 +146,46 @@ def check_is_file_flashable(logger, file_path):
     :param file_path: file to be flashed (string)
     :return: None on success, raise FlashError otherwise
     """
+    check_file(logger, file_path)
+    check_file_exists(logger, file_path)
+    check_file_extension(logger, file_path)
+
+
+def check_file(logger, file_path):
+    """
+    CHeck if file_path is not "False"
+    :param logger: logger object
+    :param file_path: file to be flashed (string)
+    :return: None on success, raise FlashError otherwise
+    """
     if not file_path:
         msg = "File to be flashed was not given"
         logger.error(msg)
         # pylint: disable=superfluous-parens
         raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
 
+
+def check_file_exists(logger, file_path):
+    """
+    CHeck if file exists
+    :param logger: logger object
+    :param file_path: file to be flashed (string)
+    :return: None on success, raise FlashError otherwise
+    """
     if not os.path.isfile(file_path):
         msg = "Could not find given file: {}".format(file_path)
         logger.error(msg)
         # pylint: disable=superfluous-parens
         raise FlashError(message=msg, return_code=EXIT_CODE_FILE_MISSING)
 
+
+def check_file_extension(logger, file_path):
+    """
+    CHeck if file name extension is valid
+    :param logger: logger object
+    :param file_path: file to be flashed (string)
+    :return: None on success, raise FlashError otherwise
+    """
     if not file_path.lower().endswith(ALLOWED_FILE_EXTENSIONS):
         msg = "File extension is not supported: {}".format(file_path)
         logger.error(msg)

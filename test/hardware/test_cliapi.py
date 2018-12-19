@@ -62,3 +62,11 @@ class ApiTests(unittest.TestCase):
         target_id = first_or_default['target_id']
         parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_DAPLINK_USER_ERROR)
+
+    # pylint:disable=invalid-name
+    def test_flash_success_with_target_filename(self):
+        first_or_default = self.find_platform('K64F')
+        filename = self.bin_hello_world
+        target_id = first_or_default['target_id']
+        parameters = ['flash', '-i', filename, '--tid', target_id, '--target_filename', 'test.bin']
+        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
