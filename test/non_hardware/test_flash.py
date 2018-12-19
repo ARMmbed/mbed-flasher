@@ -20,9 +20,10 @@ limitations under the License.
 # pylint:disable=unused-argument
 
 import logging
-import unittest
 import os
-import sys
+import platform
+import unittest
+
 import mock
 
 from mbed_flasher.common import FlashError
@@ -116,12 +117,13 @@ class FlashTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
     # pylint: disable=no-self-use
-    @mock.patch('os.fsync')
-    def test_copy_file_with_spaces(self, mock_os_fsync):
+    @unittest.skipIf(platform.system() != 'Windows', 'require windows')
+    @mock.patch('subprocess.check_call')
+    def test_copy_file_with_spaces(self, mock_check_call):
         flasher = FlasherMbed()
         flasher.copy_file(__file__, "tar get")
-        os.remove("tar get")
-        mock_os_fsync.assert_called_once()
+        should_be = ["cmd", "/c", "copy", __file__, "tar get"]
+        mock_check_call.assert_called_with(should_be)
 
     def test_copy_file_unable_to_read(self):
         flasher = FlasherMbed()
@@ -129,47 +131,28 @@ class FlashTestCase(unittest.TestCase):
             flasher.copy_file("not-existing-file", "target")
 
     # pylint: disable=no-self-use
-    @mock.patch('os.fsync')
-    def test_copy_empty_file(self, mock_os_fsync):
+    @unittest.skipIf(platform.system() != 'Windows', 'require windows')
+    @mock.patch('subprocess.check_call')
+    def test_copy_empty_file_windows(self, mock_system):
+        flasher = FlasherMbed()
+        file_path = os.path.join(os.getcwd(), "empty_file")
+        with open(file_path, 'a'):
+            os.utime(file_path, None)
+        flasher.copy_file(file_path, "target")
+        os.remove(file_path)
+        should_be = ["cmd", "/c", "copy", file_path, "target"]
+        mock_system.assert_called_once_with(should_be)
+
+    @unittest.skipIf(platform.system() != 'Linux', 'require linux')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._copy_file')
+    def test_copy_empty_file_linux(self, mock_copy_file):
         flasher = FlasherMbed()
         with open("empty_file", 'a'):
-            os.utime("empty_file", None)
+            pass
+
         flasher.copy_file("empty_file", "target")
         os.remove("empty_file")
-        os.remove("target")
-        mock_os_fsync.assert_called_once()
-
-    # pylint: disable=no-self-use
-    @mock.patch('os.fsync')
-    def test_copy_file_write_success(self, mock_os_fsync):
-        flasher = FlasherMbed()
-        with open("source_file", 'wb') as source_file:
-            source_file.write(b"test data")
-
-        flasher.copy_file("source_file", "destination")
-
-        with open("destination", "rb") as destination:
-            result = destination.read()
-
-        # remove file before assert to clean environment
-        os.remove("source_file")
-        os.remove("destination")
-
-        # make sure file.write() really worked
-        self.assertEqual(result, b"test data", "copy file failed")
-        mock_os_fsync.assert_called_once()
-
-    @mock.patch('builtins.open' if sys.version_info.major > 2 else '__builtin__.open', create=True)
-    @mock.patch('hashlib.sha1')
-    @mock.patch('os.fsync')
-    def test_copy_file_flush_is_called(self, mock_os_fsync, mock_sha1, mock_open):
-        flasher = FlasherMbed()
-        flasher.copy_file("source_file", "destination")
-
-        file_handle = mock_open.return_value.__enter__.return_value
-
-        self.assertEqual(1, file_handle.flush.call_count)
-        file_handle.flush.assert_called_once()
+        mock_copy_file.assert_called_once_with(b"", "target")
 
 
 class FlasherMbedRetry(unittest.TestCase):

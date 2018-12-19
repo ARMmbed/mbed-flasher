@@ -19,6 +19,9 @@ from os.path import join, isfile
 import os
 from time import sleep
 import hashlib
+import platform
+import subprocess
+
 import six
 
 import mbed_lstools
@@ -199,16 +202,38 @@ class FlasherMbed(object):
 
         self.logger.debug("SHA1: %s", hashlib.sha1(aux_source).hexdigest())
 
-        self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
         try:
-            with open(destination, "wb", 0) as new_file:
-                new_file.write(aux_source)
-                new_file.flush()
-                os.fsync(new_file.fileno())
-        except (IOError, OSError):
+            if platform.system() == "Windows":
+                self._copy_file_windows(source, destination)
+            else:
+                self._copy_file(aux_source, destination)
+        except (IOError, OSError, subprocess.CalledProcessError):
             self.logger.exception("File couldn't be copied")
             raise FlashError(message="File couldn't be copied",
                              return_code=EXIT_CODE_OS_ERROR)
+
+    def _copy_file_windows(self, source, destination):
+        command = ["cmd", "/c", "copy", os.path.abspath(source), destination]
+        self.logger.debug("Copying with command: {}".format(command))
+        subprocess.check_call(command)
+
+    def _copy_file(self, aux_source, destination):
+        destination_fd = None
+        try:
+            if os.uname()[4].startswith('arm'):
+                destination_fd = os.open(
+                    destination,
+                    os.O_CREAT | os.O_TRUNC | os.O_RDWR | os.O_DIRECT)
+            else:
+                destination_fd = os.open(
+                    destination,
+                    os.O_CREAT | os.O_TRUNC | os.O_RDWR | os.O_SYNC)
+
+            self.logger.debug("Copying binary: %s (size=%i bytes)", destination, len(aux_source))
+            os.write(destination_fd, aux_source)
+        finally:
+            if destination_fd:
+                os.close(destination_fd)
 
     @staticmethod
     def _read_file(path, file_name):
