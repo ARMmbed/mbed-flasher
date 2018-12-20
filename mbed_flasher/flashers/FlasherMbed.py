@@ -19,6 +19,9 @@ from os.path import join, isfile
 import os
 from time import sleep
 import hashlib
+import platform
+import subprocess
+
 import six
 
 import mbed_lstools
@@ -84,13 +87,14 @@ class FlasherMbed(object):
         """
         return True
 
-    # pylint: disable=too-many-return-statements, duplicate-except
-    def flash(self, source, target, method, no_reset):
+    # pylint: disable=too-many-return-statements, duplicate-except, too-many-arguments
+    def flash(self, source, target, method, no_reset, target_filename):
         """copy file to the destination
         :param source: binary to be flashed
         :param target: target to be flashed
         :param method: method to use when flashing
         :param no_reset: do not reset flashed board at all
+        :param target_filename: destination filename
         """
         if not isinstance(source, six.string_types):
             return
@@ -106,7 +110,7 @@ class FlasherMbed(object):
         return retry(
             logger=self.logger,
             func=self.try_drag_and_drop_flash,
-            func_args=(source, target, no_reset),
+            func_args=(source, target, target_filename, no_reset),
             retries=FlasherMbed.DRAG_AND_DROP_FLASH_RETRIES,
             conditions=[EXIT_CODE_OS_ERROR,
                         EXIT_CODE_DAPLINK_TRANSIENT_ERROR,
@@ -143,7 +147,7 @@ class FlasherMbed(object):
             raise FlashError(message="PyOCD flash failed",
                              return_code=EXIT_CODE_FLASH_FAILED)
 
-    def try_drag_and_drop_flash(self, source, target, no_reset):
+    def try_drag_and_drop_flash(self, source, target, target_filename, no_reset):
         """
         Try to flash the target using drag and drop method.
         :param source: file to be flashed
@@ -157,7 +161,7 @@ class FlasherMbed(object):
             raise FlashError(message="Target ID is missing",
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        destination = MbedCommon.get_binary_destination(target["mount_point"], source)
+        destination = MbedCommon.get_binary_destination(target["mount_point"], target_filename)
 
         try:
             if 'serial_port' in target and not no_reset:
@@ -167,7 +171,7 @@ class FlasherMbed(object):
             self.copy_file(source, destination)
             self.logger.debug("copy finished")
 
-            target = MbedCommon.wait_for_file_disappear(target, source)
+            target = MbedCommon.wait_for_file_disappear(target, target_filename)
 
             if not no_reset:
                 Reset(logger=self.logger).reset_board(target["serial_port"])
@@ -176,7 +180,7 @@ class FlasherMbed(object):
             # verify flashing went as planned
             self.logger.debug("verifying flash")
             return self.verify_flash_success(
-                target, MbedCommon.get_binary_destination(target["mount_point"], source))
+                target, MbedCommon.get_binary_destination(target["mount_point"], target_filename))
         # In python3 IOError is just an alias for OSError
         except (OSError, IOError) as error:
             msg = "File copy failed due to: {}".format(str(error))
@@ -199,16 +203,38 @@ class FlasherMbed(object):
 
         self.logger.debug("SHA1: %s", hashlib.sha1(aux_source).hexdigest())
 
-        self.logger.debug("writing binary: %s (size=%i bytes)", destination, len(aux_source))
         try:
-            with open(destination, "wb", 0) as new_file:
-                new_file.write(aux_source)
-                new_file.flush()
-                os.fsync(new_file.fileno())
-        except (IOError, OSError):
+            if platform.system() == "Windows":
+                self._copy_file_windows(source, destination)
+            else:
+                self._copy_file(aux_source, destination)
+        except (IOError, OSError, subprocess.CalledProcessError):
             self.logger.exception("File couldn't be copied")
             raise FlashError(message="File couldn't be copied",
                              return_code=EXIT_CODE_OS_ERROR)
+
+    def _copy_file_windows(self, source, destination):
+        command = ["cmd", "/c", "copy", os.path.abspath(source), destination]
+        self.logger.debug("Copying with command: {}".format(command))
+        subprocess.check_call(command)
+
+    def _copy_file(self, aux_source, destination):
+        destination_fd = None
+        try:
+            if os.uname()[4].startswith('arm'):
+                destination_fd = os.open(
+                    destination,
+                    os.O_CREAT | os.O_TRUNC | os.O_RDWR | os.O_DIRECT)
+            else:
+                destination_fd = os.open(
+                    destination,
+                    os.O_CREAT | os.O_TRUNC | os.O_RDWR | os.O_SYNC)
+
+            self.logger.debug("Copying binary: %s (size=%i bytes)", destination, len(aux_source))
+            os.write(destination_fd, aux_source)
+        finally:
+            if destination_fd:
+                os.close(destination_fd)
 
     @staticmethod
     def _read_file(path, file_name):
