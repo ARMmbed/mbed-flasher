@@ -117,27 +117,28 @@ class FlasherMbed(object):
         try pyOCD flash
         """
         try:
-            from pyOCD.board import MbedBoard
+            from pyocd.core.helpers import ConnectHelper
+            from pyocd.flash.loader import FileProgrammer
         except ImportError:
             # python 3 compatibility
             # pylint: disable=superfluous-parens
-            raise FlashError(message="PyOCD is missing",
+            raise FlashError(message="pyocd is missing",
                              return_code=EXIT_CODE_PYOCD_NOT_INSTALLED)
 
         try:
-            with MbedBoard.chooseBoard(board_id=target["target_id"]) as board:
-                ocd_target = board.target
-                ocd_flash = board.flash
-                self.logger.debug("resetting device: %s", target["target_id"])
-                sleep(0.5)  # small sleep for lesser HW ie raspberry
-                ocd_target.reset()
-                self.logger.debug("flashing device: %s", target["target_id"])
-                ocd_flash.flashBinary(source)
-                self.logger.debug("resetting device: %s", target["target_id"])
-                sleep(0.5)  # small sleep for lesser HW ie raspberry
-                ocd_target.reset()
+            session = ConnectHelper.session_with_chosen_probe(board_id=target["target_id"])
+            if session is None:
+                raise FlashError(message="pyocd debug probe missing",
+                                 return_code=EXIT_CODE_FLASH_FAILED)
+            with session:
+                # with session you can get board
+                #board = session.board
+                #target = board.target
+                #self.logger.debug("target is {}".format(target))
+                programmer = FileProgrammer(session)
+                programmer.program(source)
             return EXIT_CODE_SUCCESS
-        except AttributeError as err:
+        except Exception as err:
             msg = "Flashing failed: {}. tid={}".format(err, target["target_id"])
             self.logger.error(msg)
             raise FlashError(message="PyOCD flash failed",
