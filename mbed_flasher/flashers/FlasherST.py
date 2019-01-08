@@ -49,9 +49,8 @@ class FlasherSTLink(FlasherBase):
         """
         if not FlasherSTLink.supported_targets:
             mbeds = mbed_lstools.create()
-            # @todo this is workaround until mbed-ls provide public api
-            db_items = list(mbeds.plat_db.items(device_type=FlasherSTLink.name))
-            FlasherSTLink.supported_targets = sorted([i[1]["platform_name"] for i in db_items])
+            db_items = mbeds.get_supported_platforms(device_type='stlink')
+            FlasherSTLink.supported_targets = sorted(db_items.keys())
 
         return FlasherSTLink.supported_targets
 
