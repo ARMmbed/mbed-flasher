@@ -50,7 +50,7 @@ class FlasherSTLink(FlasherBase):
         if not FlasherSTLink.supported_targets:
             mbeds = mbed_lstools.create()
             db_items = mbeds.get_supported_platforms(device_type='stlink')
-            FlasherSTLink.supported_targets = sorted(db_items.keys())
+            FlasherSTLink.supported_targets = sorted(db_items.values())
 
         return FlasherSTLink.supported_targets
 
