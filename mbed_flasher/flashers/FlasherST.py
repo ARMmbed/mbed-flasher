@@ -103,8 +103,11 @@ class FlasherSTLink(FlasherBase):
                 tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=target_filename)
                 with open(source, 'rb') as source_file:
                     tmp_file.write(source_file.read())
+                tmp_file.flush()
+                tmp_file.close()
                 source = tmp_file.name
         except (IOError, OSError):
+            os.remove(tmp_file.name)
             raise FlashError(message="File couldn't be read",
                              return_code=EXIT_CODE_FILE_COULD_NOT_BE_READ)
 
@@ -126,7 +129,7 @@ class FlasherSTLink(FlasherBase):
                              return_code=EXIT_CODE_FLASH_FAILED)
         finally:
             if tmp_file:
-                os.remove(tmp_file)
+                os.remove(tmp_file.name)
 
         if returncode != 0:
             self.logger.error("Flash of {} failed, with returncode {}"
