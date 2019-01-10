@@ -15,11 +15,13 @@ limitations under the License.
 """
 
 from distutils import spawn
+import os
 try:
     import queue
 except ImportError:
     import Queue as queue
 import sys
+import tempfile
 
 import mbed_lstools
 
@@ -27,6 +29,7 @@ from mbed_flasher.common import FlashError
 from mbed_flasher.flashers.FlasherBase import FlasherBase
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
+from mbed_flasher.return_codes import EXIT_CODE_FILE_COULD_NOT_BE_READ
 
 
 class FlasherSTLink(FlasherBase):
@@ -94,6 +97,17 @@ class FlasherSTLink(FlasherBase):
         :param target_filename: target filename (not in use)
         :return: 0 when flashing success
         """
+        tmp_file = None
+        try:
+            if target_filename:
+                tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=target_filename)
+                with open(source, 'rb') as source_file:
+                    tmp_file.write(source_file.read())
+                source = tmp_file.name
+        except (IOError, OSError):
+            raise FlashError(message="File couldn't be read",
+                             return_code=EXIT_CODE_FILE_COULD_NOT_BE_READ)
+
         try:
             args = [
                 FlasherSTLink.executable,
@@ -110,6 +124,9 @@ class FlasherSTLink(FlasherBase):
         except queue.Empty:
             raise FlashError(message="No returncode from ST-LINK_CLI",
                              return_code=EXIT_CODE_FLASH_FAILED)
+        finally:
+            if tmp_file:
+                os.remove(tmp_file)
 
         if returncode != 0:
             self.logger.error("Flash of {} failed, with returncode {}"
