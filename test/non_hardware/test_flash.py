@@ -372,6 +372,8 @@ class FlashVerify(unittest.TestCase):
               EXIT_CODE_DAPLINK_USER_ERROR)
         check("The application file format is unknown and cannot be parsed and/or processed.",
               EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The application file format is unknown and cannot be parsed and/or processed",
+              EXIT_CODE_DAPLINK_USER_ERROR)
 
         check("The interface firmware FAILED to reset/halt the target MCU",
               EXIT_CODE_DAPLINK_TARGET_ERROR)
