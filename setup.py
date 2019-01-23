@@ -53,7 +53,7 @@ setup(name="mbed-flasher",
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
       dependency_links=[
-          'git+https://github.com/RomanSaveljev/mbed-ls@patch-1#egg=mbed-ls-1.6.2-1'],
+          'git+https://github.com/RomanSaveljev/mbed-ls@st-link-rig#egg=mbed-ls-1.6.2-1'],
       install_requires=[
           "mbed-ls==1.6.2-1",
           "six",
