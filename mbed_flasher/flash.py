@@ -104,7 +104,7 @@ class Flash(object):
         :return:
         """
         for flasher in self._flashers:
-            if platform_name in flasher.get_supported_targets() and flasher.can_flash(target):
+            if flasher.can_flash(target):
                 return flasher(logger=self.logger)
 
         raise NotImplementedError("Flashing %s is not supported" % platform_name)
