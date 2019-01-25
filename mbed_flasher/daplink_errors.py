@@ -43,7 +43,8 @@ DAPLINK_ERRORS = {
     "The hex file offset load address is not correct.": EXIT_CODE_DAPLINK_USER_ERROR,
     "The starting address for the bootloader update is wrong.": EXIT_CODE_DAPLINK_USER_ERROR,
     "The starting address for the interface update is wrong.": EXIT_CODE_DAPLINK_USER_ERROR,
-    "The application file format is unknown and cannot be parsed and/or processed.": EXIT_CODE_DAPLINK_USER_ERROR,
+    # Official daplink has the "." at the end, stlink fork is missing it.
+    "The application file format is unknown and cannot be parsed and/or processed": EXIT_CODE_DAPLINK_USER_ERROR,
 
     # Target error
     "The interface firmware FAILED to reset/halt the target MCU": EXIT_CODE_DAPLINK_TARGET_ERROR,
