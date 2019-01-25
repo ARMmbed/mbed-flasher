@@ -96,8 +96,8 @@ class FlasherSTLink(FlasherBase):
         try:
             args = [
                 FlasherSTLink.executable,
-                "-c", "SN=" + target['target_id_usb_id'],  # chip to be flash
-                "-P", source, "0x08000000",  # Loads file into device memory
+                "-c", "UR", "SN=" + target['target_id_usb_id'],  # chip to be flash
+                "-P", source, "0x08000000",  "ske", # Loads file into device memory
                 "-V"  # Verifies that the programming operation was performed successfully.
             ]
         except KeyError:
