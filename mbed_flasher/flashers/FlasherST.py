@@ -62,21 +62,29 @@ class FlasherSTLink(FlasherBase):
         """
         mbeds = mbed_lstools.create()
         # device_type introduced in mbedls version 1.4.0
-        return mbeds.list_mbeds(filter_function=FlasherSTLink.can_flash)
+        return mbeds.list_mbeds(filter_function=FlasherSTLink.can_flash_at_all)
+
+    @staticmethod
+    def can_flash_at_all(target):
+        """
+        Returns true, if can flash the board at all
+        :param target: target board
+        :return: boolean
+        """
+        try:
+            return target["device_type"] == FlasherSTLink.name
+        except KeyError:
+            return False
 
     @staticmethod
     def can_flash(target, filename):
         """
-        Check if target should be flashed by using ST-LINK_CLI.exe.
+        Check if target should be flashed by using ST-LINK_CLI.exe
         :param target: target board
         :param filename: firmware filename
         :return: boolean
         """
-        try:
-            return splitext(filename)[1] == '.hex' and \
-                   target["device_type"] == FlasherSTLink.name
-        except KeyError:
-            return False
+        return FlasherSTLink.can_flash_at_all(target) and splitext(filename)[1] == '.hex'
 
     @staticmethod
     def is_executable_installed():
