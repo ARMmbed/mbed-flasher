@@ -67,10 +67,11 @@ class FlasherJLink(FlasherBase):
         return mbeds.list_mbeds(filter_function=lambda m: m['device_type'] == 'jlink')
 
     @staticmethod
-    def can_flash(target):
+    def can_flash(target, filename):
         """
         Check if target should be flashed by using JLinkExe.
         :param target: target board
+        :param filename: firmware filename
         :return: boolean
         """
         try:

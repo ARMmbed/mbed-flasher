@@ -78,11 +78,12 @@ class FlasherMbed(object):
 
     # pylint: disable=unused-argument
     @staticmethod
-    def can_flash(target):
+    def can_flash(target, filename):
         """
         Check if target should be flashed by drag and drop method.
         Currently there is no reason not to try it.
         :param target: target board
+        :param filename: firmware filename
         :return: True
         """
         return True

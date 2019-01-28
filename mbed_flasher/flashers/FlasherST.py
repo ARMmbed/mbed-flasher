@@ -20,6 +20,7 @@ try:
 except ImportError:
     import Queue as queue
 import sys
+from os.path import splitext
 
 import mbed_lstools
 
@@ -64,14 +65,16 @@ class FlasherSTLink(FlasherBase):
         return mbeds.list_mbeds(filter_function=FlasherSTLink.can_flash)
 
     @staticmethod
-    def can_flash(target):
+    def can_flash(target, filename):
         """
         Check if target should be flashed by using ST-LINK_CLI.exe.
         :param target: target board
+        :param filename: firmware filename
         :return: boolean
         """
         try:
-            return target["device_type"] == FlasherSTLink.name
+            return splitext(filename)[1] == '.hex' and \
+                   target["device_type"] == FlasherSTLink.name
         except KeyError:
             return False
 

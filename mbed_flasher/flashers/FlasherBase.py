@@ -55,10 +55,11 @@ class FlasherBase(object):
         raise NotImplementedError
 
     @staticmethod
-    def can_flash(target):
+    def can_flash(target, filename):
         """
         Check if target should be flashed using this flasher.
         :param target: target board
+        :param filename: firmware filename
         :return: boolean
         """
         raise NotImplementedError

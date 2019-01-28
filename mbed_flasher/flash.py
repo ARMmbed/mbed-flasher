@@ -98,13 +98,13 @@ class Flash(object):
         raise FlashError(message="Requested flasher does not exist",
                          return_code=EXIT_CODE_REQUESTED_FLASHER_DOES_NOT_EXIST)
 
-    def __get_flasher(self, platform_name, target):
+    def __get_flasher(self, platform_name, target, filename):
         """
         :param platform_name: platform name
         :return:
         """
         for flasher in self._flashers:
-            if flasher.can_flash(target):
+            if flasher.can_flash(target, filename):
                 return flasher(logger=self.logger)
 
         raise NotImplementedError("Flashing %s is not supported" % platform_name)
@@ -265,7 +265,7 @@ class Flash(object):
 
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
-        flasher = self.__get_flasher(platform_name, target_mbed)
+        flasher = self.__get_flasher(platform_name, target_mbed, target_filename)
         retcode = Flash._do_flash(flasher=flasher,
                                   build=build,
                                   target=target_mbed,
