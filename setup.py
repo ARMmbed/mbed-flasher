@@ -52,10 +52,8 @@ setup(name="mbed-flasher",
       entry_points={
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
-      dependency_links=[
-          'git+https://github.com/RomanSaveljev/mbed-ls@st-link-rig#egg=mbed-ls-1.6.2-1'],
       install_requires=[
-          "mbed-ls==1.6.2-1",
+          "mbed-ls>=1.5.1,==1.*",
           "six",
           "pyserial",
           "pyOCD!=0.13.0"
