@@ -107,9 +107,12 @@ class FlasherSTLink(FlasherBase):
         try:
             args = [
                 FlasherSTLink.executable,
-                "-c", "UR", "SN=" + target['target_id_usb_id'],  # chip to be flash
-                "-P", source, "0x08000000",  "ske", # Loads file into device memory
-                "-V"  # Verifies that the programming operation was performed successfully.
+                # UR - connect under reset, SN=<probe serial>
+                "-c", "UR", "SN=" + target['target_id_usb_id'],
+                # Loads file into device memory and skips chip erasing
+                "-P", source,
+                # Verifies that the programming operation was performed successfully
+                "-V", "after_programming"
             ]
         except KeyError:
             raise FlashError(message="Invalid target", return_code=EXIT_CODE_FLASH_FAILED)
