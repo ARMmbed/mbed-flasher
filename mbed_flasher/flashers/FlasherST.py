@@ -107,6 +107,8 @@ class FlasherSTLink(FlasherBase):
         try:
             args = [
                 FlasherSTLink.executable,
+                # Do not show progress bar
+                "-Q",
                 # UR - connect under reset, SN=<probe serial>
                 "-c", "UR", "SN=" + target['target_id_usb_id'],
                 # Loads file into device memory and skips chip erasing
