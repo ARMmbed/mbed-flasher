@@ -105,11 +105,14 @@ class FlasherAtmelAt(object):
             "Connected atprogrammer supported devices: %s", connected_devices)
         return connected_devices
 
-    # actual flash procedure
-    def flash(self, source, target):
-        """flash device
-        :param sn: device serial number to be flashed
-        :param binary: binary file to be flash
+    # pylint: disable=too-many-arguments, unused-argument
+    def flash(self, source, target, method, no_reset, target_filename):
+        """
+        :param source: binary file to be flash
+        :param target: target id
+        :param method:
+        :param no_reset:
+        :param target_filename:
         :return: 0 when flashing success
         """
         with tempfile.TemporaryFile() as temp:

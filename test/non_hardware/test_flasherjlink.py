@@ -103,7 +103,7 @@ class FlasherJLinkTest(unittest.TestCase):
         jlink._start_and_wait_flash = mock_start
 
         target = {"jlink_device_name": "test_jlink", "target_id": "test_target_id"}
-        returncode = jlink.flash("test_source", target, "", False)
+        returncode = jlink.flash("test_source", target, None, "", False)
         self.assertEqual(returncode, 0)
 
     @mock.patch("mbed_flasher.flash.Logger")

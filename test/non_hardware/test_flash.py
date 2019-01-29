@@ -20,9 +20,10 @@ limitations under the License.
 # pylint:disable=unused-argument
 
 import logging
-import unittest
 import os
-import sys
+import platform
+import unittest
+
 import mock
 
 from mbed_flasher.common import FlashError
@@ -115,13 +116,26 @@ class FlashTestCase(unittest.TestCase):
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
+    def test_raises_with_bad_file_extension_in_target_filename(self):
+        flasher = Flash()
+        with self.assertRaises(FlashError) as cm:
+            flasher.flash(build=__file__,
+                          target_id='0240000029164e45002f0012706e0006f301000097969900',
+                          platform_name=False,
+                          device_mapping_table=None,
+                          method='simple',
+                          target_filename='test.jpg')
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+
     # pylint: disable=no-self-use
-    @mock.patch('os.fsync')
-    def test_copy_file_with_spaces(self, mock_os_fsync):
+    @unittest.skipIf(platform.system() != 'Windows', 'require windows')
+    @mock.patch('subprocess.check_call')
+    def test_copy_file_with_spaces(self, mock_check_call):
         flasher = FlasherMbed()
         flasher.copy_file(__file__, "tar get")
-        os.remove("tar get")
-        mock_os_fsync.assert_called_once()
+        should_be = ["cmd", "/c", "copy", __file__, "tar get"]
+        mock_check_call.assert_called_with(should_be)
 
     def test_copy_file_unable_to_read(self):
         flasher = FlasherMbed()
@@ -129,47 +143,51 @@ class FlashTestCase(unittest.TestCase):
             flasher.copy_file("not-existing-file", "target")
 
     # pylint: disable=no-self-use
-    @mock.patch('os.fsync')
-    def test_copy_empty_file(self, mock_os_fsync):
+    @unittest.skipIf(platform.system() != 'Windows', 'require windows')
+    @mock.patch('subprocess.check_call')
+    def test_copy_empty_file_windows(self, mock_system):
+        flasher = FlasherMbed()
+        file_path = os.path.join(os.getcwd(), "empty_file")
+        with open(file_path, 'a'):
+            os.utime(file_path, None)
+        flasher.copy_file(file_path, "target")
+        os.remove(file_path)
+        should_be = ["cmd", "/c", "copy", file_path, "target"]
+        mock_system.assert_called_once_with(should_be)
+
+    @unittest.skipIf(platform.system() != 'Linux', 'require linux')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed._copy_file')
+    def test_copy_empty_file_linux(self, mock_copy_file):
         flasher = FlasherMbed()
         with open("empty_file", 'a'):
-            os.utime("empty_file", None)
+            pass
+
         flasher.copy_file("empty_file", "target")
         os.remove("empty_file")
-        os.remove("target")
-        mock_os_fsync.assert_called_once()
+        mock_copy_file.assert_called_once_with(b"", "target")
 
-    # pylint: disable=no-self-use
-    @mock.patch('os.fsync')
-    def test_copy_file_write_success(self, mock_os_fsync):
+    @mock.patch('mbed_flasher.mbed_common.MbedCommon.wait_for_file_disappear')
+    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
+    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
+    def test_flash_with_target_filename(self, copy_file, mock_refresh_target,
+                                        mock_wait_for_file_disappear):
         flasher = FlasherMbed()
-        with open("source_file", 'wb') as source_file:
-            source_file.write(b"test data")
+        flasher.return_value = True
+        copy_file.return_value = True
+        target = {"target_id": "a", "mount_point": ""}
+        mock_refresh_target.return_value = target
+        flasher.verify_flash_success = mock.MagicMock()
+        flasher.verify_flash_success.return_value = EXIT_CODE_SUCCESS
+        mock_wait_for_file_disappear.return_value = {"target_id": "a", "mount_point": ""}
+        flasher.flash(source=__file__,
+                      target=target,
+                      method='simple',
+                      no_reset=True,
+                      target_filename="test.ext")
 
-        flasher.copy_file("source_file", "destination")
-
-        with open("destination", "rb") as destination:
-            result = destination.read()
-
-        # remove file before assert to clean environment
-        os.remove("source_file")
-        os.remove("destination")
-
-        # make sure file.write() really worked
-        self.assertEqual(result, b"test data", "copy file failed")
-        mock_os_fsync.assert_called_once()
-
-    @mock.patch('builtins.open' if sys.version_info.major > 2 else '__builtin__.open', create=True)
-    @mock.patch('hashlib.sha1')
-    @mock.patch('os.fsync')
-    def test_copy_file_flush_is_called(self, mock_os_fsync, mock_sha1, mock_open):
-        flasher = FlasherMbed()
-        flasher.copy_file("source_file", "destination")
-
-        file_handle = mock_open.return_value.__enter__.return_value
-
-        self.assertEqual(1, file_handle.flush.call_count)
-        file_handle.flush.assert_called_once()
+        target_filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                       "../..", "test.ext"))
+        copy_file.assert_called_once_with(__file__, target_filename)
 
 
 class FlasherMbedRetry(unittest.TestCase):
@@ -189,7 +207,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -207,7 +226,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -226,7 +246,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -245,7 +266,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -263,7 +285,8 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
+            flasher.flash(source="", target=target, method="simple",
+                          no_reset=False, target_filename="")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
         self.assertEqual(mock_copy_file.call_count, 1)
@@ -348,6 +371,8 @@ class FlashVerify(unittest.TestCase):
         check("The starting address for the interface update is wrong.",
               EXIT_CODE_DAPLINK_USER_ERROR)
         check("The application file format is unknown and cannot be parsed and/or processed.",
+              EXIT_CODE_DAPLINK_USER_ERROR)
+        check("The application file format is unknown and cannot be parsed and/or processed",
               EXIT_CODE_DAPLINK_USER_ERROR)
 
         check("The interface firmware FAILED to reset/halt the target MCU",

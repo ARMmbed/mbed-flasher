@@ -58,7 +58,8 @@ class FlashTestCaseHW(unittest.TestCase):
         flasher = Flash()
         with self.assertRaises(SyntaxError) as context:
             flasher.flash(build='file.bin', target_id=None,
-                          platform_name=None, device_mapping_table=None, method='simple')
+                          platform_name=None, device_mapping_table=None, method='simple',
+                          target_filename='file.bin')
         self.assertIn("target_id or target_name is required", context.exception.msg)
 
     # pylint:disable=invalid-name
@@ -78,7 +79,8 @@ class FlashTestCaseHW(unittest.TestCase):
                               target_id=target_id,
                               platform_name='K65G',
                               device_mapping_table=None,
-                              method='simple')
+                              method='simple',
+                              target_filename=self.bin_path)
             self.assertIn("Platform 'K65G' is not supported by mbed-flasher",
                           str(context.exception))
 
@@ -97,7 +99,8 @@ class FlashTestCaseHW(unittest.TestCase):
                                 target_id=target_id,
                                 platform_name=False,
                                 device_mapping_table=None,
-                                method='simple')
+                                method='simple',
+                                target_filename=self.bin_path)
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -107,7 +110,8 @@ class FlashTestCaseHW(unittest.TestCase):
                             target_id='all',
                             platform_name='K64F',
                             device_mapping_table=None,
-                            method='simple')
+                            method='simple',
+                            target_filename=self.bin_path)
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if mock_stdout:
             pass
@@ -119,7 +123,8 @@ class FlashTestCaseHW(unittest.TestCase):
                             target_id='02',
                             platform_name='K64F',
                             device_mapping_table=None,
-                            method='simple')
+                            method='simple',
+                            target_filename=self.bin_path)
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if mock_stdout:
             pass
@@ -144,7 +149,8 @@ class FlashTestCaseHW(unittest.TestCase):
         with self.assertRaises(FlashError) as cm:
             flasher = FlasherMbed()
             flasher.flash(source=fail_txt_path, target=target_to_test,
-                          method='simple', no_reset=False)
+                          method='simple', no_reset=False,
+                          target_filename=fail_txt_path)
 
         if platform.system() == 'Windows':
             os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
@@ -176,7 +182,8 @@ class FlashTestCaseHW(unittest.TestCase):
             flasher = Flash()
             flasher.flash(build=fail_bin_path, target_id=target_id,
                           platform_name='K64F', device_mapping_table=None,
-                          method='simple')
+                          method='simple',
+                          target_filename=fail_bin_path)
 
         if platform.system() == 'Windows':
             os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))

@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from mbed_flasher.common import Common, Logger, FlashError, check_is_file_flashable
+from mbed_flasher.common import Common, Logger, FlashError,\
+    check_file, check_file_exists, check_file_extension
 from mbed_flasher.flashers import AvailableFlashers
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
@@ -149,14 +150,15 @@ class Flash(object):
                                  return_code=EXIT_CODE_PLATFORM_REQUIRED)
 
     # pylint: disable=too-many-arguments
-    def flash_multiple(self, build, platform_name,
-                       method='simple', target_ids_or_prefix='', no_reset=None):
+    def flash_multiple(self, build, platform_name, method='simple',
+                       target_ids_or_prefix='', no_reset=None, target_filename=None):
         """
         :param build: build
         :param platform_name: platform name
         :param method: method
         :param target_ids_or_prefix: target ids or prefix
         :param no_reset: with/without reset
+        :param target_filename: optional target filename
         :return:
         """
         device_mapping_table = Common(self.logger).get_available_device_mapping(self._flashers)
@@ -192,26 +194,31 @@ class Flash(object):
         for item in device_mapping_table:
             self.logger.info(item['target_id'])
 
+        target_filename = target_filename or build
+
         for device in device_mapping_table:
             self.flash(build=build,
                        target_id=device['target_id'],
                        platform_name=None,
                        device_mapping_table=device_mapping_table,
                        method=method,
-                       no_reset=no_reset)
+                       no_reset=no_reset,
+                       target_filename=target_filename)
 
         return EXIT_CODE_SUCCESS
 
     # pylint: disable=too-many-return-statements
     def flash(self, build, target_id=None, platform_name=None,
-              device_mapping_table=None, method='simple', no_reset=None):
+              device_mapping_table=None, method='simple', no_reset=None,
+              target_filename=None):
         """Flash (mbed) device
-        :param build:  Build -object or string (file-path)
+        :param build: string (file-path)
         :param target_id: target_id
         :param platform_name: platform_name, to flash multiple devices of same type
         :param device_mapping_table: individual devices mapping table
         :param method: method for flashing i.e. simple, pyocd or edbg
         :param no_reset: whether to reset the board after flash
+        :param target_filename: optional Target filename
         """
 
         k64f_target_id_length = 48
@@ -219,7 +226,12 @@ class Flash(object):
         if target_id is None and platform_name is None:
             raise SyntaxError("target_id or target_name is required")
 
-        check_is_file_flashable(self.logger, build)
+        target_filename = target_filename or build
+
+        check_file(self.logger, target_filename)
+        check_file(self.logger, build)
+        check_file_extension(self.logger, target_filename)
+        check_file_exists(self.logger, build)
 
         if (isinstance(target_id, list) or
                 target_id.lower() == 'all' or
@@ -231,7 +243,8 @@ class Flash(object):
                 platform_name=platform_name,
                 method=method,
                 target_ids_or_prefix=target_id,
-                no_reset=no_reset)
+                no_reset=no_reset,
+                target_filename=target_filename)
 
         device_mapping_table = self._refine__device_mapping_table(
             device_mapping_table, target_id)
@@ -257,7 +270,8 @@ class Flash(object):
                                   build=build,
                                   target=target_mbed,
                                   method=method,
-                                  no_reset=no_reset)
+                                  no_reset=no_reset,
+                                  target_filename=target_filename)
         if retcode == EXIT_CODE_SUCCESS:
             self.logger.info("%s flash success", target_mbed["target_id"])
         else:
@@ -267,10 +281,14 @@ class Flash(object):
         return retcode
 
     @staticmethod
-    def _do_flash(flasher, build, target, method, no_reset):
+    def _do_flash(flasher, build, target, method, no_reset, target_filename):
         try:
             return flasher.flash(
-                source=build, target=target, method=method, no_reset=no_reset)
+                source=build,
+                target=target,
+                method=method,
+                no_reset=no_reset,
+                target_filename=target_filename)
         except KeyboardInterrupt:
             raise FlashError(message="Aborted by user",
                              return_code=EXIT_CODE_KEYBOARD_INTERRUPT)

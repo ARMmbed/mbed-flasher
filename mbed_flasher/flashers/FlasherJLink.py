@@ -86,12 +86,14 @@ class FlasherJLink(FlasherBase):
         """
         return spawn.find_executable(FlasherJLink.executable) is not None
 
-    def flash(self, source, target, method, no_reset):
+    # pylint: disable=too-many-arguments
+    def flash(self, source, target, method, no_reset, target_filename=None):
         """flash device
         :param source: binary to be flashed
         :param target: target to be flashed
         :param method: method to use when flashing
         :param no_reset: do not reset flashed board at all
+        :param target_filename: target filename (not in use)
         :return: 0 when flashing success
         """
 
