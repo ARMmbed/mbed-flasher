@@ -130,7 +130,7 @@ class FlasherMbed(object):
                              return_code=EXIT_CODE_PYOCD_NOT_INSTALLED)
 
         try:
-            with ConnectHelper.session_with_chosen_probe(unique_id=target["target_id"]) as session:
+            with ConnectHelper.session_with_chosen_probe(unique_id=target["target_id_usb_id"]) as session:
                 ocd_target = session.target
                 self.logger.debug("resetting device: %s", target["target_id"])
                 sleep(0.5)  # small sleep for lesser HW ie raspberry
