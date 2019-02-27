@@ -23,7 +23,6 @@ import logging
 import logging.handlers
 import os
 from os.path import isdir, join
-import json
 import time
 
 from mbed_flasher.common import Common, FlashError, EraseError, ResetError, GeneralFatalError,\
@@ -168,14 +167,6 @@ class FlasherCLI(object):
                                            help='command help',
                                            metavar='<command>')
         subparsers.required = True
-        get_subparser(subparsers,
-                      'list',
-                      func=self.subcmd_list_platforms,
-                      help='Prints a list of supported platforms.')
-        get_subparser(subparsers,
-                      'flashers',
-                      func=self.subcmd_list_flashers,
-                      help='Prints a list of supported flashers.')
         get_subparser(subparsers,
                       'version',
                       func=self.subcmd_version_handler,
@@ -419,23 +410,6 @@ class FlasherCLI(object):
         else:
             print(versions[0].version)
 
-        return EXIT_CODE_SUCCESS
-
-    # pylint: disable=no-self-use
-    def subcmd_list_platforms(self, args):
-        """
-        list platform command
-        """
-        flasher = Flash()
-        print(json.dumps(flasher.get_supported_targets()))
-        return EXIT_CODE_SUCCESS
-
-    def subcmd_list_flashers(self, args):
-        """
-        list flasher command handler
-        """
-        flasher = Flash()
-        print(json.dumps(flasher.get_supported_flashers()))
         return EXIT_CODE_SUCCESS
 
     def parse_id_to_devices(self, tid):

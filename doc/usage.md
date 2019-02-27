@@ -32,8 +32,6 @@
 * [Command Line Interface](#command-line-interface)
     * [Listing commands](#listing-commands)
         * [Running mbed-flasher without input](#running-mbed-flasher-without-input)
-        * [Running mbed-flasher to list supported devices](#running-mbed-flasher-to-list-supported-devices)
-        * [Running mbed-flasher to list supported flashers](#running-mbed-flasher-to-list-supported-flashers)
     * [Flashing](#flashing)
         * [Flashing a single device](#flashing-a-single-device-1)
         * [Flashing more than one device](#flashing-more-than-one-device)
@@ -96,25 +94,11 @@ To import the mbed-flasher module:
 >>> flasher = Flash()
 ```
 
-#### Querying available flashers
-
-```python
->>> flasher.get_supported_flashers()
-['mbed']
-```
-
 #### Getting a specific flasher
 
 ```python
 >>> flasher.get_flasher(flasher='mbed')
 <class 'mbed_flasher.flashers.FlasherMbed.FlasherMbed'>
-```
-
-#### Querying supported targets
-
-```python
->>> flasher.get_supported_targets()
-[u'NRF51822', u'K64F', u'NRF51_DK', u'NUCLEO_F401RE']
 ```
 
 #### Querying attached devices
@@ -340,20 +324,6 @@ b_id': '0240000028884e450051700f6bf000128021000097969900', 'platform_name': 'K64
 ```batch
 usage: mbedflash [-h] [-v] [-s] <command> ...
 mbedflash: error: too few arguments
-```
-
-#### Running mbed-flasher to list supported devices
-
-```batch
-C:\>mbedflash list
-["NRF51822", "K64F", "NRF51_DK", "NUCLEO_F401RE"]
-```
-
-#### Running mbed-flasher to list supported flashers
-
-```batch
-C:\>mbedflash flashers
-["Mbed"]
 ```
 
 ### Flashing
