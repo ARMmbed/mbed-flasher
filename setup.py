@@ -53,7 +53,7 @@ setup(name="mbed-flasher",
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
       },
       install_requires=[
-          "mbed-ls>=1.5.1,==1.*",
+          "mbed-ls==1.7.2",
           "six==1.*",
           "pyserial==3.*"
       ],
