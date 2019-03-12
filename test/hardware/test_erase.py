@@ -52,12 +52,6 @@ class EraseTestCaseHW(unittest.TestCase):
         count_eraseable = len(list_mbeds_eraseable(devices))
         self.assertEqual(count_eraseable, len(EraseTestCaseHW.erase_allowed_devices))
 
-    @unittest.skip("target_id 'all' will use Jlink boards, on Linux-nuc, which don't support erase")
-    def test_erase_with_all(self):
-        eraser = Erase()
-        ret = eraser.erase(target_id='all', method='simple')
-        self.assertEqual(ret, EXIT_CODE_SUCCESS)
-
     def test_erase_with_target_id(self):
         eraser = Erase()
         devices = EraseTestCaseHW.erase_allowed_devices
@@ -95,23 +89,6 @@ class EraseTestCaseHW(unittest.TestCase):
                                    no_reset=True)
                 break
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
-
-    def test_erase_with_target_id_list(self):
-        devices = EraseTestCaseHW.erase_allowed_devices
-        eraser = Erase()
-        ret = None
-        for item in devices:
-            if item['target_id']:
-                ret = eraser.erase(target_id=[item['target_id']], method='simple')
-                break
-        self.assertEqual(ret, EXIT_CODE_SUCCESS)
-
-        # For some reason a bunch of tracebacks on usb.core langid problems.
-        # @unittest.skipIf(all_devices == [], "no hardware attached")
-        # def test_erase_with_all_pyocd(self):
-        #    eraser = Erase()
-        #    ret = eraser.erase(target_id='all', method='pyocd')
-        #    self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
 
 if __name__ == '__main__':

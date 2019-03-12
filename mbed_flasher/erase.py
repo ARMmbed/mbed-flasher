@@ -20,13 +20,11 @@ limitations under the License.
 from os.path import join, isfile
 import six
 
-from mbed_flasher.common import Common, Logger, EraseError
+from mbed_flasher.common import Logger, EraseError
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_PYOCD_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_PYOCD_ERASE_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
@@ -39,6 +37,7 @@ ERASE_VERIFICATION_TIMEOUT = 30
 ERASE_DAPLINK_SUPPORT_VERSION = 243
 
 
+# pylint: disable=too-few-public-methods
 class Erase(object):
     """ Erase object, which manages erasing for given devices
     """
@@ -46,22 +45,6 @@ class Erase(object):
     def __init__(self):
         logger = Logger('mbed-flasher')
         self.logger = logger.logger
-        self.flashers = self.__get_flashers()
-
-    def get_available_device_mapping(self):
-        """
-        Get available devices
-        :return: list of devices
-        """
-        return Common(self.logger).get_available_device_mapping(self.flashers)
-
-    @staticmethod
-    def __get_flashers():
-        """
-        :return: list of available flashers
-        """
-        from mbed_flasher.flashers import AvailableFlashers
-        return AvailableFlashers
 
     @staticmethod
     def _can_be_erased(target):
@@ -107,37 +90,26 @@ class Erase(object):
         Erase (mbed) device(s).
         :param target_id: target_id
         :param no_reset: erase with/without reset
-        :param method: method for erase i.e. simple, pyocd or edbg
+        :param method: method for erase i.e. simple
         """
         if target_id is None:
-            raise EraseError(message="target id is missing",
+            raise EraseError(message="target_id is missing",
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         self.logger.info("Starting erase for given target_id %s", target_id)
         self.logger.info("method used for reset: %s", method)
-        available_devices = Common(self.logger).get_available_device_mapping(
-            self.flashers, target_id)
-
-        targets_to_erase = self.prepare_target_to_erase(target_id, available_devices)
-
-        if len(targets_to_erase) <= 0:
-            msg = "Could not map given target_id(s) to available devices"
-            raise EraseError(message=msg,
+        target_mbed = MbedCommon.refresh_target(target_id)
+        if target_mbed is None:
+            raise EraseError(message="Did not find target: {}".format(target_id),
                              return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
-        for item in targets_to_erase:
-            if method == 'simple':
-                erase_fnc = self._erase_board_simple
-            elif method == 'pyocd':
-                erase_fnc = self._erase_board_with_pyocd
-            elif method == 'edbg':
-                raise EraseError(message="egdb not supported",
-                                 return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
-            else:
-                raise EraseError(message="Selected method {} not supported".format(method),
-                                 return_code=EXIT_CODE_MISUSE_CMD)
+        if method == 'simple':
+            erase_fnc = self._erase_board_simple
+        else:
+            raise EraseError(message="Selected method {} not supported".format(method),
+                             return_code=EXIT_CODE_MISUSE_CMD)
 
-            erase_fnc(target=item, no_reset=no_reset)
+        erase_fnc(target=target_mbed, no_reset=no_reset)
 
         return EXIT_CODE_SUCCESS
 
@@ -184,52 +156,3 @@ class Erase(object):
             msg = "Erase failed: ERASE.ACT still present in mount point"
             self.logger.error(msg)
             raise EraseError(message=msg, return_code=EXIT_CODE_FILE_STILL_PRESENT)
-
-    def _erase_board_with_pyocd(self, target, no_reset):
-        try:
-            from pyOCD.board import MbedBoard
-            from pyOCD.pyDAPAccess import DAPAccessIntf
-        except ImportError:
-            raise EraseError(message="pyOCD is not installed",
-                             return_code=EXIT_CODE_PYOCD_MISSING)
-
-        target_id = target["target_id"]
-        board = MbedBoard.chooseBoard(board_id=target_id)
-        self.logger.info("erasing device: %s", target_id)
-        ocd_target = board.target
-        flash = ocd_target.flash
-        try:
-            flash.eraseAll()
-            if not no_reset:
-                ocd_target.reset()
-        except DAPAccessIntf.TransferFaultError:
-            msg = "PyOCD erase failed"
-            self.logger.exception(msg)
-            raise EraseError(message=msg, return_code=EXIT_CODE_PYOCD_ERASE_FAILED)
-
-        self.logger.info("erase completed for target: %s", target_id)
-        return EXIT_CODE_SUCCESS
-
-    @staticmethod
-    def prepare_target_to_erase(target_id, available_devices):
-        """
-        prepare target to erase
-        """
-        targets_to_erase = []
-        if isinstance(target_id, list):
-            for target in target_id:
-                for device in available_devices:
-                    if target == device['target_id']:
-                        if device not in targets_to_erase:
-                            targets_to_erase.append(device)
-        else:
-            if target_id == 'all':
-                targets_to_erase = available_devices
-            elif len(target_id) <= 48:
-                for device in available_devices:
-                    if target_id == device['target_id'] \
-                            or device['target_id'].startswith(target_id):
-                        if device not in targets_to_erase:
-                            targets_to_erase.append(device)
-
-        return targets_to_erase

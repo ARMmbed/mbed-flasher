@@ -28,6 +28,7 @@ OWNER_NAMES = "Jussi Vatjus-Anttila"
 OWNER_EMAILS = "Jussi.Vatjus-Anttila@arm.com"
 VERSION = "0.10.1"
 
+
 # Utility function to cat in a file (used for the README)
 def read(fname):
     """
@@ -50,7 +51,7 @@ setup(name="mbed-flasher",
       test_suite="test",
       tests_require=["mock"],
       entry_points={
-          "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main",],
+          "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main", ],
       },
       install_requires=[
           "mbed-ls>=1.5.1,==1.*",

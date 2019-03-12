@@ -17,79 +17,13 @@ limitations under the License.
 import logging
 import os
 import time
-import six
 
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 
 
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
-
-
 DEFAULT_RETRY_AMOUNT = 3
 ALLOWED_FILE_EXTENSIONS = (".bin", ".hex", ".act", ".cfg")
-
-
-# pylint: disable=too-few-public-methods
-class Common(object):
-    """
-    Class for holding common methods for all operations (flash, erase, reset).
-    """
-    GET_DEVICES_RETRY = 5
-
-    def __init__(self, logger):
-        self.logger = logger
-
-    def get_available_device_mapping(self, flashers, target=None):
-        """
-        Loop through flashers in search for devices.
-        If specific device is given retry multiple times if not found.
-        :return: list of available devices
-        """
-
-        def get_devices(required_target_id=None):
-            """
-            Get unique devices from flashers.
-            :return: list of devices
-            """
-            available_devices = []
-            for flasher in flashers:
-                available_devices.extend(flasher.get_available_devices())
-
-            try:
-                # Filter unique devices as flashers could list same devices
-                found = list({dev["target_id"]: dev for dev in available_devices}.values())
-
-                # If not searching for specific target, just return what is found.
-                if not required_target_id:
-                    return found
-
-                for target_id in [device["target_id"] for device in found]:
-                    if target in target_id:
-                        return found
-
-                raise GeneralFatalError(message="Did not find target",
-                                        return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
-            except (KeyError, TypeError):
-                msg = "Invalid device listing from flasher"
-                self.logger.exception(msg)
-                raise GeneralFatalError(message=msg,
-                                        return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
-
-        if isinstance(target, list) and len(target) == 1:
-            target = target[0]
-
-        if not isinstance(target, six.string_types) or target == "all":
-            return get_devices()
-
-        # This is a workaround for a problem where mbedls (basically mount command)
-        # fails to list mount point sometimes in linux. Occurs at least in Raspberry Pi3.
-        return retry(logger=self.logger,
-                     func=get_devices,
-                     func_args=(target, ),
-                     retries=Common.GET_DEVICES_RETRY,
-                     conditions=[EXIT_CODE_COULD_NOT_MAP_DEVICE])
 
 
 # pylint: disable=too-few-public-methods
@@ -215,10 +149,4 @@ class ResetError(FlashError):
     """
     Exception class for reset errors.
     Should be raised when resetting cannot be continued further.
-    """
-
-
-class GeneralFatalError(FlashError):
-    """
-    Exception class for general errors which should make the program quit immediately.
     """

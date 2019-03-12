@@ -41,20 +41,6 @@ class FlasherBase(object):
         self._process = None
 
     @staticmethod
-    def get_supported_targets():
-        """
-        :return: supported targets
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def get_available_devices():
-        """
-        :return: list of available devices
-        """
-        raise NotImplementedError
-
-    @staticmethod
     def can_flash(target):
         """
         Check if target should be flashed using this flasher.

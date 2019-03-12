@@ -2,7 +2,7 @@
 
 ## Description
 
-mbed-flasher is a simple Python-based tool for flashing single or multiple boards.
+mbed-flasher is a simple Python-based tool for flashing boards.
 It provides a simple Command Line Interface and Python API for flashing.
 
 The purpose is to provide a clean and simple library that is easy to integrate to other tools.
@@ -20,17 +20,11 @@ To install the flasher in development mode:
 
 `python setup.py develop`
 
-To use JLink flashing, additional package needs to be installed from [here](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack).
-JLinkExe must be found from PATH for flasher to be able to use it.
-
-To use STLink flashing (windows only), additional package needs to be installed from [here](https://www.st.com/en/development-tools/stsw-link004.html#sw-tools-scroll).
-`ST-LINK_CLI.exe` must be found from PATH for flasher to be able to use it.
-
 ## Usage
 
-This tool has been tested and verified to work with Windows 7 and Ubuntu (14.04 LTS) Linux.
+This tool has been tested and verified to work with Windows 10 and Ubuntu (16.04 LTS) Linux.
 
-Devices used in verification: NXP K64F, Nucleo F401RE, BBC micro:bit.
+Devices used in verification: NXP K64F.
 
 See the actual usage documentation [here](doc/usage.md).
 
@@ -51,8 +45,6 @@ optional arguments:
 
 command:
   <command>      command help
-    list         Prints a list of supported platforms.
-    flashers     Prints a list of supported flashers.
     version      Display version information
     flash        Flash given resource
     reset        Reset given resource
@@ -64,56 +56,35 @@ command:
 
 ```
 />mbedflash flash --help
-usage: mbedflash flash [-h] [-i INPUT] [--tid TARGET_ID] [-t PLATFORM_NAME]
-                       [--no-reset]
-                       [method]
+usage: mbedflash flash [-h] [-i INPUT] [--tid TARGET_ID] [--no-reset] [method]
 
 positional arguments:
-  method                <simple|pyocd|edbg>, used for flashing
+  method                <simple>, used for flashing
 
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
                         Binary input to be flashed.
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be flashed, ALL will flash all connected
-                        devices with given platform-name, also multiple
-                        targets can be given. Does not continue flashing
-                        next device in case of failures. Short target_id
-                        matches boards by prefix
-  --target_filename TARGET_FILENAME
-                        Custom target filename
-  -t PLATFORM_NAME, --platform_name PLATFORM_NAME
-                        Platform of the target device(s)
+                        Target to be flashed.
   --no-reset            Do not reset device before or after flashing
 
 ```
-
-`--target_filename TARGET_FILENAME` -option is used to select custom
-target filename when source file is copied to mbed target
-
-e.g.
-```
-$ mbedflash flash simple --tid 0240000032254e45000f800ab529001f3f31000097969900 -i setup.hex --target_filename asd.hex
-```
-input file in above example would be `setup.hex`, that must exists and filename
-that is created for target mount point would be `asd.hex`.
 
 **Erase help**
 
 ```
 c:\>mbedflash erase --help
-usage: mbedflash erase [-h] [--tid TARGET_ID] [method]
+usage: mbedflash erase [-h] [--tid TARGET_ID] [--no-reset] [method]
 
 positional arguments:
-  method                <simple|pyocd|edbg>, used for erase
+  method                <simple>, used for erase
 
 optional arguments:
   -h, --help            show this help message and exit
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be erased or ALL, also multiple targets can
-                        be given. Short target_id matches boards by prefix
-
+                        Target to be erased.
+  --no-reset            Do not reset device after erase
 ```
 
 **Reset help**
@@ -123,14 +94,12 @@ c:\>mbedflash reset --help
 usage: mbedflash reset [-h] [--tid TARGET_ID] [method]
 
 positional arguments:
-  method                <simple|pyocd|edbg>, used for reset
+  method                <simple>, used for reset
 
 optional arguments:
   -h, --help            show this help message and exit
   --tid TARGET_ID, --target_id TARGET_ID
-                        Target to be reset or ALL, also multiple targets can
-                        be given. Short target_id matches boards by prefix
-
+                        Target to be reset.
 ```
 
 ## Running unit tests

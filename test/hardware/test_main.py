@@ -28,10 +28,10 @@ except ImportError:
 import mock
 import mbed_lstools
 
-from mbed_flasher.common import GeneralFatalError
+from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.main import FlasherCLI
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 
 
 class MainTestCaseHW(unittest.TestCase):
@@ -60,21 +60,23 @@ class MainTestCaseHW(unittest.TestCase):
 
     # test name is meaningful
     # pylint: disable=invalid-name
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_wrong_tid_with_device(self, mock_stdout):
+    def test_reset_wrong_tid_with_device(self, mock_stdout, mock_sleep):
         fcli = FlasherCLI(["reset", "--tid", "555"])
-        with self.assertRaises(GeneralFatalError) as cm:
+        with self.assertRaises(FlashError) as cm:
             fcli.execute()
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
+    @mock.patch("time.sleep", return_value=None)
     @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_erase_wrong_tid_with_device(self, mock_stdout):
+    def test_erase_wrong_tid_with_device(self, mock_stdout, mock_sleep):
         fcli = FlasherCLI(["erase", "--tid", "555"])
-        with self.assertRaises(GeneralFatalError) as cm:
+        with self.assertRaises(EraseError) as cm:
             fcli.execute()
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
 if __name__ == '__main__':
     unittest.main()

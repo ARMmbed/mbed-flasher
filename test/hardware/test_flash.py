@@ -37,6 +37,7 @@ from mbed_flasher.common import FlashError
 from mbed_flasher.flash import Flash
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
+from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 
@@ -56,33 +57,12 @@ class FlashTestCaseHW(unittest.TestCase):
 
     def test_run_file_does_not_exist(self):
         flasher = Flash()
-        with self.assertRaises(SyntaxError) as context:
-            flasher.flash(build='file.bin', target_id=None,
-                          platform_name=None, device_mapping_table=None, method='simple',
-                          target_filename='file.bin')
-        self.assertIn("target_id or target_name is required", context.exception.msg)
-
-    # pylint:disable=invalid-name
-    def test_run_with_file_with_one_target_id_wrong_platform(self):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
-        target_id = None
-        for target in targets:
-            if target['platform_name'] == 'K64F':
-                if 'target_id' in target:
-                    target_id = target['target_id']
-                    break
-        if target_id:
-            flasher = Flash()
-            with self.assertRaises(NotImplementedError) as context:
-                flasher.flash(build=self.bin_path,
-                              target_id=target_id,
-                              platform_name='K65G',
-                              device_mapping_table=None,
-                              method='simple',
-                              target_filename=self.bin_path)
-            self.assertIn("Platform 'K65G' is not supported by mbed-flasher",
-                          str(context.exception))
+        with self.assertRaises(FlashError) as context:
+            flasher.flash(build='file.bin', target_id=targets[0], method='simple')
+
+        self.assertEqual(context.exception.return_code, EXIT_CODE_FILE_MISSING)
 
     def test_hw_flash(self):
         mbeds = mbed_lstools.create()
@@ -93,41 +73,12 @@ class FlashTestCaseHW(unittest.TestCase):
                 if 'target_id' in target:
                     target_id = target['target_id']
                     break
-        if target_id:
-            flasher = Flash()
-            ret = flasher.flash(build=self.bin_path,
-                                target_id=target_id,
-                                platform_name=False,
-                                device_mapping_table=None,
-                                method='simple',
-                                target_filename=self.bin_path)
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_run_with_file_with_all(self, mock_stdout):
         flasher = Flash()
         ret = flasher.flash(build=self.bin_path,
-                            target_id='all',
-                            platform_name='K64F',
-                            device_mapping_table=None,
-                            method='simple',
-                            target_filename=self.bin_path)
+                            target_id=target_id,
+                            method='simple')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
-        if mock_stdout:
-            pass
-
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_run_with_file_with_prefix(self, mock_stdout):
-        flasher = Flash()
-        ret = flasher.flash(build=self.bin_path,
-                            target_id='02',
-                            platform_name='K64F',
-                            device_mapping_table=None,
-                            method='simple',
-                            target_filename=self.bin_path)
-        self.assertEqual(ret, EXIT_CODE_SUCCESS)
-        if mock_stdout:
-            pass
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_fail_file(self, mock_stdout):
@@ -146,11 +97,10 @@ class FlashTestCaseHW(unittest.TestCase):
         with open(fail_txt_path, 'w') as new_file:
             new_file.write("0000000000000000000000000000000000")
 
-        with self.assertRaises(FlashError) as cm:
+        with self.assertRaises(FlashError) as context:
             flasher = FlasherMbed()
             flasher.flash(source=fail_txt_path, target=target_to_test,
-                          method='simple', no_reset=False,
-                          target_filename=fail_txt_path)
+                          method='simple', no_reset=False)
 
         if platform.system() == 'Windows':
             os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
@@ -159,7 +109,7 @@ class FlashTestCaseHW(unittest.TestCase):
             os.system('rm %s' % os.path.join(mount_point, 'failing.txt'))
             os.system('rm %s' % os.path.join(os.getcwd(), fail_txt_path))
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_STILL_PRESENT)
+        self.assertEqual(context.exception.return_code, EXIT_CODE_FILE_STILL_PRESENT)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_fail_binary(self, mock_stdout):
@@ -178,12 +128,9 @@ class FlashTestCaseHW(unittest.TestCase):
         with open(fail_bin_path, 'w') as new_file:
             new_file.write("0000000000000000000000000000000000")
 
-        with self.assertRaises(FlashError) as cm:
+        with self.assertRaises(FlashError) as context:
             flasher = Flash()
-            flasher.flash(build=fail_bin_path, target_id=target_id,
-                          platform_name='K64F', device_mapping_table=None,
-                          method='simple',
-                          target_filename=fail_bin_path)
+            flasher.flash(build=fail_bin_path, target_id=target_id, method='simple')
 
         if platform.system() == 'Windows':
             os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
@@ -192,7 +139,7 @@ class FlashTestCaseHW(unittest.TestCase):
             os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
             os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+        self.assertEqual(context.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
 
 if __name__ == '__main__':

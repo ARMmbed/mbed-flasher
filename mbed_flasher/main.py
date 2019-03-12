@@ -25,20 +25,14 @@ import os
 from os.path import isdir, join
 import time
 
-from mbed_flasher.common import Common, FlashError, EraseError, ResetError, GeneralFatalError,\
-    check_file, check_file_extension, check_file_exists
+from mbed_flasher.common import FlashError, EraseError, ResetError
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
-from mbed_flasher.return_codes import EXIT_CODE_NOT_SUPPORTED_PLATFORM
-from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_DEVICES_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_PLATFORM_REQUIRED
 
-LOGS_TTL = 172800 # 2 days, when log file is older it will be deleted
+LOGS_TTL = 172800  # 2 days, when log file is older it will be deleted
 
 
 def get_subparser(subparsers, name, func, **kwargs):
@@ -137,7 +131,7 @@ class FlasherCLI(object):
         :return: 0 or args.func()
         """
         if self.args.func:
-            return self.args.func(self.args)
+            return self.args.func()
         self.parser.print_usage()
         return EXIT_CODE_SUCCESS
 
@@ -181,60 +175,42 @@ class FlasherCLI(object):
                                   help='Binary input to be flashed.',
                                   default=None, metavar='INPUT')
         parser_flash.add_argument('--tid', '--target_id',
-                                  help='Target to be flashed, '
-                                       'ALL will flash all connected devices '
-                                       'with given platform-name, '
-                                       'also multiple targets can be given. '
-                                       'Short target_id matches boards by prefix',
-                                  default=None, metavar='TARGET_ID', action='append')
-        parser_flash.add_argument('--target_filename',
-                                  help='Custom target filename',
-                                  default=None, metavar='TARGET_FILENAME')
-        parser_flash.add_argument('-t', '--platform_name',
-                                  help='Platform of the target device(s)',
-                                  default=None)
+                                  help='Target to be flashed',
+                                  default=None, metavar='TARGET_ID')
         parser_flash.add_argument('--no-reset',
                                   help='Do not reset device before or after flashing',
                                   default=None, dest='no_reset', action='store_true')
-        parser_flash.add_argument('method', help='<simple|pyocd|edbg>, used for flashing',
+        parser_flash.add_argument('method', help='<simple>, used for flashing',
                                   metavar='method',
-                                  choices=['simple', 'pyocd', 'edbg'],
+                                  choices=['simple'],
                                   nargs='?')
         # Initialize reset command
         parser_reset = get_resource_subparser(subparsers, 'reset',
                                               func=self.subcmd_reset_handler,
                                               help='Reset given resource')
         parser_reset.add_argument('--tid', '--target_id',
-                                  help='Target to be reset or ALL, '
-                                       'also multiple targets can be given.'
-                                       'Does not continue flashing next device in case of failures.'
-                                       'Short target_id matches boards by prefix',
-                                  default=None, metavar='TARGET_ID', action='append')
+                                  help='Target to be reset',
+                                  default=None, metavar='TARGET_ID')
         parser_reset.add_argument('method',
-                                  help='<simple|pyocd|edbg>, used for reset',
+                                  help='<simple>, used for reset',
                                   metavar='method',
-                                  choices=['simple', 'pyocd', 'edbg'],
+                                  choices=['simple'],
                                   nargs='?')
         # Initialize erase command
         parser_erase = get_resource_subparser(subparsers, 'erase',
                                               func=self.subcmd_erase_handler,
                                               help='Erase given resource')
         parser_erase.add_argument('--tid', '--target_id',
-                                  help='Target to be erased or ALL, '
-                                       'also multiple targets can be given. '
-                                       'Short target_id matches boards by prefix',
-                                  default=None, metavar='TARGET_ID', action='append')
+                                  help='Target to be erased',
+                                  default=None, metavar='TARGET_ID')
         parser_erase.add_argument('--no-reset',
                                   help='Do not reset device after erase',
                                   default=None, dest='no_reset', action='store_true')
         parser_erase.add_argument('method',
-                                  help='<simple|pyocd|edbg>, used for erase',
+                                  help='<simple>, used for erase',
                                   metavar='method',
-                                  choices=['simple', 'pyocd', 'edbg'],
+                                  choices=['simple'],
                                   nargs='?')
-
-        #parser.add_argument('-m', '--mapping',
-        #                    dest='device_mapping_table', help='Device mapping table.')
 
         args = parser.parse_args(args=sysargs)
         if 'method' in args:
@@ -245,7 +221,6 @@ class FlasherCLI(object):
 
     def set_log_level_from_verbose(self):
         """ set logging level, silent, or some of verbose level
-        :param args: command line arguments
         """
         if self.args.silent:
             self.console_handler.setLevel('NOTSET')
@@ -260,145 +235,32 @@ class FlasherCLI(object):
         else:
             self.logger.critical("UNEXPLAINED NEGATIVE COUNT!")
 
-    # the cli decorator doesn't need self as a arg,
-    # operation wrapper is used
-    # pylint: disable=no-self-argument, not-callable
-    def cli_decorator(operation):
-        """
-        cli decorator
-        """
-        def operation_wrapper(self, args):
-            """
-            wrapper
-            """
-            retcode = operation(self, args)
-            return retcode
-        return operation_wrapper
-
-    # pylint: disable=too-many-return-statements
-    @cli_decorator
-    def subcmd_flash_handler(self, args):
+    def subcmd_flash_handler(self):
         """
         flash command handler
         """
-        if not args.tid:
-            msg = "Target_id is missing"
-            raise FlashError(message=msg,
-                             return_code=EXIT_CODE_TARGET_ID_MISSING)
-
-        check_file(self.logger, args.target_filename or args.input)
-        check_file(self.logger, args.input)
-        check_file_exists(self.logger, args.input)
-        check_file_extension(self.logger, args.target_filename or args.input)
-
-
         flasher = Flash()
-        available = Common(self.logger).get_available_device_mapping(
-            flasher.get_all_flashers(), args.tid)
-        available_target_ids = []
-        retcode = EXIT_CODE_SUCCESS
-        if args.platform_name:
-            if args.platform_name not in flasher.get_supported_targets():
-                self.logger.error("Not supported platform: %s", args.platform_name)
-                self.logger.error("Supported platforms: %s", flasher.get_supported_targets())
-                raise FlashError(message="Platform {} not supported".format(args.platform_name),
-                                 return_code=EXIT_CODE_NOT_SUPPORTED_PLATFORM)
+        return flasher.flash(build=self.args.input,
+                             target_id=self.args.tid,
+                             method=self.args.method,
+                             no_reset=self.args.no_reset)
 
-        if 'all' in args.tid:
-            retcode = flasher.flash(build=args.input, target_id='all',
-                                    platform_name=args.platform_name,
-                                    target_filename=args.target_filename,
-                                    method=args.method, no_reset=args.no_reset)
-
-        if len(available) <= 0:
-            msg = "Could not find any connected device"
-            raise FlashError(message=msg, return_code=EXIT_CODE_DEVICES_MISSING)
-
-        available_platforms, target_ids_to_flash = \
-            self.prepare_platforms_and_targets(available, args.tid, available_target_ids)
-
-        if not target_ids_to_flash:
-            self.logger.error("Could not find given target_id from attached devices")
-            self.logger.error("Available target_ids: %s", available_target_ids)
-            raise FlashError(message="Could not map device",
-                             return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
-        elif len(available_platforms) > 1:
-            if not args.platform_name:
-                self.logger.error("More than one platform detected for given target_id")
-                self.logger.error("Please specify the platform with -t <PLATFORM_NAME>")
-                self.logger.error("Found platforms: %s", available_platforms)
-                raise FlashError(message="More than one platform detected for given target id",
-                                 return_code=EXIT_CODE_PLATFORM_REQUIRED)
-        else:
-            retcode = flasher.flash(build=args.input,
-                                    target_id=target_ids_to_flash,
-                                    target_filename=args.target_filename,
-                                    platform_name=available_platforms[0],
-                                    method=args.method,
-                                    no_reset=args.no_reset)
-
-        return retcode
-
-    @staticmethod
-    def prepare_platforms_and_targets(available, tid, available_target_ids):
-        """
-        prepare available platforms and target ids to flash
-        """
-        available_platforms = []
-        target_ids_to_flash = []
-
-        for device in available:
-            available_target_ids.append(device['target_id'])
-            if isinstance(tid, list):
-                for item in tid:
-                    if device['target_id'] == item \
-                            or device['target_id'].startswith(item):
-                        if device['target_id'] not in target_ids_to_flash:
-                            target_ids_to_flash.append(device['target_id'])
-
-                        if 'platform_name' in device \
-                                and device['platform_name'] not in available_platforms:
-                            available_platforms.append(device['platform_name'])
-
-            else:
-                if device['target_id'] == tid \
-                        or device['target_id'].startswith(tid):
-                    if device['target_id'] not in target_ids_to_flash:
-                        target_ids_to_flash.append(device['target_id'])
-
-                    if 'platform_name' in device and \
-                            device['platform_name'] not in available_platforms:
-                        available_platforms.append(device['platform_name'])
-
-        return available_platforms, target_ids_to_flash
-
-    def subcmd_reset_handler(self, args):
+    def subcmd_reset_handler(self):
         """
         reset command handler
         """
-        resetter = Reset()
-        if not args.tid:
-            msg = "Target_id is missing"
-            raise ResetError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
+        reset = Reset()
+        return reset.reset(target_id=self.args.tid, method=self.args.method)
 
-        ids = self.parse_id_to_devices(args.tid)
-        return resetter.reset(target_id=ids, method=args.method)
-
-    def subcmd_erase_handler(self, args):
+    def subcmd_erase_handler(self):
         """
         erase command handler
         """
         eraser = Erase()
-        if not args.tid:
-            msg = "Target_id is missing"
-            raise EraseError(message=msg, return_code=EXIT_CODE_TARGET_ID_MISSING)
+        return eraser.erase(
+            target_id=self.args.tid, no_reset=self.args.no_reset, method=self.args.method)
 
-        ids = self.parse_id_to_devices(args.tid)
-        return eraser.erase(target_id=ids, no_reset=args.no_reset, method=args.method)
-
-    # args not used, but the logic to call sub cmd handler is passing two args
-    # pylint: disable=unused-argument
-    def subcmd_version_handler(self, args):
+    def subcmd_version_handler(self):
         """
         version command handler
         """
@@ -411,41 +273,6 @@ class FlasherCLI(object):
             print(versions[0].version)
 
         return EXIT_CODE_SUCCESS
-
-    def parse_id_to_devices(self, tid):
-        """
-        :param tid: target id
-        """
-        flasher = Flash()
-        available = Common(self.logger).get_available_device_mapping(
-            flasher.get_all_flashers(), tid)
-        target_ids = []
-        available_target_ids = []
-        if not available:
-            msg = "Could not find any connected device"
-            raise GeneralFatalError(message=msg, return_code=EXIT_CODE_DEVICES_MISSING)
-
-        if 'all' in tid:
-            for device in available:
-                target_ids.append(device['target_id'])
-        else:
-            for item in tid:
-                for device in available:
-                    available_target_ids.append(device['target_id'])
-                    if device['target_id'] == item or \
-                            device['target_id'].startswith(item):
-                        if device['target_id'] not in target_ids:
-                            target_ids.append(device['target_id'])
-        if not target_ids:
-            self.logger.error("Could not find given target_id from attached devices")
-            self.logger.error("Available target_ids: %s", available_target_ids)
-            raise GeneralFatalError(message="Could not map device",
-                                    return_code=EXIT_CODE_COULD_NOT_MAP_DEVICE)
-
-        if len(target_ids) == 1:
-            return target_ids[0]
-
-        return target_ids
 
 
 def mbedflash_main():
@@ -466,7 +293,7 @@ def mbedflash_main():
             cli.logger.error("Failed with return code: %s", str(retcode))
 
         exit(retcode)
-    except (FlashError, EraseError, ResetError, GeneralFatalError) as error:
+    except (FlashError, EraseError, ResetError) as error:
         cli.logger.error("Failed: %s", error.message)
         exit(error.return_code)
     except Exception as error:

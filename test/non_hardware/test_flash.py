@@ -32,7 +32,6 @@ from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_OS_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_SOFTWARE_ERROR
@@ -52,21 +51,18 @@ class FlashTestCase(unittest.TestCase):
 
     def test_run_file_does_not_exist(self):
         flasher = Flash()
-        with self.assertRaises(SyntaxError) as context:
-            flasher.flash(build='file.bin', target_id=None,
-                          platform_name=None, device_mapping_table=None, method='simple')
-        self.assertIn("target_id or target_name is required", context.exception.msg)
-
-    # test with name longer than 30, disable the warning here
-    # pylint: disable=invalid-name
-    def test_run_target_id_and_platform_missing(self):
-        flasher = Flash()
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(build='file.bin', target_id=True,
-                          platform_name=False, device_mapping_table=None,
-                          method='simple')
+            flasher.flash(build='file.bin', target_id='555', method='simple')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_FILE_MISSING)
+
+    @mock.patch("time.sleep", return_value=None)
+    def test_run_target_id_missing(self, mock_sleep):
+        flasher = Flash()
+        with self.assertRaises(FlashError) as cm:
+            flasher.flash(build=self.bin_path, target_id=True, method='simple')
+
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     @mock.patch("mbed_flasher.flash.Logger")
     def test_flash_logger_created(self, mock_logger):  # pylint: disable=no-self-use
@@ -82,49 +78,22 @@ class FlashTestCase(unittest.TestCase):
         mock_logger.assert_not_called()
         self.assertEqual(very_real_logger, flash.logger)
 
-    @mock.patch('mbed_flasher.common.Common.get_available_device_mapping')
-    def test_run_with_file_with_target_id_all(self, mock_device_mapping):
-        flasher = Flash()
-        mock_device_mapping.return_value = []
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(build=self.bin_path, target_id='all',
-                          platform_name=False, device_mapping_table=None,
-                          method='simple')
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-
     @mock.patch("time.sleep", return_value=None)
     def test_run_with_file_with_one_target_id(self, mock_sleep):
         flasher = Flash()
         with self.assertRaises(FlashError) as cm:
             flasher.flash(build=self.bin_path,
                           target_id='0240000029164e45002f0012706e0006f301000097969900',
-                          platform_name=False,
-                          device_mapping_table=None,
                           method='simple')
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     def test_raises_with_bad_file_extension(self):
         flasher = Flash()
         with self.assertRaises(FlashError) as cm:
             flasher.flash(build=__file__,
                           target_id='0240000029164e45002f0012706e0006f301000097969900',
-                          platform_name=False,
-                          device_mapping_table=None,
                           method='simple')
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
-
-    def test_raises_with_bad_file_extension_in_target_filename(self):
-        flasher = Flash()
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(build=__file__,
-                          target_id='0240000029164e45002f0012706e0006f301000097969900',
-                          platform_name=False,
-                          device_mapping_table=None,
-                          method='simple',
-                          target_filename='test.jpg')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
@@ -166,29 +135,6 @@ class FlashTestCase(unittest.TestCase):
         os.remove("empty_file")
         mock_copy_file.assert_called_once_with(b"", "target")
 
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.wait_for_file_disappear')
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    def test_flash_with_target_filename(self, copy_file, mock_refresh_target,
-                                        mock_wait_for_file_disappear):
-        flasher = FlasherMbed()
-        flasher.return_value = True
-        copy_file.return_value = True
-        target = {"target_id": "a", "mount_point": ""}
-        mock_refresh_target.return_value = target
-        flasher.verify_flash_success = mock.MagicMock()
-        flasher.verify_flash_success.return_value = EXIT_CODE_SUCCESS
-        mock_wait_for_file_disappear.return_value = {"target_id": "a", "mount_point": ""}
-        flasher.flash(source=__file__,
-                      target=target,
-                      method='simple',
-                      no_reset=True,
-                      target_filename="test.ext")
-
-        target_filename = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                       "../..", "test.ext"))
-        copy_file.assert_called_once_with(__file__, target_filename)
-
 
 class FlasherMbedRetry(unittest.TestCase):
     def setUp(self):
@@ -207,8 +153,7 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple",
-                          no_reset=False, target_filename="")
+            flasher.flash(source="", target=target, method="simple", no_reset=False)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -226,8 +171,7 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple",
-                          no_reset=False, target_filename="")
+            flasher.flash(source="", target=target, method="simple", no_reset=False)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -246,8 +190,7 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple",
-                          no_reset=False, target_filename="")
+            flasher.flash(source="", target=target, method="simple", no_reset=False)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -266,8 +209,7 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple",
-                          no_reset=False, target_filename="")
+            flasher.flash(source="", target=target, method="simple", no_reset=False)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
         self.assertEqual(mock_copy_file.call_count, 5)
@@ -285,8 +227,7 @@ class FlasherMbedRetry(unittest.TestCase):
         flasher = FlasherMbed()
 
         with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple",
-                          no_reset=False, target_filename="")
+            flasher.flash(source="", target=target, method="simple", no_reset=False)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
         self.assertEqual(mock_copy_file.call_count, 1)

@@ -21,12 +21,10 @@ import logging
 
 from serial.serialutil import SerialException
 from mbed_flasher.flashers.enhancedserial import EnhancedSerial
-from mbed_flasher.common import Common, ResetError
+from mbed_flasher.common import ResetError
+from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_PYOCD_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_PYOCD_RESET_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_OPEN_FAILED
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_RESET_FAILED
@@ -40,22 +38,6 @@ class Reset(object):
 
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger("mbed-flasher")
-        self._flashers = self.__get_flashers()
-
-    def get_available_device_mapping(self):
-        """
-        Get available devices
-        :return: list of devices
-        """
-        return Common(self.logger).get_available_device_mapping(self._flashers)
-
-    @staticmethod
-    def __get_flashers():
-        """
-        :return: available flashers
-        """
-        from mbed_flasher.flashers import AvailableFlashers
-        return AvailableFlashers
 
     def reset_board(self, serial_port):
         """
@@ -97,82 +79,23 @@ class Reset(object):
     def reset(self, target_id=None, method=None):
         """Reset (mbed) device
         :param target_id: target_id
-        :param method: method for reset i.e. simple, pyocd or edbg
+        :param method: method for reset i.e. simple
         """
         if target_id is None:
-            raise ResetError(message="Target ID is missing",
+            raise ResetError(message="target_id is missing",
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
         self.logger.info("Starting reset for target_id %s", target_id)
         self.logger.info("Method for reset: %s", method)
-        available_devices = Common(self.logger).get_available_device_mapping(
-            self._flashers, target_id)
+        target_mbed = MbedCommon.refresh_target(target_id)
+        if target_mbed is None:
+            raise ResetError(message="Did not find target: {}".format(target_id),
+                             return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
-        targets_to_reset = self.prepare_target_to_reset(target_id, available_devices)
-
-        if len(targets_to_reset) <= 0:
-            msg = "Could not map given target_id(s) to available devices"
-            self.logger.error(msg)
-            raise ResetError(message=msg, return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-
-        for item in targets_to_reset:
-            if method == 'simple' and 'serial_port' in item:
-                self.reset_board(item['serial_port'])
-            elif method == 'pyocd':
-                return self.try_pyocd_reset(item)
-            elif method == 'edbg':
-                raise ResetError(message="egdb not supported",
-                                 return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
-            else:
-                raise ResetError(message="Selected method {} not supported".format(method),
-                                 return_code=EXIT_CODE_MISUSE_CMD)
+        if method == 'simple' and 'serial_port' in target_mbed:
+            self.reset_board(target_mbed['serial_port'])
+        else:
+            raise ResetError(message="Selected method {} not supported".format(method),
+                             return_code=EXIT_CODE_MISUSE_CMD)
 
         return EXIT_CODE_SUCCESS
-
-    @staticmethod
-    def prepare_target_to_reset(target_id, available_devices):
-        """
-        prepare target to reset
-        """
-        targets_to_reset = []
-
-        if isinstance(target_id, list):
-            for target in target_id:
-                for device in available_devices:
-                    if target == device['target_id'] and \
-                                    device not in targets_to_reset:
-                        targets_to_reset.append(device)
-        else:
-            if target_id == 'all':
-                targets_to_reset = available_devices
-            elif len(target_id) <= 48:
-                for device in available_devices:
-                    if (target_id == device['target_id'] or
-                            device['target_id'].startswith(target_id)) and \
-                                    device not in targets_to_reset:
-                        targets_to_reset.append(device)
-        return targets_to_reset
-
-    def try_pyocd_reset(self, item):
-        """
-        try pyOCD reset
-        """
-        try:
-            from pyOCD.board import MbedBoard
-        except ImportError:
-            raise ResetError(message="pyOCD is not installed",
-                             return_code=EXIT_CODE_PYOCD_MISSING)
-
-        try:
-            with MbedBoard.chooseBoard(board_id=item["target_id"]) \
-                    as board:
-                self.logger.info("resetting device")
-                ocd_target = board.target
-                ocd_target.reset()
-                self.logger.info("reset completed")
-            return EXIT_CODE_SUCCESS
-        except AttributeError as err:
-            self.logger.error("PyOCD reset failed: %s.", err)
-            self.logger.error("tid=%s", item["target_id"])
-            raise ResetError(message="PyOCD reset failed",
-                             return_code=EXIT_CODE_PYOCD_RESET_FAILED)

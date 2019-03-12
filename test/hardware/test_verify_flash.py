@@ -95,29 +95,15 @@ class FlashVerifyTestCase(unittest.TestCase):
                     target_id = target['target_id']
                     serial_port = target['serial_port']
                     break
-        if target_id and serial_port:
-            ret = flasher.flash(build=self.bin_path,
-                                target_id=target_id,
-                                platform_name='K64F',
-                                device_mapping_table=False,
-                                method='simple',
-                                target_filename=self.bin_path)
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
-            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
-            ret = flasher.flash(build=self.second_bin_path,
-                                target_id=target_id, platform_name='K64F',
-                                device_mapping_table=False, method='simple',
-                                target_filename=self.second_bin_path)
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
-            if not verify_output_per_device(serial_port, 'help', 'echo'):
-                self.assertEqual(
-                    verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build=self.bin_path,
-                                target_id=target_id,
-                                platform_name='K64F',
-                                device_mapping_table=False,
-                                method='simple',
-                                target_filename=self.bin_path)
+
+        ret = flasher.flash(build=self.bin_path, target_id=target_id, method='simple')
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
+        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+        ret = flasher.flash(build=self.second_bin_path, target_id=target_id, method='simple')
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
+        if not verify_output_per_device(serial_port, 'help', 'echo'):
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
+            ret = flasher.flash(build=self.bin_path, target_id=target_id, method='simple')
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
@@ -134,39 +120,24 @@ class FlashVerifyTestCase(unittest.TestCase):
                     target_id = target['target_id']
                     serial_port = target['serial_port']
                     break
-        if target_id and serial_port:
-            ret = flasher.flash(build=self.second_bin_path,
-                                target_id=target_id,
-                                platform_name='K64F',
-                                device_mapping_table=False,
-                                method='simple')
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
-            if not verify_output_per_device(serial_port, 'help', 'echo'):
-                self.assertEqual(
-                    verify_output_per_device(serial_port, 'help', 'echo'), True)
+        ret = flasher.flash(build=self.second_bin_path, target_id=target_id, method='simple')
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
+        if not verify_output_per_device(serial_port, 'help', 'echo'):
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
 
-            ret = flasher.flash(build=self.second_bin_path,
-                                target_id=target_id,
-                                platform_name='K64F',
-                                device_mapping_table=False,
-                                method='simple',
-                                no_reset=True,
-                                target_filename=self.second_bin_path)
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
-            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
-            ret = resetter.reset(target_id=target_id, method='simple')
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
-            if not verify_output_per_device(serial_port, 'help', 'echo'):
-                self.assertEqual(
-                    verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build=self.bin_path,
-                                target_id=target_id,
-                                platform_name='K64F',
-                                device_mapping_table=False,
-                                method='simple',
-                                target_filename=self.bin_path)
-            self.assertEqual(ret, EXIT_CODE_SUCCESS)
-            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+        ret = flasher.flash(build=self.second_bin_path,
+                            target_id=target_id,
+                            method='simple',
+                            no_reset=True)
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
+        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+        ret = resetter.reset(target_id=target_id, method='simple')
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
+        if not verify_output_per_device(serial_port, 'help', 'echo'):
+            self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
+        ret = flasher.flash(build=self.bin_path, target_id=target_id, method='simple')
+        self.assertEqual(ret, EXIT_CODE_SUCCESS)
+        self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
 if __name__ == '__main__':
     unittest.main()
