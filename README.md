@@ -42,10 +42,10 @@ optional arguments:
   -h, --help     show this help message and exit
   -v, --verbose  Verbose level... repeat up to three times.
   -s, --silent   Silent - only errors will be printed.
+  --version      show program's version number and exit
 
 command:
   <command>      command help
-    version      Display version information
     flash        Flash given resource
     reset        Reset given resource
     erase        Erase given resource

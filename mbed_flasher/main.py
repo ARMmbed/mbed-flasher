@@ -156,15 +156,15 @@ class FlasherCLI(object):
                             action="store_true",
                             help="Silent - only errors will be printed.")
 
+        parser.add_argument('--version',
+                            action='version',
+                            version=FlasherCLI._get_version())
+
         subparsers = parser.add_subparsers(title='command',
                                            dest='command',
                                            help='command help',
                                            metavar='<command>')
         subparsers.required = True
-        get_subparser(subparsers,
-                      'version',
-                      func=self.subcmd_version_handler,
-                      help='Display version information')
 
         # Initialize flash command
         parser_flash = get_resource_subparser(subparsers,
@@ -260,19 +260,14 @@ class FlasherCLI(object):
         return eraser.erase(
             target_id=self.args.tid, no_reset=self.args.no_reset, method=self.args.method)
 
-    def subcmd_version_handler(self):
+    @staticmethod
+    def _get_version():
         """
         version command handler
         """
         import pkg_resources  # part of setuptools
         versions = pkg_resources.require("mbed-flasher")
-        if self.args.verbose:
-            for version in versions:
-                print(version)
-        else:
-            print(versions[0].version)
-
-        return EXIT_CODE_SUCCESS
+        return versions[0].version
 
 
 def mbedflash_main():

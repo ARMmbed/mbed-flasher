@@ -22,6 +22,7 @@ import os
 import logging
 import unittest
 import re
+import sys
 try:
     from StringIO import StringIO
 except ImportError:
@@ -67,19 +68,30 @@ class MainTestCase(unittest.TestCase):
 
         self.assertEqual(context.exception.code, EXIT_CODE_MISUSE_CMD)
 
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_main_version(self, mock_stdout):
-        fcli = FlasherCLI(["version"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_SUCCESS)
+    # argparse version action prints to stderr before 3.4 version
+    # https://bugs.python.org/issue18920
+    std_channel = 'sys.stderr'
+    if sys.version_info.major == 3 and sys.version_info.minor >= 4:
+        std_channel = 'sys.stdout'
+
+    @mock.patch(std_channel, new_callable=StringIO)
+    def test_main_version(self, mock_std):
+        with self.assertRaises(SystemExit) as context:
+            FlasherCLI(["--version"])
+
+        self.assertEqual(context.exception.code, EXIT_CODE_SUCCESS)
         r_match = re.compile(r"^\d+\.\d+\.\d+$")
-        value = mock_stdout.getvalue()
+        value = mock_std.getvalue()
         self.assertTrue(r_match.match(value))
 
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_main_verboses(self, mock_stdout):
-        fcli = FlasherCLI(["-v", "version"])
-        self.assertEqual(fcli.execute(), EXIT_CODE_SUCCESS)
-        self.assertIsNot(len("\n".split(mock_stdout.getvalue())), 0)
+    @mock.patch(std_channel, new_callable=StringIO)
+    def test_main_verboses(self, mock_stderr):
+        with self.assertRaises(SystemExit) as context:
+            FlasherCLI(["-v", "--version"])
+        self.assertEqual(context.exception.code, EXIT_CODE_SUCCESS)
+        r_match = re.compile(r"^\d+\.\d+\.\d+$")
+        value = mock_stderr.getvalue()
+        self.assertTrue(r_match.match(value))
 
     def test_file_does_not_exist(self):
         fcli = FlasherCLI(["flash", "-i", "None", "--tid", "target"])
