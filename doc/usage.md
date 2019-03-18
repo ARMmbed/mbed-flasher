@@ -58,7 +58,7 @@ To import the mbed-flasher module:
 #### Flashing a single device
 
 ```python
->>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900", platform_name="K64F")
+>>> flasher.flash(build="C:\\path_to_file\\myfile.bin", target_id="0240000028884e450019700f6bf0000f8021000097969900")
 0
 ```
 
@@ -126,7 +126,7 @@ mbedflash: error: too few arguments
 #### Flashing a single device
 
 ```batch
-C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900 -t K64F
+C:\>mbedflash flash -i C:\path_to_file\myfile.bin --tid 0240000028884e450019700f6bf0000f8021000097969900
 
 C:\>
 ```
@@ -134,7 +134,7 @@ C:\>
 #### Flashing a single device with verbose output
 
 ```batch
-C:\>mbedflash -vvv flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900 -t K64F
+C:\>mbedflash -vvv flash -i C:\path_to_file\myfile.bin --tid 0240000033514e45000b500585d40029e981000097969900
 [DEBUG](mbed-flasher): Supported targets: NRF51822, K64F, NRF51_DK, NUCLEO_F401RE
 [DEBUG](mbed-flasher): [{'target_id_mbed_htm': '0240000033514e45000b500585d40029e981000097969900', 'mount_point': 'D:', 'target_id': '0240000033514e45000b500585d40029e981000097969900', 'serial_port':
 u'COM78', 'target_id_usb_id': '0240000033514e45000b500585d40029e981000097969900', 'platform_name': 'K64F'}]
