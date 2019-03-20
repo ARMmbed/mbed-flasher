@@ -18,9 +18,9 @@ from os import path
 import logging
 
 from pyocd.core.helpers import ConnectHelper
-from pyocd.flash.loader import FileProgrammer
+from pyocd.flash.loader import FileProgrammer, FlashEraser
 
-from mbed_flasher.common import FlashError
+from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -77,9 +77,13 @@ class FlasherPyOCD(object):
 
         return PyOCDMap.is_supported(target["platform_name"])
 
+    @staticmethod
+    def can_erase(target):
+        return PyOCDMap.is_supported(target["platform_name"])
+
     # pylint: disable=unused-argument
     def flash(self, source, target, method, no_reset):
-        """copy file to the destination
+        """Flash target using pyOCD
         :param source: binary to be flashed
         :param target: target to be flashed
         :param method: method to use when flashing
@@ -87,22 +91,7 @@ class FlasherPyOCD(object):
         """
 
         self.logger.debug('Flashing with pyOCD')
-        session = ConnectHelper.session_with_chosen_probe(
-                unique_id=target['target_id_usb_id'],
-                blocking=False,
-                target_override=PyOCDMap.platform(target['platform_name']),
-                halt_on_connect=True,
-                resume_on_disconnect=False,
-                hide_programming_progress=True,
-                pack=PyOCDMap.pack(target['platform_name']))
-
-        if session is None:
-            msg = "Did not find pyOCD target: {}".format(target["target_id_usb_id"])
-            self.logger.error(msg)
-            raise FlashError(
-                message=msg,
-                return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
-
+        session = self._get_session(target, FlashError)
         try:
             with session:
                 FileProgrammer(session, chip_erase=False).program(source)
@@ -115,3 +104,37 @@ class FlasherPyOCD(object):
             raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
 
         return EXIT_CODE_SUCCESS
+
+    def erase(self, target, no_reset):
+        """Erase target using pyOCD
+        :param target: target to be erased
+        :param no_reset: do not reset flashed board at all
+        """
+        self.logger.debug('Erasing with pyOCD')
+        session = self._get_session(target, EraseError)
+        with session:
+            FlashEraser(session, FlashEraser.Mode.CHIP).erase()
+
+            if not no_reset:
+                session.target.reset()
+
+        return EXIT_CODE_SUCCESS
+
+    def _get_session(self, target, error_class):
+        session = ConnectHelper.session_with_chosen_probe(
+            unique_id=target['target_id_usb_id'],
+            blocking=False,
+            target_override=PyOCDMap.platform(target['platform_name']),
+            halt_on_connect=True,
+            resume_on_disconnect=False,
+            hide_programming_progress=True,
+            pack=PyOCDMap.pack(target['platform_name']))
+
+        if session is None:
+            msg = "Did not find pyOCD target: {}".format(target["target_id_usb_id"])
+            self.logger.error(msg)
+            raise error_class(
+                message=msg,
+                return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
+
+        return session
