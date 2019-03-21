@@ -18,13 +18,14 @@ from os import path
 import logging
 
 from pyocd.core.helpers import ConnectHelper
-from pyocd.flash.loader import FileProgrammer, FlashEraser
+from pyocd.flash.loader import FileProgrammer, FlashEraser, ArgumentError
 
 from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
 
 
 class PyOCDMap(object):
@@ -53,7 +54,8 @@ class PyOCDMap(object):
         if pack_file is None:
             return None
 
-        pack_path = path.join(path.dirname(__file__), '..', '..', 'pyocd_packs', pack_file)
+        pack_path = path.realpath(
+            path.join(path.dirname(__file__), '..', '..', 'pyocd_packs', pack_file))
         if path.isfile(pack_path):
             return pack_path
 
@@ -94,14 +96,19 @@ class FlasherPyOCD(object):
         session = self._get_session(target, FlashError)
         try:
             with session:
-                FileProgrammer(session, chip_erase=False).program(source)
+                fp = FileProgrammer(session, chip_erase=False)
+                fp.program(source)
 
                 if not no_reset:
                     session.target.reset()
         except ArgumentError as error:
-            msg = "PyOCD flash failed: {}".format(error)
+            msg = "PyOCD flash failed due to invalid argument: {}".format(error)
             self.logger.error(msg)
             raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
+        except Exception as error:
+            msg = "PyOCD flash failed unexpectedly: {}".format(error)
+            self.logger.error(msg)
+            raise FlashError(message=msg, return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
 
         return EXIT_CODE_SUCCESS
 
@@ -112,11 +119,16 @@ class FlasherPyOCD(object):
         """
         self.logger.debug('Erasing with pyOCD')
         session = self._get_session(target, EraseError)
-        with session:
-            FlashEraser(session, FlashEraser.Mode.CHIP).erase()
+        try:
+            with session:
+                FlashEraser(session, FlashEraser.Mode.CHIP).erase()
 
-            if not no_reset:
-                session.target.reset()
+                if not no_reset:
+                    session.target.reset()
+        except Exception as error:
+            msg = "PyOCD erase failed unexpectedly: {}".format(error)
+            self.logger.error(msg)
+            raise EraseError(message=msg, return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
 
         return EXIT_CODE_SUCCESS
 
