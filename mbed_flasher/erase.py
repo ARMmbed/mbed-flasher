@@ -66,5 +66,3 @@ class Erase(object):
         erase_fnc(target=target_mbed, no_reset=no_reset)
 
         return EXIT_CODE_SUCCESS
-
-

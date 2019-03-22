@@ -29,6 +29,9 @@ from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
 
 
 class PyOCDMap(object):
+    """
+    Provide list of boards and assisting methods to support PyOCD usage.
+    """
     SUPPORTED_PLATFORMS = {
         "DISCO_L475VG_IOT01A": {
             "platform": "stm32l475xg",
@@ -42,14 +45,30 @@ class PyOCDMap(object):
 
     @staticmethod
     def is_supported(platform):
+        """
+        Check if platform is supported by PyOCD
+        :param platform: mbedls board platform
+        :return: True if supported, otherwise False
+        """
         return platform in PyOCDMap.SUPPORTED_PLATFORMS.keys()
 
     @staticmethod
     def platform(platform):
+        """
+        Map mbedls target name to pyOCD target.
+        :param platform: mbedls board platform
+        :return: corresponding pyOCD platform or KeyError if doesn't exist
+        """
         return PyOCDMap.SUPPORTED_PLATFORMS[platform].get("platform")
 
     @staticmethod
     def pack(platform):
+        """
+        Acquire path to pack file for specific platform
+        :param platform: mbedls board platform
+        :return: Path for pack file, None if not needed
+        raises FlashError if pack file is needed but it doesn't exist
+        """
         pack_file = PyOCDMap.SUPPORTED_PLATFORMS[platform].get("pack")
         if pack_file is None:
             return None
@@ -65,7 +84,7 @@ class PyOCDMap(object):
 
 class FlasherPyOCD(object):
     """
-    Flash board using PyOCD.
+    Flash and erase board using PyOCD.
     """
     name = "pyOCD"
 
@@ -74,6 +93,12 @@ class FlasherPyOCD(object):
 
     @staticmethod
     def can_flash(target, source):
+        """
+        Function deciding whether the target should be flashed with pyOCD
+        :param target: mbedls given target dictionary
+        :param source: application to be flashed
+        :return: True if target can be flashed with FlasherPyOCD otherwise False
+        """
         if not source.endswith('.hex'):
             return False
 
@@ -81,23 +106,29 @@ class FlasherPyOCD(object):
 
     @staticmethod
     def can_erase(target):
+        """
+        Function deciding whether the target should be erased with pyOCD
+        :param target: mbedls given target dictionary
+        :return: True if target can be erased with FlasherPyOCD otherwise False
+        """
         return PyOCDMap.is_supported(target["platform_name"])
 
     # pylint: disable=unused-argument
     def flash(self, source, target, method, no_reset):
         """Flash target using pyOCD
         :param source: binary to be flashed
-        :param target: target to be flashed
+        :param target: mbedls given target dictionary
         :param method: method to use when flashing
         :param no_reset: do not reset flashed board at all
+        :return: 0 if success otherwise raises
         """
 
         self.logger.debug('Flashing with pyOCD')
         session = self._get_session(target, FlashError)
         try:
             with session:
-                fp = FileProgrammer(session, chip_erase=False)
-                fp.program(source)
+                file_programmer = FileProgrammer(session, chip_erase=False)
+                file_programmer.program(source)
 
                 if not no_reset:
                     session.target.reset()
@@ -114,14 +145,16 @@ class FlasherPyOCD(object):
 
     def erase(self, target, no_reset):
         """Erase target using pyOCD
-        :param target: target to be erased
+        :param target: mbedls given target dictionary
         :param no_reset: do not reset flashed board at all
+        :return: 0 if success otherwise raises
         """
         self.logger.debug('Erasing with pyOCD')
         session = self._get_session(target, EraseError)
         try:
             with session:
-                FlashEraser(session, FlashEraser.Mode.CHIP).erase()
+                flash_eraser = FlashEraser(session, FlashEraser.Mode.CHIP)
+                flash_eraser.erase()
 
                 if not no_reset:
                     session.target.reset()
@@ -133,6 +166,12 @@ class FlasherPyOCD(object):
         return EXIT_CODE_SUCCESS
 
     def _get_session(self, target, error_class):
+        """
+        Internal method for acquiring pyOCD session
+        :param target: mbedls given target dictionary
+        :param error_class: error to be risen on failure
+        :return: Session
+        """
         session = ConnectHelper.session_with_chosen_probe(
             unique_id=target['target_id_usb_id'],
             blocking=False,

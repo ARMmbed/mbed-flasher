@@ -289,4 +289,3 @@ class FlasherMbed(object):
                   "erasing supported from version {} onwards". \
                 format(daplink_version, ERASE_DAPLINK_SUPPORT_VERSION)
             raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
-
