@@ -150,8 +150,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         self.assertEqual(len(mock_get_session.method_calls), 1)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program',
-                side_effect=ArgumentError)
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=ValueError)
     def test_flash_argument_error_leads_to_user_error(self, mock_file_programmer, mock_get_session):
         with self.assertRaises(FlashError) as cm:
             FlasherPyOCD().flash('', '', '', True)
@@ -159,7 +158,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=ValueError)
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=TypeError)
     def test_flash_handles_all_exceptions(self, mock_file_programmer, mock_get_session):
         with self.assertRaises(FlashError) as cm:
             FlasherPyOCD().flash('', '', '', True)

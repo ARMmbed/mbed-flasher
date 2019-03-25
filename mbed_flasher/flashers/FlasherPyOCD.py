@@ -132,7 +132,7 @@ class FlasherPyOCD(object):
 
                 if not no_reset:
                     session.target.reset()
-        except ArgumentError as error:
+        except ValueError as error:
             msg = "PyOCD flash failed due to invalid argument: {}".format(error)
             self.logger.error(msg)
             raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
