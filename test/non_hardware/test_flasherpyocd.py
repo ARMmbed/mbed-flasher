@@ -25,7 +25,7 @@ import unittest
 
 import mock
 from pyocd.core.helpers import ConnectHelper, Session
-from pyocd.flash.loader import FileProgrammer, FlashEraser, ArgumentError
+from pyocd.flash.loader import FileProgrammer, FlashEraser
 
 from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD, PyOCDMap
 from mbed_flasher.common import FlashError, EraseError
@@ -58,16 +58,10 @@ class PyOCDTestCase(unittest.TestCase):
         with self.assertRaises(KeyError):
             PyOCDMap.pack('')
 
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
-    def test_pack_exists(self, mock_is_file):
-        expected_dir = os.path.realpath(
-            os.path.join(
-                os.path.dirname(__file__),
-                '..',
-                '..',
-                'pyocd_packs',
-                'Keil.STM32L0xx_DFP.2.0.1.pack')
-        )
+    def test_pack_exists(self, mock_is_file, mock_get_pack_path):
+        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
         self.assertEqual(PyOCDMap.pack('NUCLEO_L073RZ'), expected_dir)
 
 

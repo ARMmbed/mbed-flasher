@@ -17,8 +17,9 @@ limitations under the License.
 from os import path
 import logging
 
+from appdirs import user_data_dir
 from pyocd.core.helpers import ConnectHelper
-from pyocd.flash.loader import FileProgrammer, FlashEraser, ArgumentError
+from pyocd.flash.loader import FileProgrammer, FlashEraser
 
 from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
@@ -62,6 +63,17 @@ class PyOCDMap(object):
         return PyOCDMap.SUPPORTED_PLATFORMS[platform].get("platform")
 
     @staticmethod
+    def _get_pack_path():
+        """
+        Return platform specific pack installation dir.
+        Linux: /home/<user>/.local/share/mbed-flasher/pyocd-packs
+        MacOSX: /Users/<user>/Library/Application Support/mbed-flasher/pyocd-packs
+        Windows 7: C:\\Users\\<user>\\AppData\\Local\\mbed-flasher\\mbed-flasher\\pyocd-packs
+        :return: path to packs folder
+        """
+        return path.join(user_data_dir('mbed-flasher'), 'pyocd-packs')
+
+    @staticmethod
     def pack(platform):
         """
         Acquire path to pack file for specific platform
@@ -73,8 +85,7 @@ class PyOCDMap(object):
         if pack_file is None:
             return None
 
-        pack_path = path.realpath(
-            path.join(path.dirname(__file__), '..', '..', 'pyocd_packs', pack_file))
+        pack_path = path.join(PyOCDMap._get_pack_path(), pack_file)
         if path.isfile(pack_path):
             return pack_path
 
