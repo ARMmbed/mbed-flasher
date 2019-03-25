@@ -61,6 +61,7 @@ class PyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
     def test_pack_exists(self, mock_is_file, mock_get_pack_path):
+        # pylint:disable=protected-access
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
         self.assertEqual(PyOCDMap.pack('NUCLEO_L073RZ'), expected_dir)
 
