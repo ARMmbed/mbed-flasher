@@ -27,11 +27,10 @@ except ImportError:
     from io import StringIO
 import mock
 
-from mbed_flasher.common import ResetError, GeneralFatalError
+from mbed_flasher.common import ResetError
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_DEVICE
 
 
 class ResetTestCase(unittest.TestCase):
@@ -51,27 +50,8 @@ class ResetTestCase(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_reset_with_wrong_target_id(self, mock_stdout, mock_sleep):
         resetter = Reset()
-        with self.assertRaises(GeneralFatalError) as cm:
-            resetter.reset(target_id='555', method='simple')
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_DEVICE)
-
-    @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_reset_with_all_no_devices(self, mock_stdout, mock_mbed_lstools_create):
-        # pylint:disable=too-few-public-methods
-        class MockLS(object):
-            def __init__(self):
-                pass
-
-            # pylint:disable=no-self-use
-            def list_mbeds(self, filter_function=None):
-                return []
-
-        mock_mbed_lstools_create.return_value = MockLS()
-        resetter = Reset()
         with self.assertRaises(ResetError) as cm:
-            resetter.reset(target_id='all', method='simple')
+            resetter.reset(target_id='555', method='simple')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 

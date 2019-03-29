@@ -30,10 +30,6 @@ class FlasherBaseTest(unittest.TestCase):
     @mock.patch("mbed_flasher.flash.Logger")
     def test_is_ok(self, logger):
         with self.assertRaises(NotImplementedError):
-            FlasherBase.get_supported_targets()
-        with self.assertRaises(NotImplementedError):
-            FlasherBase.get_available_devices()
-        with self.assertRaises(NotImplementedError):
             FlasherBase.can_flash("")
         with self.assertRaises(NotImplementedError):
             FlasherBase.is_executable_installed()

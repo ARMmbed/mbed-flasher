@@ -36,11 +36,6 @@ class ResetTestCaseHW(unittest.TestCase):
     def tearDown(self):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
-    def test_reset_with_all(self):
-        resetter = Reset()
-        ret = resetter.reset(target_id='all', method='simple')
-        self.assertEqual(ret, EXIT_CODE_SUCCESS)
-
     def test_reset_with_target_id(self):
         mbeds = mbed_lstools.create()
         devices = mbeds.list_mbeds()
@@ -49,17 +44,6 @@ class ResetTestCaseHW(unittest.TestCase):
         for item in devices:
             if item['target_id']:
                 ret = resetter.reset(target_id=item['target_id'], method='simple')
-                break
-        self.assertEqual(ret, EXIT_CODE_SUCCESS)
-
-    def test_reset_with_target_id_list(self):
-        mbeds = mbed_lstools.create()
-        devices = mbeds.list_mbeds()
-        resetter = Reset()
-        ret = None
-        for item in devices:
-            if item['target_id']:
-                ret = resetter.reset(target_id=[item['target_id']], method='simple')
                 break
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
