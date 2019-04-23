@@ -57,7 +57,7 @@ setup(name="mbed-flasher",
           "appdirs>=1.*",
           "mbed-ls>=1.5.1,==1.*",
           "six==1.*",
-          "pyocd==0.18.0",
+          "pyocd==0.19.0",
           "pyserial==3.*"
       ],
       classifiers=[
