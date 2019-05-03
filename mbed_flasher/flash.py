@@ -17,6 +17,7 @@ limitations under the License.
 from mbed_flasher.common import Logger, FlashError,\
     check_file, check_file_exists, check_file_extension
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
+from mbed_flasher.flashers.FlasherMPS2 import FlasherMPS2
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -63,8 +64,12 @@ class Flash(object):
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         try:
-            retcode = FlasherMbed(logger=self.logger).flash(
-                source=build, target=target_mbed, method=method, no_reset=no_reset)
+            if target_mbed["platform_name"] == "ARM_MPS2":
+                retcode = FlasherMPS2(logger=self.logger).flash(
+                    source=build, target=target_mbed, method=method, no_reset=no_reset)
+            else:
+                retcode = FlasherMbed(logger=self.logger).flash(
+                    source=build, target=target_mbed, method=method, no_reset=no_reset)
         except KeyboardInterrupt:
             raise FlashError(message="Aborted by user",
                              return_code=EXIT_CODE_KEYBOARD_INTERRUPT)
