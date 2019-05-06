@@ -116,6 +116,10 @@ class FlasherMPS2(FlasherMbed):
             tar = tarfile.open(source)
             tar.extractall(path=destination)
             tar.close()
+            command = "sync -f %s" % destination
+            self._process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            output = self._process.communicate()
+
             if not no_reset:
                 Reset(logger=self.logger).reset_mps2(target)
                 self.logger.debug("Verifying flash")
