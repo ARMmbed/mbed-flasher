@@ -139,10 +139,7 @@ class FlasherPyOCD(object):
         session = self._get_session(target, FlashError)
         try:
             with session:
-                # This can be removed in the future when PyOCD Session is
-                # able to open the session using with statement.
-                session.open()
-                file_programmer = FileProgrammer(session, chip_erase=False)
+                file_programmer = FileProgrammer(session, chip_erase="sector")
                 file_programmer.program(source)
 
                 if not no_reset:
@@ -169,9 +166,6 @@ class FlasherPyOCD(object):
         session = self._get_session(target, EraseError)
         try:
             with session:
-                # This can be removed in the future when PyOCD Session is
-                # able to open the session using with statement.
-                session.open()
                 flash_eraser = FlashEraser(session, FlashEraser.Mode.CHIP)
                 flash_eraser.erase()
 
@@ -199,8 +193,7 @@ class FlasherPyOCD(object):
             halt_on_connect=True,
             resume_on_disconnect=False,
             hide_programming_progress=True,
-            pack=PyOCDMap.pack(target['platform_name']),
-            open_session=False)
+            pack=PyOCDMap.pack(target['platform_name']))
 
         if session is None:
             msg = "Did not find pyOCD target: {}".format(target["target_id_usb_id"])

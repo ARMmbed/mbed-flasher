@@ -160,21 +160,18 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         return_value = FlasherPyOCD().flash('test_source', '', '', True)
 
         self.assertEqual(return_value, 0)
-        self.assertEqual(mock_file_programmer.call_args[1], {'chip_erase': False})
+        self.assertEqual(mock_file_programmer.call_args[1], {'chip_erase': 'sector'})
         self.assertEqual(mock_file_programmer.method_calls[0][1], ('test_source',))
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer', autospec=FileProgrammer)
     def test_flash_no_reset_parameter_is_respected(self, mock_file_programmer, mock_get_session):
         FlasherPyOCD().flash('', '', '', True)
-        self.assertEqual(len(mock_get_session.method_calls), 1)
-        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().open()')
+        self.assertEqual(mock_get_session.call_count, 1)
 
         FlasherPyOCD().flash('', '', '', False)
-        self.assertEqual(len(mock_get_session.method_calls), 3)
-        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().open()')
-        self.assertEqual(str(mock_get_session.method_calls[1]), 'call().open()')
-        self.assertEqual(str(mock_get_session.method_calls[2]), 'call().target.reset()')
+        self.assertEqual(mock_get_session.call_count, 2)
+        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().target.reset()')
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=ValueError)
@@ -213,14 +210,11 @@ class FlasherPyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser', autospec=FlashEraser)
     def test_erase_no_reset_parameter_is_respected(self, mock_file_programmer, mock_get_session):
         FlasherPyOCD().erase('', True)
-        self.assertEqual(len(mock_get_session.method_calls), 1)
-        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().open()')
+        self.assertEqual(mock_get_session.call_count, 1)
 
         FlasherPyOCD().erase('', False)
-        self.assertEqual(len(mock_get_session.method_calls), 3)
-        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().open()')
-        self.assertEqual(str(mock_get_session.method_calls[1]), 'call().open()')
-        self.assertEqual(str(mock_get_session.method_calls[2]), 'call().target.reset()')
+        self.assertEqual(mock_get_session.call_count, 2)
+        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().target.reset()')
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser.erase', side_effect=ValueError)
