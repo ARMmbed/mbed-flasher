@@ -55,7 +55,7 @@ setup(name="mbed-flasher",
       },
       install_requires=[
           "appdirs>=1.*",
-          "mbed-ls>=1.5.1,==1.*",
+          "mbed-ls==1.7.7",
           "six==1.*",
           "pyocd==0.21.0",
           "pyserial==3.*"
