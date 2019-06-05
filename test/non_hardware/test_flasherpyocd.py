@@ -18,7 +18,6 @@ limitations under the License.
 # pylint:disable=too-few-public-methods
 # pylint:disable=invalid-name
 # pylint:disable=unused-argument
-import copy
 import logging
 import os
 import unittest
@@ -38,23 +37,10 @@ from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
 class PyOCDMapTestCase(unittest.TestCase):
     def test_supported_boards(self):
         self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
-
-    def test_non_supported_boards(self):
-        self.assertFalse(PyOCDMap.is_supported('NUCLEO_L073RZ'))
+        self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
 
 
 class PyOCDTestCase(unittest.TestCase):
-    def setUp(self):
-        # todo: remove these once NUCLEO_L073RZ is supported (added to PyOCDMap)
-        self.original_platform_map = copy.deepcopy(PyOCDMap.SUPPORTED_PLATFORMS)
-        PyOCDMap.SUPPORTED_PLATFORMS['NUCLEO_L073RZ'] = {
-            "platform": "stm32l073rz",
-            "pack": "Keil.STM32L0xx_DFP.2.0.1.pack"
-        }
-
-    def tearDown(self):
-        PyOCDMap.SUPPORTED_PLATFORMS = self.original_platform_map
-
     def test_is_supported(self):
         self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
         self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
@@ -88,15 +74,6 @@ class PyOCDTestCase(unittest.TestCase):
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
         logging.disable(logging.CRITICAL)
-        # todo: remove these once NUCLEO_L073RZ is supported (added to PyOCDMap)
-        self.original_platform_map = copy.deepcopy(PyOCDMap.SUPPORTED_PLATFORMS)
-        PyOCDMap.SUPPORTED_PLATFORMS['NUCLEO_L073RZ'] = {
-            "platform": "stm32l073rz",
-            "pack": "Keil.STM32L0xx_DFP.2.0.1.pack"
-        }
-
-    def tearDown(self):
-        PyOCDMap.SUPPORTED_PLATFORMS = self.original_platform_map
 
     def test_is_ok(self):
         FlasherPyOCD()

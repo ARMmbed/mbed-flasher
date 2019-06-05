@@ -37,12 +37,11 @@ class PyOCDMap(object):
         "DISCO_L475VG_IOT01A": {
             "platform": "stm32l475xg",
             "pack": None
+        },
+        "NUCLEO_L073RZ": {
+            "platform": "stm32l073rz",
+            "pack": "Keil.STM32L0xx_DFP.2.0.1.pack"
         }
-#        },
-#        "NUCLEO_L073RZ": {
-#            "platform": "stm32l073rz",
-#            "pack": "Keil.STM32L0xx_DFP.2.0.1.pack"
-#        }
     }
 
     @staticmethod
