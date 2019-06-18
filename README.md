@@ -14,11 +14,11 @@ Developers can also use it as a standalone tool for flashing their development b
 
 To install the flasher, use:
 
-`python setup.py install`
+`pip install .`
 
 To install the flasher in development mode:
 
-`python setup.py develop`
+`pip install --editable .`
 
 ## Usage
 
@@ -130,19 +130,3 @@ Generate a coverage report:
 ```
 coverage html
 ```
-
-## Creating the installer
-
-**For Windows:**
-```
-python setup.py build
-python setup.py bdist_msi
-```
-
-**For Linux:**
-```
-python setup.py build
-//for rpm package
-python setup.py bdist_rpm
-```
-Read [more on installers](https://docs.python.org/2/distutils/builtdist.html).
