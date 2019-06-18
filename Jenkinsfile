@@ -176,7 +176,7 @@ def unittest(nodeType, String pythonVersion) {
                         echo "linux python3 test starts"
                         set -e
                         . py3venv/bin/activate
-                        python setup.py install
+                        pip install .
                         coverage run -m unittest discover -s test -vvv
                         coverage html
                         coverage xml
@@ -188,7 +188,7 @@ def unittest(nodeType, String pythonVersion) {
                     echo "linux python2 test starts"
                         set -e
                         . py2venv/bin/activate
-                        python setup.py install
+                        pip install .
                         coverage run -m unittest discover -s test -vvv
                         coverage html --include='*mbed_flasher*' --directory=logs
                         coverage xml --include='*mbed_flasher*'
@@ -266,7 +266,7 @@ def winTest(String pythonVersion) {
                     echo 'hello windows python3 test starts'
                     bat """
                         call py3venv\\Scripts\\activate.bat || goto :error
-                        python setup.py install  || goto :error
+                        pip install . || goto :error
                         coverage run -m unittest discover -s test -vvv || goto :error
                         coverage html & coverage xml || goto :error
                         deactivate
@@ -280,7 +280,7 @@ def winTest(String pythonVersion) {
                     echo 'hello windows python2 test starts'
                     bat """
                         call py2venv\\Scripts\\activate.bat || goto :error
-                        python setup.py install || goto :error
+                        pip install . || goto :error
                         coverage run -m unittest discover -s test -vvv || goto :error
                         coverage html & coverage xml || goto :error
                         deactivate
