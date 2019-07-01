@@ -116,9 +116,22 @@ class FlasherMPS2(FlasherMbed):
             tar = tarfile.open(source)
             tar.extractall(path=destination)
             tar.close()
-            command = "sync -f %s" % destination
+            # Find mount node
+            command = "mount"
+            self._process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            output = self._process.communicate()[0]
+
+            for line in output.split("\n"):
+                if destination in line:
+                    node = line.split()[0]
+            command = "pumount %s" % destination
             self._process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             output = self._process.communicate()
+
+            command = "pmount --sync --fmask 0022 --dmask 0022 -A %s %s" % (node, destination)
+            self._process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            output = self._process.communicate()
+            sleep(3)
 
             if not no_reset:
                 Reset(logger=self.logger).reset_mps2(target)

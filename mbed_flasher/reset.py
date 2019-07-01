@@ -129,7 +129,7 @@ class Reset(object):
                              return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
         if method == 'simple' and 'serial_port' in target_mbed:
-            if target_mbed["platform_name"] == "ARM_MPS2":
+            if target_mbed["platform_name"] in ["ARM_MPS2", "ARM_MPS3"]:
                 self.reset_mps2(target_mbed)
             else:
                 self.reset_board(target_mbed['serial_port'])

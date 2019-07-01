@@ -64,7 +64,7 @@ class Flash(object):
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         try:
-            if target_mbed["platform_name"] == "ARM_MPS2":
+            if target_mbed["platform_name"] in ["ARM_MPS2", "ARM_MPS3"]:
                 retcode = FlasherMPS2(logger=self.logger).flash(
                     source=build, target=target_mbed, method=method, no_reset=no_reset)
             else:
