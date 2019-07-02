@@ -110,9 +110,6 @@ class FlasherPyOCD(object):
         :param source: application to be flashed
         :return: True if target can be flashed with FlasherPyOCD otherwise False
         """
-        if not source.endswith('.hex'):
-            return False
-
         return PyOCDMap.is_supported(target["platform_name"])
 
     @staticmethod

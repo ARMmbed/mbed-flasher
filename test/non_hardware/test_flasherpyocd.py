@@ -83,14 +83,12 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         self.assertTrue(hasattr(FlasherPyOCD, 'erase'))
         self.assertTrue(hasattr(FlasherPyOCD, '_get_session'))
 
-    def test_can_flash_allows_only_hex(self):
+    def test_can_flash_does_not_care_about_extension(self):
         target = {'platform_name': 'DISCO_L475VG_IOT01A'}
         self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.hex'))
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'asd.bin'))
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'asd.elf'))
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'hex'))
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'hex.'))
-        self.assertFalse(FlasherPyOCD.can_flash(target, ''))
+        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.bin'))
+        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.elf'))
+        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd'))
 
     def test_can_flash_allows_only_supported_platforms(self):
         target = {'platform_name': 'DISCO_L475VG_IOT01A'}
