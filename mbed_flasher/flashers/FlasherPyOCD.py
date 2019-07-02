@@ -41,6 +41,14 @@ class PyOCDMap(object):
         "NUCLEO_L073RZ": {
             "platform": "stm32l073rz",
             "pack": "Keil.STM32L0xx_DFP.2.0.1.pack"
+        },
+        "NUCLEO_F411RE": {
+            "platform": "stm32f411re",
+            "pack": "Keil.STM32F4xx_DFP.2.13.0.pack"
+        },
+        "NUCLEO_F429ZI": {
+            "platform": "stm32f429xi",
+            "pack": None
         }
     }
 
