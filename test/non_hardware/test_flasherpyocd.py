@@ -34,27 +34,15 @@ from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVIC
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
 
 
-class PyOCDMapTestCase(unittest.TestCase):
-    def test_supported_boards(self):
-        self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F429ZI'))
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F411RE'))
-
-
 class PyOCDTestCase(unittest.TestCase):
     def test_is_supported(self):
         self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
         self.assertFalse(PyOCDMap.is_supported(''))
         self.assertFalse(PyOCDMap.is_supported(None))
         self.assertFalse(PyOCDMap.is_supported(1))
 
     def test_platform(self):
         self.assertEqual(PyOCDMap.platform('DISCO_L475VG_IOT01A'), 'stm32l475xg')
-        self.assertEqual(PyOCDMap.platform('NUCLEO_L073RZ'), 'stm32l073rz')
-        self.assertEqual(PyOCDMap.platform('NUCLEO_F411RE'), 'stm32f411re')
-        self.assertEqual(PyOCDMap.platform('NUCLEO_F429ZI'), 'stm32f429xi')
         with self.assertRaises(KeyError):
             PyOCDMap.platform('')
 
@@ -73,8 +61,32 @@ class PyOCDTestCase(unittest.TestCase):
         # pylint:disable=protected-access
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
         self.assertEqual(PyOCDMap.pack('NUCLEO_L073RZ'), expected_dir)
+
+    def test_disco_l475vg_iot01a(self):
+        self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
+        self.assertEqual(PyOCDMap.platform('DISCO_L475VG_IOT01A'), 'stm32l475xg')
+        self.assertEqual(PyOCDMap.pack('DISCO_L475VG_IOT01A'), None)
+
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
+    def test_nucleo_l073rz(self, mock_is_file, mock_get_pack_path):
+        self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
+        self.assertEqual(PyOCDMap.platform('NUCLEO_L073RZ'), 'stm32l073rz')
+        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
+        self.assertEqual(PyOCDMap.pack('NUCLEO_L073RZ'), expected_dir)
+
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
+    def test_nucleo_f411re(self, mock_is_file, mock_get_pack_path):
+        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F411RE'))
+        self.assertEqual(PyOCDMap.platform('NUCLEO_F411RE'), 'stm32f411re')
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F4xx_DFP.2.13.0.pack')
         self.assertEqual(PyOCDMap.pack('NUCLEO_F411RE'), expected_dir)
+
+    def test_nucleo_f429zi(self):
+        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F429ZI'))
+        self.assertEqual(PyOCDMap.platform('NUCLEO_F429ZI'), 'stm32f429xi')
+        self.assertEqual(PyOCDMap.pack('NUCLEO_F429ZI'), None)
 
 
 class FlasherPyOCDTestCase(unittest.TestCase):
