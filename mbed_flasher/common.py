@@ -23,7 +23,7 @@ from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 
 
 DEFAULT_RETRY_AMOUNT = 3
-ALLOWED_FILE_EXTENSIONS = (".bin", ".hex", ".act", ".cfg", ".tar")
+ALLOWED_FILE_EXTENSIONS = (".bin", ".hex", ".act", ".cfg", ".tar", ".axf")
 
 
 # pylint: disable=too-few-public-methods
