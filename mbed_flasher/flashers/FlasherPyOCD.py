@@ -16,6 +16,7 @@ limitations under the License.
 
 from os import path
 import logging
+import traceback
 
 from appdirs import user_data_dir
 from pyocd.core.helpers import ConnectHelper
@@ -140,8 +141,8 @@ class FlasherPyOCD(object):
         """
 
         self.logger.debug('Flashing with pyOCD')
-        session = self._get_session(target, FlashError)
         try:
+            session = self._get_session(target, FlashError)
             with session:
                 file_programmer = FileProgrammer(session, chip_erase="sector")
                 file_programmer.program(source)
@@ -149,6 +150,8 @@ class FlasherPyOCD(object):
                 if not no_reset:
                     self.logger.debug('Resetting with pyOCD')
                     session.target.reset()
+        except FlashError:
+            raise
         except ValueError as error:
             msg = "PyOCD flash failed due to invalid argument: {}".format(error)
             self.logger.error(msg)
@@ -156,6 +159,7 @@ class FlasherPyOCD(object):
         except Exception as error:
             msg = "PyOCD flash failed unexpectedly: {}".format(error)
             self.logger.error(msg)
+            self.logger.error(traceback.format_exc())
             raise FlashError(message=msg, return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
 
         return EXIT_CODE_SUCCESS
@@ -167,8 +171,8 @@ class FlasherPyOCD(object):
         :return: 0 if success otherwise raises
         """
         self.logger.debug('Erasing with pyOCD')
-        session = self._get_session(target, EraseError)
         try:
+            session = self._get_session(target, EraseError)
             with session:
                 flash_eraser = FlashEraser(session, FlashEraser.Mode.CHIP)
                 flash_eraser.erase()
@@ -176,9 +180,12 @@ class FlasherPyOCD(object):
                 if not no_reset:
                     self.logger.debug('Resetting with pyOCD')
                     session.target.reset()
+        except EraseError:
+            raise
         except Exception as error:
             msg = "PyOCD erase failed unexpectedly: {}".format(error)
             self.logger.error(msg)
+            self.logger.error(traceback.format_exc())
             raise EraseError(message=msg, return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
 
         return EXIT_CODE_SUCCESS
