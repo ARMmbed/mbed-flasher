@@ -54,13 +54,13 @@ setup(name="mbed-flasher",
           "console_scripts": ["mbedflash=mbed_flasher:mbedflash_main", ],
       },
       dependency_links=[
-          "git+https://github.com/ARMmbed/pyOCD@v0.21.2#egg=pyOCD-0.21.2"
+          "git+https://github.com/ARMmbed/pyOCD@v0.21.3#egg=pyOCD-0.21.3"
       ],
       install_requires=[
           "appdirs>=1.*",
           "mbed-ls==1.7.7",
           "six==1.*",
-          "pyocd @ git+https://github.com/ARMmbed/pyOCD@v0.21.2#egg=pyOCD-0.21.2",
+          "pyocd @ git+https://github.com/ARMmbed/pyOCD@v0.21.3#egg=pyOCD-0.21.3",
           "pyserial==3.*"
       ],
       classifiers=[
