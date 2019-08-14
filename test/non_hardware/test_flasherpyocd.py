@@ -88,6 +88,14 @@ class PyOCDTestCase(unittest.TestCase):
         self.assertEqual(PyOCDMap.platform('NUCLEO_F429ZI'), 'stm32f429xi')
         self.assertEqual(PyOCDMap.pack('NUCLEO_F429ZI'), None)
 
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
+    def test_nucleo_f303re(self, mock_is_file, mock_get_pack_path):
+        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F303RE'))
+        self.assertEqual(PyOCDMap.platform('NUCLEO_F303RE'), 'stm32f303re')
+        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F3xx_DFP.2.1.0.pack')
+        self.assertEqual(PyOCDMap.pack('NUCLEO_F303RE'), expected_dir)
+
 
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
