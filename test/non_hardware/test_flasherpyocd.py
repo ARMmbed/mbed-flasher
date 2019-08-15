@@ -96,6 +96,11 @@ class PyOCDTestCase(unittest.TestCase):
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F3xx_DFP.2.1.0.pack')
         self.assertEqual(PyOCDMap.pack('NUCLEO_F303RE'), expected_dir)
 
+    def test_lpc55s69(self):
+        self.assertTrue(PyOCDMap.is_supported('LPC55S69'))
+        self.assertEqual(PyOCDMap.platform('LPC55S69'), 'lpc55s69')
+        self.assertEqual(PyOCDMap.pack('LPC55S69'), None)
+
 
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
