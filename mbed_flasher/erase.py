@@ -17,24 +17,14 @@ limitations under the License.
 # python 3 compatibility
 # pylint: disable=superfluous-parens
 
-from os.path import join, isfile
-import six
-
 from mbed_flasher.common import Logger, EraseError
+from mbed_flasher.flashers.FlasherMbed import FlasherMbed
+from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD
 from mbed_flasher.mbed_common import MbedCommon
-from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
-from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
-
-ERASE_REMOUNT_TIMEOUT = 10
-ERASE_VERIFICATION_TIMEOUT = 30
-ERASE_DAPLINK_SUPPORT_VERSION = 243
 
 
 # pylint: disable=too-few-public-methods
@@ -45,45 +35,6 @@ class Erase(object):
     def __init__(self):
         logger = Logger('mbed-flasher')
         self.logger = logger.logger
-
-    @staticmethod
-    def _can_be_erased(target):
-        """
-        Check if target can be erased.
-        :param target: target board to be checked
-        :return: None if can be erased, raises otherwise
-        """
-        try:
-            with open(join(target["mount_point"], 'DETAILS.TXT'), 'rb') as new_file:
-                details_txt = new_file.readlines()
-        except (OSError, IOError):
-            raise EraseError(message="No DETAILS.TXT found",
-                             return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
-
-        automation_activated = False
-        daplink_version = 0
-        for line in details_txt:
-            if line.find(b"Automation allowed: 1") != -1:
-                automation_activated = True
-            if line.find(b"Interface Version") != -1:
-                try:
-                    if six.PY2:
-                        daplink_version = int(line.split(' ')[-1])
-                    else:
-                        daplink_version = int(line.decode('utf-8').split(' ')[-1])
-                except (IndexError, ValueError):
-                    raise EraseError(message="Failed to parse DAPLINK version from DETAILS.TXT",
-                                     return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
-
-        if not automation_activated:
-            msg = "Selected device does not have automation activated in DAPLINK"
-            raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
-
-        if daplink_version < ERASE_DAPLINK_SUPPORT_VERSION:
-            msg = "Selected device has Daplink version {}," \
-                  "erasing supported from version {} onwards". \
-                format(daplink_version, ERASE_DAPLINK_SUPPORT_VERSION)
-            raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
 
     def erase(self, target_id=None, no_reset=None, method=None):
         """
@@ -96,15 +47,18 @@ class Erase(object):
             raise EraseError(message="target_id is missing",
                              return_code=EXIT_CODE_TARGET_ID_MISSING)
 
-        self.logger.info("Starting erase for given target_id %s", target_id)
-        self.logger.info("method used for reset: %s", method)
         target_mbed = MbedCommon.refresh_target(target_id)
         if target_mbed is None:
             raise EraseError(message="Did not find target: {}".format(target_id),
                              return_code=EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
+        self.logger.info("Erasing: %s", target_id)
+
         if method == 'simple':
-            erase_fnc = self._erase_board_simple
+            if FlasherPyOCD.can_erase(target_mbed):
+                erase_fnc = FlasherPyOCD(logger=self.logger).erase
+            else:
+                erase_fnc = FlasherMbed(logger=self.logger).erase
         else:
             raise EraseError(message="Selected method {} not supported".format(method),
                              return_code=EXIT_CODE_MISUSE_CMD)
@@ -112,47 +66,3 @@ class Erase(object):
         erase_fnc(target=target_mbed, no_reset=no_reset)
 
         return EXIT_CODE_SUCCESS
-
-    # pylint: disable=too-many-return-statements, too-many-branches
-    def _erase_board_simple(self, target, no_reset):
-        """
-        :param target: target to which perform the erase
-        :param no_reset: erase with/without reset
-        :return: exit code
-        """
-        if "mount_point" not in target:
-            raise EraseError(message="mount point missing from target",
-                             return_code=EXIT_CODE_MOUNT_POINT_MISSING)
-
-        if "serial_port" not in target:
-            raise EraseError(message="serial port missing from target",
-                             return_code=EXIT_CODE_SERIAL_PORT_MISSING)
-
-        Erase._can_be_erased(target)
-
-        # Copy ERASE.ACT to target mount point, this will trigger the erasing.
-        destination = MbedCommon.get_binary_destination(target["mount_point"], "ERASE.ACT")
-        with open(destination, "wb"):
-            pass
-
-        target = MbedCommon.wait_for_file_disappear(target, "ERASE.ACT")
-
-        if not no_reset:
-            Reset(logger=self.logger).reset_board(target["serial_port"])
-
-        self._verify_erase_success(MbedCommon.get_binary_destination(
-            target["mount_point"], "ERASE.ACT"))
-
-        self.logger.info("erase %s completed", target["target_id"])
-        return EXIT_CODE_SUCCESS
-
-    def _verify_erase_success(self, destination):
-        """
-        Verify that ERASE.ACT is not present in the target mount point.
-        :param destination: target mount point
-        :return: None on success, raises otherwise
-        """
-        if isfile(destination):
-            msg = "Erase failed: ERASE.ACT still present in mount point"
-            self.logger.error(msg)
-            raise EraseError(message=msg, return_code=EXIT_CODE_FILE_STILL_PRESENT)

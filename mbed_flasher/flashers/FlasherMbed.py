@@ -24,7 +24,7 @@ import subprocess
 
 import six
 
-from mbed_flasher.common import retry, FlashError
+from mbed_flasher.common import retry, FlashError, EraseError
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.daplink_errors import DAPLINK_ERRORS
 from mbed_flasher.reset import Reset
@@ -36,6 +36,13 @@ from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_TRANSIENT_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_SOFTWARE_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_MISSING
+from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
+
+ERASE_REMOUNT_TIMEOUT = 10
+ERASE_VERIFICATION_TIMEOUT = 30
+ERASE_DAPLINK_SUPPORT_VERSION = 243
 
 
 class FlasherMbed(object):
@@ -67,6 +74,40 @@ class FlasherMbed(object):
             conditions=[EXIT_CODE_OS_ERROR,
                         EXIT_CODE_DAPLINK_TRANSIENT_ERROR,
                         EXIT_CODE_DAPLINK_SOFTWARE_ERROR])
+
+    # pylint: disable=too-many-return-statements, too-many-branches
+    def erase(self, target, no_reset):
+        """
+        :param target: target to which perform the erase
+        :param no_reset: erase with/without reset
+        :return: exit code
+        """
+        self.logger.debug('Erasing with drag and drop')
+        if "mount_point" not in target:
+            raise EraseError(message="mount point missing from target",
+                             return_code=EXIT_CODE_MOUNT_POINT_MISSING)
+
+        if "serial_port" not in target:
+            raise EraseError(message="serial port missing from target",
+                             return_code=EXIT_CODE_SERIAL_PORT_MISSING)
+
+        FlasherMbed._can_be_erased(target)
+
+        # Copy ERASE.ACT to target mount point, this will trigger the erasing.
+        destination = MbedCommon.get_binary_destination(target["mount_point"], "ERASE.ACT")
+        with open(destination, "wb"):
+            pass
+
+        target = MbedCommon.wait_for_file_disappear(target, "ERASE.ACT")
+
+        if not no_reset:
+            Reset(logger=self.logger).reset_board(target["serial_port"])
+
+        self._verify_erase_success(MbedCommon.get_binary_destination(
+            target["mount_point"], "ERASE.ACT"))
+
+        self.logger.info("erase %s completed", target["target_id"])
+        return EXIT_CODE_SUCCESS
 
     def try_drag_and_drop_flash(self, source, target, no_reset):
         """
@@ -198,3 +239,53 @@ class FlasherMbed(object):
 
         self.logger.debug("ready")
         return EXIT_CODE_SUCCESS
+
+    def _verify_erase_success(self, destination):
+        """
+        Verify that ERASE.ACT is not present in the target mount point.
+        :param destination: target mount point
+        :return: None on success, raises otherwise
+        """
+        if isfile(destination):
+            msg = "Erase failed: ERASE.ACT still present in mount point"
+            self.logger.error(msg)
+            raise EraseError(message=msg, return_code=EXIT_CODE_FILE_STILL_PRESENT)
+
+    @staticmethod
+    def _can_be_erased(target):
+        """
+        Check if target can be erased.
+        :param target: target board to be checked
+        :return: None if can be erased, raises otherwise
+        """
+        try:
+            with open(join(target["mount_point"], 'DETAILS.TXT'), 'rb') as new_file:
+                details_txt = new_file.readlines()
+        except (OSError, IOError):
+            raise EraseError(message="No DETAILS.TXT found",
+                             return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
+
+        automation_activated = False
+        daplink_version = 0
+        for line in details_txt:
+            if line.find(b"Automation allowed: 1") != -1:
+                automation_activated = True
+            if line.find(b"Interface Version") != -1:
+                try:
+                    if six.PY2:
+                        daplink_version = int(line.split(' ')[-1])
+                    else:
+                        daplink_version = int(line.decode('utf-8').split(' ')[-1])
+                except (IndexError, ValueError):
+                    raise EraseError(message="Failed to parse DAPLINK version from DETAILS.TXT",
+                                     return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
+
+        if not automation_activated:
+            msg = "Selected device does not have automation activated in DAPLINK"
+            raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
+
+        if daplink_version < ERASE_DAPLINK_SUPPORT_VERSION:
+            msg = "Selected device has Daplink version {}," \
+                  "erasing supported from version {} onwards". \
+                format(daplink_version, ERASE_DAPLINK_SUPPORT_VERSION)
+            raise EraseError(message=msg, return_code=EXIT_CODE_IMPLEMENTATION_MISSING)
