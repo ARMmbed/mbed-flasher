@@ -122,7 +122,7 @@ class FlasherMPS2(FlasherMbed):
             output = self._process.communicate()[0]
 
             for line in output.split("\n"):
-                if destination in line:
+                if destination in line.split():
                     node = line.split()[0]
             command = "pumount %s" % destination
             self._process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
