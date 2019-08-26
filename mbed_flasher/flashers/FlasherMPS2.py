@@ -136,6 +136,7 @@ class FlasherMPS2(FlasherMbed):
             if not no_reset:
                 Reset(logger=self.logger).reset_mps2(target)
                 self.logger.debug("Verifying flash")
+                target = MbedCommon.refresh_target(target["target_id"])
                 return self.verify_flash_success(
                     target, MbedCommon.get_binary_destination(target["mount_point"], source))
             else:
