@@ -15,7 +15,6 @@ properties ([
 
 
 parallelSteps = [:]
-parallelSteps['Rpi3'] = streamStep('Rpi3', 'mbed-flasher-linux')
 parallelSteps['linux-nuc'] = streamStep('linux-nuc', 'oul_ext_lin_nuc')
 parallelSteps['windows'] = streamStep('windows', 'mbed-flasher-windows')
 
