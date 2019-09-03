@@ -64,7 +64,7 @@ class Flash(object):
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         try:
-            if FlasherPyOCD.can_flash(target_mbed, build):
+            if FlasherPyOCD.can_flash(target_mbed):
                 retcode = FlasherPyOCD(logger=self.logger).flash(
                     source=build, target=target_mbed, method=method, no_reset=no_reset)
             else:

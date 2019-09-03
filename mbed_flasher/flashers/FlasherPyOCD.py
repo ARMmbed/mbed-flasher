@@ -120,11 +120,10 @@ class FlasherPyOCD(object):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
 
     @staticmethod
-    def can_flash(target, source):
+    def can_flash(target):
         """
         Function deciding whether the target should be flashed with pyOCD
         :param target: mbedls given target dictionary
-        :param source: application to be flashed
         :return: True if target can be flashed with FlasherPyOCD otherwise False
         """
         return PyOCDMap.is_supported(target["platform_name"])

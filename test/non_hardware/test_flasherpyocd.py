@@ -70,6 +70,7 @@ class PyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
     def test_nucleo_l073rz(self, mock_is_file, mock_get_pack_path):
+        # pylint:disable=protected-access
         self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
         self.assertEqual(PyOCDMap.platform('NUCLEO_L073RZ'), 'stm32l073rz')
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
@@ -78,6 +79,7 @@ class PyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
     def test_nucleo_f411re(self, mock_is_file, mock_get_pack_path):
+        # pylint:disable=protected-access
         self.assertTrue(PyOCDMap.is_supported('NUCLEO_F411RE'))
         self.assertEqual(PyOCDMap.platform('NUCLEO_F411RE'), 'stm32f411re')
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F4xx_DFP.2.13.0.pack')
@@ -91,6 +93,7 @@ class PyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
     def test_nucleo_f303re(self, mock_is_file, mock_get_pack_path):
+        # pylint:disable=protected-access
         self.assertTrue(PyOCDMap.is_supported('NUCLEO_F303RE'))
         self.assertEqual(PyOCDMap.platform('NUCLEO_F303RE'), 'stm32f303re')
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F3xx_DFP.2.1.0.pack')
@@ -116,25 +119,25 @@ class FlasherPyOCDTestCase(unittest.TestCase):
 
     def test_can_flash_does_not_care_about_extension(self):
         target = {'platform_name': 'DISCO_L475VG_IOT01A'}
-        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.hex'))
-        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.bin'))
-        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.elf'))
-        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd'))
+        self.assertTrue(FlasherPyOCD.can_flash(target))
+        self.assertTrue(FlasherPyOCD.can_flash(target))
+        self.assertTrue(FlasherPyOCD.can_flash(target))
+        self.assertTrue(FlasherPyOCD.can_flash(target))
 
     def test_can_flash_allows_only_supported_platforms(self):
         target = {'platform_name': 'DISCO_L475VG_IOT01A'}
-        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.hex'))
+        self.assertTrue(FlasherPyOCD.can_flash(target))
         target = {'platform_name': 'NUCLEO_L073RZ'}
-        self.assertTrue(FlasherPyOCD.can_flash(target, 'asd.hex'))
+        self.assertTrue(FlasherPyOCD.can_flash(target))
         target = {'platform_name': 'K64F'}
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'asd.hex'))
+        self.assertFalse(FlasherPyOCD.can_flash(target))
         target = {'platform_name': ''}
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'asd.hex'))
+        self.assertFalse(FlasherPyOCD.can_flash(target))
         target = {'platform_name': None}
-        self.assertFalse(FlasherPyOCD.can_flash(target, 'asd.hex'))
+        self.assertFalse(FlasherPyOCD.can_flash(target))
         target = {}
         with self.assertRaises(KeyError):
-            FlasherPyOCD.can_flash(target, 'asd.hex')
+            FlasherPyOCD.can_flash(target)
 
     def test_can_erase_allows_only_supported_platforms(self):
         target = {'platform_name': 'DISCO_L475VG_IOT01A'}
