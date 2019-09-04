@@ -54,10 +54,6 @@ class PyOCDMap(object):
         "NUCLEO_F303RE": {
             "platform": "stm32f303re",
             "pack": "Keil.STM32F3xx_DFP.2.1.0.pack"
-        },
-        "LPC55S69": {
-            "platform": "lpc55s69",
-            "pack": None
         }
     }
 
