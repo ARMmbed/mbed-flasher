@@ -19,6 +19,8 @@ limitations under the License.
 import os
 import subprocess
 import unittest
+
+from test.hardware.test_helper import Helper
 import mbed_lstools
 
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -41,6 +43,7 @@ class ApiTests(unittest.TestCase):
         self.mbeds = ApiTests.mbeds.list_mbeds()
         self.bin_hello_world = os.path.join('test', 'helloworld.bin')
         self.bin_corrupted = os.path.join('test', 'corrupted.bin')
+        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).reset()
 
     def test_flash_success_no_reset(self):
         first_or_default = self.find_platform('K64F')

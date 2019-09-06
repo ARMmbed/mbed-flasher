@@ -15,7 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import os
+import platform
+
 import mbed_lstools
+import serial
 
 
 # pylint: disable=too-few-public-methods
@@ -42,6 +45,22 @@ class Helper(object):
                     for bad_file in os.listdir(mount_point):
                         if os.path.isfile(bad_file) and bad_file not in self.allowed_files:
                             os.remove(os.path.join(mount_point, bad_file))
+
+    def reset(self):
+        """
+        Reset all boards found of specific platform
+        :return:
+        """
+        if self.platform_name:
+            targets = self._get_targets()
+
+            for target in targets:
+                serial_port = target.get('serial_port')
+                port = serial.Serial(serial_port)
+                if platform.system() == "Windows":
+                    port.send_break(1)
+                else:
+                    port.send_break(1000)
 
     def _get_targets(self):
         """

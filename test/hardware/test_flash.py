@@ -50,7 +50,9 @@ class FlashTestCaseHW(unittest.TestCase):
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
-        Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
+        helper = Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM'])
+        helper.clear()
+        helper.reset()
 
     def tearDown(self):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
