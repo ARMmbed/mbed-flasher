@@ -178,7 +178,7 @@ class FlasherCLI(object):
                                   help='Target to be flashed',
                                   default=None, metavar='TARGET_ID')
         parser_flash.add_argument('--no-reset',
-                                  help='Do not reset device before or after flashing',
+                                  help='Do not drive any external reset to the device',
                                   default=None, dest='no_reset', action='store_true')
         parser_flash.add_argument('method', help='<simple>, used for flashing',
                                   metavar='method',
