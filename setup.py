@@ -58,7 +58,7 @@ setup(name="mbed-flasher",
       ],
       install_requires=[
           "appdirs>=1.*",
-          "mbed-ls==1.7.7",
+          "mbed-ls==1.7.8",
           "six==1.*",
           "pyocd @ git+https://github.com/ARMmbed/pyOCD@v0.21.3#egg=pyOCD-0.21.3",
           "pyserial==3.*"
