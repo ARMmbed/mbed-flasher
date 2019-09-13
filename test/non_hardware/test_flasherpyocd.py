@@ -99,6 +99,11 @@ class PyOCDTestCase(unittest.TestCase):
         expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F3xx_DFP.2.1.0.pack')
         self.assertEqual(PyOCDMap.pack('NUCLEO_F303RE'), expected_dir)
 
+    def test_nrf52840_dk(self):
+        self.assertTrue(PyOCDMap.is_supported('NRF52840_DK'))
+        self.assertEqual(PyOCDMap.platform('NRF52840_DK'), 'nrf52840')
+        self.assertEqual(PyOCDMap.pack('NRF52840_DK'), None)
+
 
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
