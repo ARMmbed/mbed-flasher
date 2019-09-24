@@ -58,6 +58,10 @@ class PyOCDMap(object):
         "NRF52840_DK": {
             "platform": "nrf52840",
             "pack": None
+        },
+        "CY8CPROTO_062_4343W": {
+            "platform": "cy8c6xxA",
+            "pack": None
         }
     }
 

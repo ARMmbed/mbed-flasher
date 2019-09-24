@@ -60,7 +60,7 @@ setup(name="mbed-flasher",
           "appdirs>=1.*",
           "mbed-ls==1.7.8",
           "six==1.*",
-          "pyocd @ git+https://github.com/ARMmbed/pyOCD@v0.21.3#egg=pyOCD-0.21.3",
+          "pyocd @ git+https://github.com/ARMmbed/pyOCD@v0.22.1#egg=pyOCD-0.22.1",
           "pyserial==3.*"
       ],
       classifiers=[

@@ -104,6 +104,11 @@ class PyOCDTestCase(unittest.TestCase):
         self.assertEqual(PyOCDMap.platform('NRF52840_DK'), 'nrf52840')
         self.assertEqual(PyOCDMap.pack('NRF52840_DK'), None)
 
+    def test_cy8cproto_062_4343w(self):
+        self.assertTrue(PyOCDMap.is_supported('CY8CPROTO_062_4343W'))
+        self.assertEqual(PyOCDMap.platform('CY8CPROTO_062_4343W'), 'cy8c6xxA')
+        self.assertEqual(PyOCDMap.pack('CY8CPROTO_062_4343W'), None)
+
 
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
