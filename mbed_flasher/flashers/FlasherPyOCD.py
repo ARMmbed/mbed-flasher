@@ -34,34 +34,48 @@ class PyOCDMap(object):
     """
     Provide list of boards and assisting methods to support PyOCD usage.
     """
+    CONNECT_MODE_UNDER_RESET = "under-reset"
+    CONNECT_MODE_ATTACH = "attach"
     SUPPORTED_PLATFORMS = {
         "DISCO_L475VG_IOT01A": {
             "platform": "stm32l475xg",
-            "pack": None
+            "pack": None,
+            "connect_mode": CONNECT_MODE_UNDER_RESET
         },
         "NUCLEO_L073RZ": {
             "platform": "stm32l073rz",
-            "pack": "Keil.STM32L0xx_DFP.2.0.1.pack"
+            "pack": "Keil.STM32L0xx_DFP.2.0.1.pack",
+            "connect_mode": CONNECT_MODE_UNDER_RESET
         },
         "NUCLEO_F411RE": {
             "platform": "stm32f411re",
-            "pack": "Keil.STM32F4xx_DFP.2.13.0.pack"
+            "pack": "Keil.STM32F4xx_DFP.2.13.0.pack",
+            "connect_mode": CONNECT_MODE_UNDER_RESET
         },
         "NUCLEO_F429ZI": {
             "platform": "stm32f429xi",
-            "pack": None
+            "pack": None,
+            "connect_mode": CONNECT_MODE_UNDER_RESET
         },
         "NUCLEO_F303RE": {
             "platform": "stm32f303re",
-            "pack": "Keil.STM32F3xx_DFP.2.1.0.pack"
+            "pack": "Keil.STM32F3xx_DFP.2.1.0.pack",
+            "connect_mode": CONNECT_MODE_UNDER_RESET
         },
         "NRF52840_DK": {
             "platform": "nrf52840",
-            "pack": None
+            "pack": None,
+            "connect_mode": CONNECT_MODE_UNDER_RESET
         },
         "CY8CPROTO_062_4343W": {
             "platform": "cy8c6xxA",
-            "pack": None
+            "pack": None,
+            "connect_mode": CONNECT_MODE_UNDER_RESET
+        },
+        "LPC55S69": {
+            "platform": "lpc55s69",
+            "pack": None,
+            "connect_mode": CONNECT_MODE_ATTACH
         }
     }
 
@@ -82,6 +96,15 @@ class PyOCDMap(object):
         :return: corresponding pyOCD platform or KeyError if doesn't exist
         """
         return PyOCDMap.SUPPORTED_PLATFORMS[platform].get("platform")
+
+    @staticmethod
+    def connect_mode(platform):
+        """
+        Return connect mode which pyOCD is to use.
+        :param platform: mbedls board platform
+        :return: platform specific connect_mode
+        """
+        return PyOCDMap.SUPPORTED_PLATFORMS[platform].get("connect_mode")
 
     @staticmethod
     def _get_pack_path():
@@ -213,6 +236,7 @@ class FlasherPyOCD(object):
             blocking=False,
             target_override=PyOCDMap.platform(target['platform_name']),
             halt_on_connect=True,
+            connect_mode=PyOCDMap.connect_mode(target['platform_name']),
             resume_on_disconnect=False,
             hide_programming_progress=True,
             pack=PyOCDMap.pack(target['platform_name']))
