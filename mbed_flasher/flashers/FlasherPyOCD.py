@@ -19,6 +19,7 @@ import logging
 import traceback
 
 from appdirs import user_data_dir
+from intelhex import IntelHexError
 from pyocd.core.helpers import ConnectHelper
 from pyocd.flash.loader import FileProgrammer, FlashEraser
 
@@ -163,6 +164,10 @@ class FlasherPyOCD(object):
                     session.target.reset()
         except FlashError:
             raise
+        except IntelHexError as error:
+            msg = "PyOCD flash failed due to invalid hex file: {}".format(error)
+            self.logger.error(msg)
+            raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
         except ValueError as error:
             msg = "PyOCD flash failed due to invalid argument: {}".format(error)
             self.logger.error(msg)

@@ -143,6 +143,26 @@ class FlashTestCaseHW(unittest.TestCase):
 
         self.assertEqual(context.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
 
+    # NUCLEO_F429ZI is flashed with PyOCD
+    @mock.patch('sys.stdout', new_callable=StringIO)
+    @unittest.skipIf(platform.system() != 'Linux', 'require linux')
+    def test_run_fail_binary_pyocd(self, mock_stdout):
+        mbeds = mbed_lstools.create()
+        targets = mbeds.list_mbeds()
+        target_id = None
+        fail_bin_path = os.path.join('test', 'corrupt_app_NUCLEO_F429ZI.hex')
+        for target in targets:
+            if target['platform_name'] == 'NUCLEO_F429ZI':
+                if 'target_id' in target:
+                    target_id = target['target_id']
+                    break
+
+        with self.assertRaises(FlashError) as context:
+            flasher = Flash()
+            flasher.flash(build=fail_bin_path, target_id=target_id)
+
+        self.assertEqual(context.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+
 
 if __name__ == '__main__':
     unittest.main()

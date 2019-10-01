@@ -17,6 +17,7 @@ limitations under the License.
 # pylint:disable=missing-docstring
 
 import os
+import platform
 import subprocess
 import unittest
 
@@ -43,6 +44,7 @@ class ApiTests(unittest.TestCase):
         self.mbeds = ApiTests.mbeds.list_mbeds()
         self.bin_hello_world = os.path.join('test', 'helloworld.bin')
         self.bin_corrupted = os.path.join('test', 'corrupted.bin')
+        self.nucleo_f429zi_invalid = os.path.join('test', 'corrupt_app_NUCLEO_F429ZI.hex')
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).reset()
 
     def test_flash_success_no_reset(self):
@@ -64,4 +66,12 @@ class ApiTests(unittest.TestCase):
         filename = self.bin_corrupted
         target_id = first_or_default['target_id']
         parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]
+        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_DAPLINK_USER_ERROR)
+
+    # PyOCD is used to flash NUCLEO_F429ZI
+    @unittest.skipIf(platform.system() != 'Linux', 'require linux')
+    def test_flash_user_error_pyocd(self):
+        first_or_default = self.find_platform('NUCLEO_F429ZI')
+        target_id = first_or_default['target_id']
+        parameters = ['flash', '--no-reset', '-i', self.nucleo_f429zi_invalid, '--tid', target_id]
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_DAPLINK_USER_ERROR)
