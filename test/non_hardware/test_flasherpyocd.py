@@ -28,8 +28,8 @@ from pyocd.flash.loader import FileProgrammer, FlashEraser
 
 from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD, PyOCDMap
 from mbed_flasher.common import FlashError, EraseError
-from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
-from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
 
@@ -193,7 +193,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         with self.assertRaises(FlashError) as cm:
             FlasherPyOCD().flash('', '', '', True)
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_USER_ERROR)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=TypeError)
@@ -201,7 +201,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         with self.assertRaises(FlashError) as cm:
             FlasherPyOCD().flash('', '', '', True)
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_UNHANDLED_EXCEPTION)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.ConnectHelper', autospec=ConnectHelper)
     def test_erase_session_init_fails(self, mock_connect_helper):
@@ -236,7 +236,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         with self.assertRaises(EraseError) as cm:
             FlasherPyOCD().erase('', True)
 
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_UNHANDLED_EXCEPTION)
+        self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
 
 if __name__ == '__main__':

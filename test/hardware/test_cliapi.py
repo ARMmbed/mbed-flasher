@@ -26,6 +26,7 @@ import mbed_lstools
 
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 
 
 class ApiTests(unittest.TestCase):
@@ -74,4 +75,4 @@ class ApiTests(unittest.TestCase):
         first_or_default = self.find_platform('NUCLEO_F429ZI')
         target_id = first_or_default['target_id']
         parameters = ['flash', '--no-reset', '-i', self.nucleo_f429zi_invalid, '--tid', target_id]
-        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_DAPLINK_USER_ERROR)
+        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_PYOCD_USER_ERROR)

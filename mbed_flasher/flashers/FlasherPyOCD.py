@@ -25,10 +25,10 @@ from pyocd.flash.loader import FileProgrammer, FlashEraser
 
 from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION
 
 
 class PyOCDMap(object):
@@ -167,16 +167,16 @@ class FlasherPyOCD(object):
         except IntelHexError as error:
             msg = "PyOCD flash failed due to invalid hex file: {}".format(error)
             self.logger.error(msg)
-            raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
+            raise FlashError(message=msg, return_code=EXIT_CODE_PYOCD_USER_ERROR)
         except ValueError as error:
             msg = "PyOCD flash failed due to invalid argument: {}".format(error)
             self.logger.error(msg)
-            raise FlashError(message=msg, return_code=EXIT_CODE_DAPLINK_USER_ERROR)
+            raise FlashError(message=msg, return_code=EXIT_CODE_PYOCD_USER_ERROR)
         except Exception as error:
             msg = "PyOCD flash failed unexpectedly: {}".format(error)
             self.logger.error(msg)
             self.logger.error(traceback.format_exc())
-            raise FlashError(message=msg, return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
+            raise FlashError(message=msg, return_code=EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
         return EXIT_CODE_SUCCESS
 
@@ -202,7 +202,7 @@ class FlasherPyOCD(object):
             msg = "PyOCD erase failed unexpectedly: {}".format(error)
             self.logger.error(msg)
             self.logger.error(traceback.format_exc())
-            raise EraseError(message=msg, return_code=EXIT_CODE_UNHANDLED_EXCEPTION)
+            raise EraseError(message=msg, return_code=EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
         return EXIT_CODE_SUCCESS
 

@@ -24,7 +24,7 @@ import subprocess
 
 import six
 
-from mbed_flasher.common import retry, FlashError, EraseError
+from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.daplink_errors import DAPLINK_ERRORS
 from mbed_flasher.reset import Reset
@@ -34,8 +34,6 @@ from mbed_flasher.return_codes import EXIT_CODE_FILE_COULD_NOT_BE_READ
 from mbed_flasher.return_codes import EXIT_CODE_OS_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
-from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_TRANSIENT_ERROR
-from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_SOFTWARE_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_MOUNT_POINT_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_SERIAL_PORT_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
@@ -50,7 +48,6 @@ class FlasherMbed(object):
     Implementation class of mbed-flasher flash operation
     """
     name = "mbed"
-    DRAG_AND_DROP_FLASH_RETRIES = 5
 
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
@@ -66,14 +63,7 @@ class FlasherMbed(object):
         if not isinstance(source, six.string_types):
             return
 
-        return retry(
-            logger=self.logger,
-            func=self.try_drag_and_drop_flash,
-            func_args=(source, target, no_reset),
-            retries=FlasherMbed.DRAG_AND_DROP_FLASH_RETRIES,
-            conditions=[EXIT_CODE_OS_ERROR,
-                        EXIT_CODE_DAPLINK_TRANSIENT_ERROR,
-                        EXIT_CODE_DAPLINK_SOFTWARE_ERROR])
+        return self.try_drag_and_drop_flash(source, target, no_reset)
 
     # pylint: disable=too-many-return-statements, too-many-branches
     def erase(self, target, no_reset):

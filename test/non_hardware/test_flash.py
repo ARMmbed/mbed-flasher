@@ -30,7 +30,6 @@ from mbed_flasher.common import FlashError
 from mbed_flasher.flash import Flash
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
-from mbed_flasher.return_codes import EXIT_CODE_OS_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
 from mbed_flasher.return_codes import EXIT_CODE_FLASH_FAILED
@@ -134,103 +133,6 @@ class FlashTestCase(unittest.TestCase):
         flasher.copy_file("empty_file", "target")
         os.remove("empty_file")
         mock_copy_file.assert_called_once_with(b"", "target")
-
-
-class FlasherMbedRetry(unittest.TestCase):
-    def setUp(self):
-        logging.disable(logging.CRITICAL)
-
-    @mock.patch("time.sleep", return_value=None)
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
-    @mock.patch('mbed_flasher.reset.Reset.reset_board')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    def test_retries_on_io_error(
-            self, mock_copy_file, mock_reset_board, mock_refresh_target, mock_sleep):
-        target = {"target_id": "a", "mount_point": ""}
-        mock_copy_file.side_effect = IOError("")
-        mock_reset_board.return_value = True
-        mock_refresh_target.return_value = target
-        flasher = FlasherMbed()
-
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
-        self.assertEqual(mock_copy_file.call_count, 5)
-
-    @mock.patch("time.sleep", return_value=None)
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
-    @mock.patch('mbed_flasher.reset.Reset.reset_board')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    def test_retries_on_os_error(
-            self, mock_copy_file, mock_reset_board, mock_refresh_target, mock_sleep):
-        target = {"target_id": "a", "mount_point": ""}
-        mock_copy_file.side_effect = OSError("")
-        mock_reset_board.return_value = True
-        mock_refresh_target.return_value = target
-        flasher = FlasherMbed()
-
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_OS_ERROR)
-        self.assertEqual(mock_copy_file.call_count, 5)
-
-    @mock.patch("time.sleep", return_value=None)
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
-    @mock.patch('mbed_flasher.reset.Reset.reset_board')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    def test_retries_on_daplink_sw_error(
-            self, mock_copy_file, mock_reset_board, mock_refresh_target, mock_sleep):
-        target = {"target_id": "a", "mount_point": ""}
-        mock_copy_file.side_effect = FlashError(message="",
-                                                return_code=EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
-        mock_reset_board.return_value = True
-        mock_refresh_target.return_value = target
-        flasher = FlasherMbed()
-
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_SOFTWARE_ERROR)
-        self.assertEqual(mock_copy_file.call_count, 5)
-
-    @mock.patch("time.sleep", return_value=None)
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
-    @mock.patch('mbed_flasher.reset.Reset.reset_board')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    def test_retries_on_daplink_transient_error(
-            self, mock_copy_file, mock_reset_board, mock_refresh_target, mock_sleep):
-        target = {"target_id": "a", "mount_point": ""}
-        mock_copy_file.side_effect = FlashError(message="",
-                                                return_code=EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
-        mock_reset_board.return_value = True
-        mock_refresh_target.return_value = target
-        flasher = FlasherMbed()
-
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_TRANSIENT_ERROR)
-        self.assertEqual(mock_copy_file.call_count, 5)
-
-    @mock.patch('mbed_flasher.mbed_common.MbedCommon.refresh_target')
-    @mock.patch('mbed_flasher.reset.Reset.reset_board')
-    @mock.patch('mbed_flasher.flashers.FlasherMbed.FlasherMbed.copy_file')
-    def test_does_not_retry_on_daplink_user_error(
-            self, mock_copy_file, mock_reset_board, mock_refresh_target):
-        target = {"target_id": "a", "mount_point": ""}
-        mock_copy_file.side_effect = FlashError(message="",
-                                                return_code=EXIT_CODE_DAPLINK_USER_ERROR)
-        mock_reset_board.return_value = True
-        mock_refresh_target.return_value = target
-        flasher = FlasherMbed()
-
-        with self.assertRaises(FlashError) as cm:
-            flasher.flash(source="", target=target, method="simple", no_reset=False)
-
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
-        self.assertEqual(mock_copy_file.call_count, 1)
 
 
 class FlashVerify(unittest.TestCase):

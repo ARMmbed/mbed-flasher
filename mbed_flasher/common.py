@@ -16,13 +16,11 @@ limitations under the License.
 
 import logging
 import os
-import time
 
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 
 
-DEFAULT_RETRY_AMOUNT = 3
 ALLOWED_FILE_EXTENSIONS = (".bin", ".hex", ".act", ".cfg")
 
 
@@ -41,36 +39,6 @@ class Logger(object):
 
     def __call__(self, name):
         return self.logger
-
-
-def retry(logger, func, func_args, retries=DEFAULT_RETRY_AMOUNT, conditions=None):
-    """
-    Generic retry component.
-    :param logger: logger to use
-    :param func: function to run and possibly retry
-    :param func_args: args for func
-    :param retries: max amount of retires
-    :param conditions: conditions on when to retry
-    :return: latest return code
-    """
-    if conditions is None:
-        conditions = []
-
-    for index in range(retries):
-        try:
-            return func(*func_args)
-        except FlashError as error:
-            if error.return_code not in conditions:
-                raise error
-
-            index_from_one = index + 1
-            if index_from_one == retries:
-                raise error
-
-            retry_interval = index_from_one ** 2
-            logger.info("Starting retry round {} after {} sleep"
-                        .format(index_from_one, retry_interval))
-            time.sleep(retry_interval)
 
 
 def check_is_file_flashable(logger, file_path):

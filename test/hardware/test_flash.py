@@ -40,6 +40,7 @@ from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
 from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
+from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 
 
 class FlashTestCaseHW(unittest.TestCase):
@@ -161,7 +162,7 @@ class FlashTestCaseHW(unittest.TestCase):
             flasher = Flash()
             flasher.flash(build=fail_bin_path, target_id=target_id)
 
-        self.assertEqual(context.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+        self.assertEqual(context.exception.return_code, EXIT_CODE_PYOCD_USER_ERROR)
 
 
 if __name__ == '__main__':
