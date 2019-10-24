@@ -39,7 +39,6 @@ from mbed_flasher.flashers.FlasherMbed import FlasherMbed
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_FILE_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_FILE_STILL_PRESENT
-from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 
 
@@ -114,35 +113,26 @@ class FlashTestCaseHW(unittest.TestCase):
 
         self.assertEqual(context.exception.return_code, EXIT_CODE_FILE_STILL_PRESENT)
 
+    # PyOCD does not have verification for .bin files.
+    # Success is expected as K64F moves to PyOCD.
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_fail_binary(self, mock_stdout):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
         target_id = None
-        mount_point = None
         fail_bin_path = os.path.join('test', 'fail.bin')
         for target in targets:
             if target['platform_name'] == 'K64F':
                 if 'target_id' in target and 'mount_point' in target:
                     target_id = target['target_id']
-                    mount_point = target['mount_point']
                     break
 
         with open(fail_bin_path, 'w') as new_file:
             new_file.write("0000000000000000000000000000000000")
 
-        with self.assertRaises(FlashError) as context:
-            flasher = Flash()
-            flasher.flash(build=fail_bin_path, target_id=target_id, method='simple')
-
-        if platform.system() == 'Windows':
-            os.system('del /F %s' % os.path.join(mount_point, 'FAIL.TXT'))
-            os.system('del %s' % os.path.join(os.getcwd(), fail_bin_path))
-        else:
-            os.system('rm -f %s' % os.path.join(mount_point, 'FAIL.TXT'))
-            os.system('rm %s' % os.path.join(os.getcwd(), fail_bin_path))
-
-        self.assertEqual(context.exception.return_code, EXIT_CODE_DAPLINK_USER_ERROR)
+        flasher = Flash()
+        return_code = flasher.flash(build=fail_bin_path, target_id=target_id, method='simple')
+        self.assertEqual(return_code, EXIT_CODE_SUCCESS)
 
     # NUCLEO_F429ZI is flashed with PyOCD
     @mock.patch('sys.stdout', new_callable=StringIO)

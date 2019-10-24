@@ -109,6 +109,11 @@ class PyOCDTestCase(unittest.TestCase):
         self.assertEqual(PyOCDMap.platform('CY8CPROTO_062_4343W'), 'cy8c6xxA')
         self.assertEqual(PyOCDMap.pack('CY8CPROTO_062_4343W'), None)
 
+    def test_k64f(self):
+        self.assertTrue(PyOCDMap.is_supported('K64F'))
+        self.assertEqual(PyOCDMap.platform('K64F'), 'k64f')
+        self.assertEqual(PyOCDMap.pack('K64F'), None)
+
 
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
@@ -134,7 +139,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         self.assertTrue(FlasherPyOCD.can_flash(target))
         target = {'platform_name': 'NUCLEO_L073RZ'}
         self.assertTrue(FlasherPyOCD.can_flash(target))
-        target = {'platform_name': 'K64F'}
+        target = {'platform_name': 'DRAG-AND-DROP-PLATFORM'}
         self.assertFalse(FlasherPyOCD.can_flash(target))
         target = {'platform_name': ''}
         self.assertFalse(FlasherPyOCD.can_flash(target))
@@ -149,7 +154,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         self.assertTrue(FlasherPyOCD.can_erase(target))
         target = {'platform_name': 'NUCLEO_L073RZ'}
         self.assertTrue(FlasherPyOCD.can_erase(target))
-        target = {'platform_name': 'K64F'}
+        target = {'platform_name': 'DRAG-AND-DROP-PLATFORM'}
         self.assertFalse(FlasherPyOCD.can_erase(target))
         target = {'platform_name': ''}
         self.assertFalse(FlasherPyOCD.can_erase(target))

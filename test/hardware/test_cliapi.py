@@ -25,7 +25,6 @@ from test.hardware.test_helper import Helper
 import mbed_lstools
 
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
-from mbed_flasher.return_codes import EXIT_CODE_DAPLINK_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 
 
@@ -62,12 +61,14 @@ class ApiTests(unittest.TestCase):
         parameters = ['flash', '-i', filename, '--tid', target_id]
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
 
+    # PyOCD does not have verification for .bin files.
+    # Success is expected as K64F moves to PyOCD.
     def test_flash_user_error_k64f(self):
         first_or_default = self.find_platform('K64F')
         filename = self.bin_corrupted
         target_id = first_or_default['target_id']
         parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]
-        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_DAPLINK_USER_ERROR)
+        self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
 
     # PyOCD is used to flash NUCLEO_F429ZI
     @unittest.skipIf(platform.system() != 'Linux', 'require linux')

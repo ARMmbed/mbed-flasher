@@ -58,7 +58,7 @@ class EraseTestCase(unittest.TestCase):
     # pylint: disable=invalid-name
     def test_erase_failed_non_supported_devices(self, _, refresh_target):
         device = {"target_id": "123",
-                  "platform_name": "K64F",
+                  "platform_name": "DRAG-AND-DROP-PLATFORM",
                   "mount_point": "/mnt/k64f",
                   "serial_port": "/dev/uart"}
         refresh_target.return_value = device
@@ -74,7 +74,7 @@ class EraseTestCase(unittest.TestCase):
     # pylint: disable=invalid-name
     def test_erase_failed_mount_point_missing(self, _, refresh_target):
         device = {"target_id": "123",
-                  "platform_name": "K64F",
+                  "platform_name": "DRAG-AND-DROP-PLATFORM",
                   "serial_port": "/dev/uart"}
         refresh_target.return_value = device
         eraser = Erase()
@@ -89,7 +89,7 @@ class EraseTestCase(unittest.TestCase):
     # pylint: disable=invalid-name
     def test_erase_failed_serial_port_missing(self, _, refresh_target):
         device = {"target_id": "123",
-                  "platform_name": "K64F",
+                  "platform_name": "DRAG-AND-DROP-PLATFORM",
                   "mount_point": "/mnt/k64f"}
         refresh_target.return_value = device
         eraser = Erase()

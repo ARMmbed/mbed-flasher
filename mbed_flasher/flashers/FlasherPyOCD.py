@@ -36,6 +36,10 @@ class PyOCDMap(object):
     Provide list of boards and assisting methods to support PyOCD usage.
     """
     SUPPORTED_PLATFORMS = {
+        "K64F": {
+            "platform": "k64f",
+            "pack": None
+        },
         "DISCO_L475VG_IOT01A": {
             "platform": "stm32l475xg",
             "pack": None
