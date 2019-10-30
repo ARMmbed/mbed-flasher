@@ -114,6 +114,11 @@ class PyOCDTestCase(unittest.TestCase):
         self.assertEqual(PyOCDMap.platform('K64F'), 'k64f')
         self.assertEqual(PyOCDMap.pack('K64F'), None)
 
+    def test_cy8cproto_064_sb(self):
+        self.assertTrue(PyOCDMap.is_supported('CY8CPROTO_064_SB'))
+        self.assertEqual(PyOCDMap.platform('CY8CPROTO_064_SB'), 'cy8c64xx_cm4')
+        self.assertEqual(PyOCDMap.pack('CY8CPROTO_064_SB'), None)
+
 
 class FlasherPyOCDTestCase(unittest.TestCase):
     def setUp(self):
