@@ -71,6 +71,10 @@ class PyOCDMap(object):
         "CY8CPROTO_064_SB": {
             "platform": "cy8c64xx_cm4",
             "pack": None
+        },
+        "K66F": {
+            "platform": "k66f18",
+            "pack": None
         }
     }
 
