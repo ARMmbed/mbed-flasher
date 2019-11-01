@@ -93,6 +93,20 @@ class MainTestCase(unittest.TestCase):
         value = mock_stderr.getvalue()
         self.assertTrue(r_match.match(value))
 
+    def test_main_sets_verbosity(self):
+        # pylint: disable=no-member
+        fcli = FlasherCLI(["-v", "flash", "-i", "None", "--tid", "target"])
+        self.assertEqual(fcli.args.verbose, 1)
+        fcli.console_handler.setLevel.assert_called_with("WARNING")
+
+        fcli = FlasherCLI(["-vv", "flash", "-i", "None", "--tid", "target"])
+        self.assertEqual(fcli.args.verbose, 2)
+        fcli.console_handler.setLevel.assert_called_with("INFO")
+
+        fcli = FlasherCLI(["-vvv", "flash", "-i", "None", "--tid", "target"])
+        self.assertEqual(fcli.args.verbose, 3)
+        fcli.console_handler.setLevel.assert_called_with("DEBUG")
+
     def test_file_does_not_exist(self):
         fcli = FlasherCLI(["flash", "-i", "None", "--tid", "target"])
         with self.assertRaises(FlashError) as cm:

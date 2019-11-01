@@ -21,9 +21,6 @@ import sys
 import argparse
 import logging
 import logging.handlers
-import os
-from os.path import isdir, join
-import time
 
 from mbed_flasher.common import FlashError, EraseError, ResetError
 from mbed_flasher.flash import Flash
@@ -31,8 +28,6 @@ from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_UNHANDLED_EXCEPTION
-
-LOGS_TTL = 172800  # 2 days, when log file is older it will be deleted
 
 
 def get_subparser(subparsers, name, func, **kwargs):
@@ -79,52 +74,19 @@ class FlasherCLI(object):
     def __init__(self, args=None):
         self.logger = logging.getLogger('mbed-flasher')
         self.logger.handlers = []
-        self.logs_folder = join(os.getcwd(), 'logs')
-        if not isdir(self.logs_folder):
-            os.mkdir(self.logs_folder)
-        log_file = 'logs/%s_mbed-flasher.txt' % time.strftime("%Y%m%d-%H%M%S")
-        self.log_file_handler = logging.handlers.RotatingFileHandler(log_file)
-        self.log_file_handler.setFormatter(
-            logging.Formatter(
-                '%(asctime)s [%(levelname)s]'
-                '(%(name)s:%(funcName)s:%(lineno)d):%(thread)d: %(message)s'))
-        self.log_file_handler.setLevel(logging.DEBUG)
-        self.logger.addHandler(self.log_file_handler)
-        # also log to the console at a level determined by the --verbose flag
+        # Log to the console at a level determined by the --verbose flag
         self.console_handler = logging.StreamHandler()  # sys.stderr
-        # set later by set_log_level_from_verbose() in interactive sessions
+        # set correct level later by set_log_level_from_verbose() in interactive sessions
         self.console_handler.setLevel(logging.CRITICAL)
         self.console_handler.setFormatter(
             logging.Formatter('[%(levelname)s](%(name)s): %(message)s'))
         self.logger.addHandler(self.console_handler)
-        self.logger.info('Writing logs to file %s', log_file)
         self.logger.setLevel(logging.DEBUG)
-
+        self.parser = None
         if args is None:
             args = sys.argv[1:]
         self.args = self.argparser_setup(args)
         self.set_log_level_from_verbose()
-
-        # always write everything to the rotating log files
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
-        files_to_be_removed = []
-        old_logs = time.time()-LOGS_TTL
-        for root, _, files in os.walk('logs/'):
-            for name in files:
-                if str(name).find('_mbed-flasher.txt') != -1:
-                    if old_logs > time.mktime(
-                            time.strptime(str(name).split('_')[0], "%Y%m%d-%H%M%S")):
-                        files_to_be_removed.append(str(os.path.join(root, name)))
-                elif str(name).find('mbed-flasher.log') != -1:
-                    files_to_be_removed.append(str(os.path.join(root, name)))
-
-        if files_to_be_removed:
-            for filename in files_to_be_removed:
-                try:
-                    os.remove(filename)
-                except OSError:
-                    self.logger.exception("Failed to remove log file: %s", filename)
 
     def execute(self):
         """
