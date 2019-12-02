@@ -24,6 +24,7 @@ from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_KEYBOARD_INTERRUPT
 from mbed_flasher.return_codes import EXIT_CODE_SYSTEM_INTERRUPT
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
+from mbed_flasher.return_codes import EXIT_CODE_MISUSE_CMD
 
 
 # pylint: disable=too-few-public-methods
@@ -33,19 +34,25 @@ class Flash(object):
     _flashers = []
     supported_targets = {}
 
+    MSD_METHOD = 'msd'
+    PYOCD_METHOD = 'pyocd'
+
     def __init__(self, logger=None):
         if logger is None:
             logger = Logger('mbed-flasher')
             logger = logger.logger
         self.logger = logger
 
-    # pylint: disable=too-many-return-statements
-    def flash(self, build, target_id=None, method='simple', no_reset=None):
+    # pylint: disable=too-many-arguments
+    def flash(self, build, target_id=None, method=MSD_METHOD, no_reset=None,
+              pyocd_platform=None, pyocd_pack=None):
         """Flash (mbed) device
         :param build: string (file-path)
         :param target_id: target_id
         :param method: method for flashing i.e. simple
         :param no_reset: whether to reset the board after flash
+        :param pyocd_platform: target platform to pyocd
+        :param pyocd_pack: pack file path to pyocd
         """
         if target_id is None:
             msg = "Target_id is missing"
@@ -64,12 +71,19 @@ class Flash(object):
         self.logger.debug("Flashing: %s", target_mbed["target_id"])
 
         try:
-            if FlasherPyOCD.can_flash(target_mbed):
-                retcode = FlasherPyOCD(logger=self.logger).flash(
-                    source=build, target=target_mbed, method=method, no_reset=no_reset)
+            if method == Flash.MSD_METHOD:
+                FlasherMbed(logger=self.logger).flash(
+                    source=build, target=target_mbed, no_reset=no_reset)
+            elif method == Flash.PYOCD_METHOD:
+                FlasherPyOCD(logger=self.logger).flash(
+                    source=build,
+                    target=target_mbed,
+                    no_reset=no_reset,
+                    platform=pyocd_platform,
+                    pack=pyocd_pack)
             else:
-                retcode = FlasherMbed(logger=self.logger).flash(
-                    source=build, target=target_mbed, method=method, no_reset=no_reset)
+                raise FlashError(message="Selected method {} not supported".format(method),
+                                 return_code=EXIT_CODE_MISUSE_CMD)
         except KeyboardInterrupt:
             raise FlashError(message="Aborted by user",
                              return_code=EXIT_CODE_KEYBOARD_INTERRUPT)
@@ -77,10 +91,6 @@ class Flash(object):
             raise FlashError(message="Aborted by SystemExit event",
                              return_code=EXIT_CODE_SYSTEM_INTERRUPT)
 
-        if retcode == EXIT_CODE_SUCCESS:
-            self.logger.info("%s flash success", target_mbed["target_id"])
-        else:
-            self.logger.warning("%s flash fails with code %d",
-                                target_mbed["target_id"], retcode)
+        self.logger.info("%s flash success", target_mbed["target_id"])
 
-        return retcode
+        return EXIT_CODE_SUCCESS

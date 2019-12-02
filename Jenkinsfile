@@ -122,6 +122,7 @@ def win_venv_installation() {
             c:\\Python36\\python.exe -m venv py3venv || goto :error
             echo "Activating venv"
             call py3venv\\Scripts\\activate.bat || goto :error
+            pip install pip -U
             pip install coverage mock || goto :error
             if %errorlevel% neq 0 exit /b %errorlevel%
             pip freeze

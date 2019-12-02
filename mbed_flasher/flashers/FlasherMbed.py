@@ -53,11 +53,10 @@ class FlasherMbed(object):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
 
     # pylint: disable=unused-argument
-    def flash(self, source, target, method, no_reset):
+    def flash(self, source, target, no_reset):
         """copy file to the destination
         :param source: binary to be flashed
         :param target: target to be flashed
-        :param method: method to use when flashing
         :param no_reset: do not reset flashed board at all
         """
         if not isinstance(source, six.string_types):

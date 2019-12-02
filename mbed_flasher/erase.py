@@ -36,12 +36,16 @@ class Erase(object):
         logger = Logger('mbed-flasher')
         self.logger = logger.logger
 
-    def erase(self, target_id=None, no_reset=None, method=None):
+    # pylint: disable=too-many-arguments
+    def erase(self, target_id=None, no_reset=None, method=None,
+              pyocd_platform=None, pyocd_pack=None):
         """
         Erase (mbed) device(s).
         :param target_id: target_id
         :param no_reset: erase with/without reset
-        :param method: method for erase i.e. simple
+        :param method: method for erase
+        :param pyocd_platform: target platform to pyocd
+        :param pyocd_pack: pack file path to pyocd
         """
         if target_id is None:
             raise EraseError(message="target_id is missing",
@@ -54,15 +58,13 @@ class Erase(object):
 
         self.logger.info("Erasing: %s", target_id)
 
-        if method == 'simple':
-            if FlasherPyOCD.can_erase(target_mbed):
-                erase_fnc = FlasherPyOCD(logger=self.logger).erase
-            else:
-                erase_fnc = FlasherMbed(logger=self.logger).erase
+        if method == 'msd':
+            FlasherMbed(logger=self.logger).erase(target=target_mbed, no_reset=no_reset)
+        elif method == 'pyocd':
+            FlasherPyOCD(logger=self.logger).erase(
+                target=target_mbed, no_reset=no_reset, platform=pyocd_platform, pack=pyocd_pack)
         else:
             raise EraseError(message="Selected method {} not supported".format(method),
                              return_code=EXIT_CODE_MISUSE_CMD)
-
-        erase_fnc(target=target_mbed, no_reset=no_reset)
 
         return EXIT_CODE_SUCCESS

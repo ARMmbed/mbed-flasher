@@ -64,7 +64,7 @@ class EraseTestCase(unittest.TestCase):
         refresh_target.return_value = device
         eraser = Erase()
         with self.assertRaises(EraseError) as cm:
-            eraser.erase(target_id="123", method='simple')
+            eraser.erase(target_id="123", method='msd')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_IMPLEMENTATION_MISSING)
 
@@ -79,7 +79,7 @@ class EraseTestCase(unittest.TestCase):
         refresh_target.return_value = device
         eraser = Erase()
         with self.assertRaises(EraseError) as cm:
-            eraser.erase(target_id="123", method='simple')
+            eraser.erase(target_id="123", method='msd')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_MOUNT_POINT_MISSING)
 
@@ -94,7 +94,7 @@ class EraseTestCase(unittest.TestCase):
         refresh_target.return_value = device
         eraser = Erase()
         with self.assertRaises(EraseError) as cm:
-            eraser.erase(target_id="123", method='simple')
+            eraser.erase(target_id="123", method="msd")
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_SERIAL_PORT_MISSING)
 

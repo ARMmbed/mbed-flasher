@@ -96,14 +96,17 @@ class FlashVerifyTestCase(unittest.TestCase):
                     serial_port = target['serial_port']
                     break
 
-        ret = flasher.flash(build=self.bin_path, target_id=target_id, method='simple')
+        ret = flasher.flash(
+            build=self.bin_path, target_id=target_id, method='pyocd', pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
-        ret = flasher.flash(build=self.second_bin_path, target_id=target_id, method='simple')
+        ret = flasher.flash(
+            build=self.second_bin_path, target_id=target_id, method='pyocd', pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if not verify_output_per_device(serial_port, 'help', 'echo'):
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-            ret = flasher.flash(build=self.bin_path, target_id=target_id, method='simple')
+            ret = flasher.flash(
+                build=self.bin_path, target_id=target_id, method='pyocd', pyocd_platform='k64f')
             self.assertEqual(ret, EXIT_CODE_SUCCESS)
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
@@ -120,22 +123,25 @@ class FlashVerifyTestCase(unittest.TestCase):
                     target_id = target['target_id']
                     serial_port = target['serial_port']
                     break
-        ret = flasher.flash(build=self.second_bin_path, target_id=target_id, method='simple')
+        ret = flasher.flash(
+            build=self.second_bin_path, target_id=target_id, method='pyocd', pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if not verify_output_per_device(serial_port, 'help', 'echo'):
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
 
         ret = flasher.flash(build=self.second_bin_path,
                             target_id=target_id,
-                            method='simple',
-                            no_reset=True)
+                            method='pyocd',
+                            no_reset=True,
+                            pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
         ret = resetter.reset(target_id=target_id, method='simple')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         if not verify_output_per_device(serial_port, 'help', 'echo'):
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), True)
-        ret = flasher.flash(build=self.bin_path, target_id=target_id, method='simple')
+        ret = flasher.flash(
+            build=self.bin_path, target_id=target_id, method='pyocd', pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 

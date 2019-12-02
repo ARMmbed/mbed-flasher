@@ -51,14 +51,23 @@ class ApiTests(unittest.TestCase):
         first_or_default = self.find_platform('K64F')
         filename = self.bin_hello_world
         target_id = first_or_default['target_id']
-        parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]
+        parameters = ['flash',
+                      '--no-reset',
+                      '-i', filename,
+                      '--tid', target_id,
+                      '--method', 'pyocd',
+                      '--pyocd_platform', 'k64f']
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
 
     def test_flash_success_with_reset(self):
         first_or_default = self.find_platform('K64F')
         filename = self.bin_hello_world
         target_id = first_or_default['target_id']
-        parameters = ['flash', '-i', filename, '--tid', target_id]
+        parameters = ['flash',
+                      '-i', filename,
+                      '--tid', target_id,
+                      '--method', 'pyocd',
+                      '--pyocd_platform', 'k64f']
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
 
     # PyOCD does not have verification for .bin files.
@@ -67,7 +76,14 @@ class ApiTests(unittest.TestCase):
         first_or_default = self.find_platform('K64F')
         filename = self.bin_corrupted
         target_id = first_or_default['target_id']
-        parameters = ['flash', '--no-reset', '-i', filename, '--tid', target_id]
+        parameters = [
+            'flash',
+            '--no-reset',
+            '-i', filename,
+            '--tid', target_id,
+            '--pyocd_platform', 'k64f',
+            '--method', 'pyocd'
+        ]
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_SUCCESS)
 
     # PyOCD is used to flash NUCLEO_F429ZI
@@ -75,5 +91,11 @@ class ApiTests(unittest.TestCase):
     def test_flash_user_error_pyocd(self):
         first_or_default = self.find_platform('NUCLEO_F429ZI')
         target_id = first_or_default['target_id']
-        parameters = ['flash', '--no-reset', '-i', self.nucleo_f429zi_invalid, '--tid', target_id]
+        parameters = [
+            'flash',
+            '--no-reset',
+            '-i', self.nucleo_f429zi_invalid,
+            '--tid', target_id,
+            '--method', 'pyocd',
+            '--pyocd_platform', 'stm32f429xi']
         self.assertEqual(ApiTests.spawn(parameters), EXIT_CODE_PYOCD_USER_ERROR)

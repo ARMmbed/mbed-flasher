@@ -142,10 +142,18 @@ class FlasherCLI(object):
         parser_flash.add_argument('--no-reset',
                                   help='Do not drive any external reset to the device',
                                   default=None, dest='no_reset', action='store_true')
-        parser_flash.add_argument('method', help='<simple>, used for flashing',
-                                  metavar='method',
-                                  choices=['simple'],
-                                  nargs='?')
+        parser_flash.add_argument('--method',
+                                  help='Select flash method to be used',
+                                  default=Flash.MSD_METHOD,
+                                  choices=[Flash.MSD_METHOD, Flash.PYOCD_METHOD])
+        parser_flash.add_argument('--pyocd_platform',
+                                  help='PyOCD target platform, only used with pyocd method',
+                                  default=None,
+                                  metavar='PYOCD_PLATFORM')
+        parser_flash.add_argument('--pyocd_pack',
+                                  help='PyOCD pack, only used with pyocd method',
+                                  default=None,
+                                  metavar='PYOCD_PACK')
         # Initialize reset command
         parser_reset = get_resource_subparser(subparsers, 'reset',
                                               func=self.subcmd_reset_handler,
@@ -153,11 +161,10 @@ class FlasherCLI(object):
         parser_reset.add_argument('--tid', '--target_id',
                                   help='Target to be reset',
                                   default=None, metavar='TARGET_ID')
-        parser_reset.add_argument('method',
+        parser_reset.add_argument('--method',
                                   help='<simple>, used for reset',
-                                  metavar='method',
-                                  choices=['simple'],
-                                  nargs='?')
+                                  default='simple',
+                                  choices=['simple'])
         # Initialize erase command
         parser_erase = get_resource_subparser(subparsers, 'erase',
                                               func=self.subcmd_erase_handler,
@@ -168,11 +175,18 @@ class FlasherCLI(object):
         parser_erase.add_argument('--no-reset',
                                   help='Do not reset device after erase',
                                   default=None, dest='no_reset', action='store_true')
-        parser_erase.add_argument('method',
-                                  help='<simple>, used for erase',
-                                  metavar='method',
-                                  choices=['simple'],
-                                  nargs='?')
+        parser_erase.add_argument('--method',
+                                  help='Select erase method to be used',
+                                  default=Flash.MSD_METHOD,
+                                  choices=[Flash.MSD_METHOD, Flash.PYOCD_METHOD])
+        parser_erase.add_argument('--pyocd_platform',
+                                  help='PyOCD target platform, only used with pyocd method',
+                                  default=None,
+                                  metavar='PYOCD_PLATFORM')
+        parser_erase.add_argument('--pyocd_pack',
+                                  help='PyOCD pack, only used with pyocd method',
+                                  default=None,
+                                  metavar='PYOCD_PACK')
 
         args = parser.parse_args(args=sysargs)
         if 'method' in args:
@@ -202,10 +216,13 @@ class FlasherCLI(object):
         flash command handler
         """
         flasher = Flash()
-        return flasher.flash(build=self.args.input,
-                             target_id=self.args.tid,
-                             method=self.args.method,
-                             no_reset=self.args.no_reset)
+        return flasher.flash(
+            build=self.args.input,
+            target_id=self.args.tid,
+            method=self.args.method,
+            no_reset=self.args.no_reset,
+            pyocd_platform=self.args.pyocd_platform,
+            pyocd_pack=self.args.pyocd_pack)
 
     def subcmd_reset_handler(self):
         """
@@ -220,7 +237,11 @@ class FlasherCLI(object):
         """
         eraser = Erase()
         return eraser.erase(
-            target_id=self.args.tid, no_reset=self.args.no_reset, method=self.args.method)
+            target_id=self.args.tid,
+            no_reset=self.args.no_reset,
+            method=self.args.method,
+            pyocd_platform=self.args.pyocd_platform,
+            pyocd_pack=self.args.pyocd_pack)
 
     @staticmethod
     def _get_version():

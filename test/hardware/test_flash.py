@@ -62,7 +62,7 @@ class FlashTestCaseHW(unittest.TestCase):
         mbeds = mbed_lstools.create()
         targets = mbeds.list_mbeds()
         with self.assertRaises(FlashError) as context:
-            flasher.flash(build='file.bin', target_id=targets[0], method='simple')
+            flasher.flash(build='file.bin', target_id=targets[0], method='msd')
 
         self.assertEqual(context.exception.return_code, EXIT_CODE_FILE_MISSING)
 
@@ -79,7 +79,8 @@ class FlashTestCaseHW(unittest.TestCase):
         flasher = Flash()
         ret = flasher.flash(build=self.bin_path,
                             target_id=target_id,
-                            method='simple')
+                            method='pyocd',
+                            pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
 
     @mock.patch('sys.stdout', new_callable=StringIO)
@@ -101,8 +102,7 @@ class FlashTestCaseHW(unittest.TestCase):
 
         with self.assertRaises(FlashError) as context:
             flasher = FlasherMbed()
-            flasher.flash(source=fail_txt_path, target=target_to_test,
-                          method='simple', no_reset=False)
+            flasher.flash(source=fail_txt_path, target=target_to_test, no_reset=False)
 
         if platform.system() == 'Windows':
             os.system('del %s' % os.path.join(mount_point, 'failing.txt'))
@@ -131,7 +131,11 @@ class FlashTestCaseHW(unittest.TestCase):
             new_file.write("0000000000000000000000000000000000")
 
         flasher = Flash()
-        return_code = flasher.flash(build=fail_bin_path, target_id=target_id, method='simple')
+        return_code = flasher.flash(
+            build=fail_bin_path,
+            target_id=target_id,
+            method='pyocd',
+            pyocd_platform='k64f')
         self.assertEqual(return_code, EXIT_CODE_SUCCESS)
 
     # NUCLEO_F429ZI is flashed with PyOCD
@@ -150,7 +154,11 @@ class FlashTestCaseHW(unittest.TestCase):
 
         with self.assertRaises(FlashError) as context:
             flasher = Flash()
-            flasher.flash(build=fail_bin_path, target_id=target_id)
+            flasher.flash(
+                build=fail_bin_path,
+                target_id=target_id,
+                method='pyocd',
+                pyocd_platform='stm32f429xi')
 
         self.assertEqual(context.exception.return_code, EXIT_CODE_PYOCD_USER_ERROR)
 

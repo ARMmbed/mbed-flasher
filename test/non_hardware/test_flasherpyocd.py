@@ -19,110 +19,17 @@ limitations under the License.
 # pylint:disable=invalid-name
 # pylint:disable=unused-argument
 import logging
-import os
 import unittest
 
 import mock
 from pyocd.core.helpers import ConnectHelper, Session
 from pyocd.flash.loader import FileProgrammer, FlashEraser
 
-from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD, PyOCDMap
+from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD
 from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
-from mbed_flasher.return_codes import EXIT_CODE_IMPLEMENTATION_MISSING
-
-
-class PyOCDTestCase(unittest.TestCase):
-    def test_is_supported(self):
-        self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
-        self.assertFalse(PyOCDMap.is_supported(''))
-        self.assertFalse(PyOCDMap.is_supported(None))
-        self.assertFalse(PyOCDMap.is_supported(1))
-
-    def test_platform(self):
-        self.assertEqual(PyOCDMap.platform('DISCO_L475VG_IOT01A'), 'stm32l475xg')
-        with self.assertRaises(KeyError):
-            PyOCDMap.platform('')
-
-    def test_pack(self):
-        self.assertEqual(PyOCDMap.pack('DISCO_L475VG_IOT01A'), None)
-        with self.assertRaises(FlashError) as cm:
-            PyOCDMap.pack('NUCLEO_L073RZ')
-        self.assertEqual(cm.exception.return_code, EXIT_CODE_IMPLEMENTATION_MISSING)
-
-        with self.assertRaises(KeyError):
-            PyOCDMap.pack('')
-
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
-    def test_pack_exists(self, mock_is_file, mock_get_pack_path):
-        # pylint:disable=protected-access
-        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
-        self.assertEqual(PyOCDMap.pack('NUCLEO_L073RZ'), expected_dir)
-
-    def test_disco_l475vg_iot01a(self):
-        self.assertTrue(PyOCDMap.is_supported('DISCO_L475VG_IOT01A'))
-        self.assertEqual(PyOCDMap.platform('DISCO_L475VG_IOT01A'), 'stm32l475xg')
-        self.assertEqual(PyOCDMap.pack('DISCO_L475VG_IOT01A'), None)
-
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
-    def test_nucleo_l073rz(self, mock_is_file, mock_get_pack_path):
-        # pylint:disable=protected-access
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_L073RZ'))
-        self.assertEqual(PyOCDMap.platform('NUCLEO_L073RZ'), 'stm32l073rz')
-        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32L0xx_DFP.2.0.1.pack')
-        self.assertEqual(PyOCDMap.pack('NUCLEO_L073RZ'), expected_dir)
-
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
-    def test_nucleo_f411re(self, mock_is_file, mock_get_pack_path):
-        # pylint:disable=protected-access
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F411RE'))
-        self.assertEqual(PyOCDMap.platform('NUCLEO_F411RE'), 'stm32f411re')
-        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F4xx_DFP.2.13.0.pack')
-        self.assertEqual(PyOCDMap.pack('NUCLEO_F411RE'), expected_dir)
-
-    def test_nucleo_f429zi(self):
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F429ZI'))
-        self.assertEqual(PyOCDMap.platform('NUCLEO_F429ZI'), 'stm32f429xi')
-        self.assertEqual(PyOCDMap.pack('NUCLEO_F429ZI'), None)
-
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.PyOCDMap._get_pack_path', return_value='hih')
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.path.isfile', return_value=True)
-    def test_nucleo_f303re(self, mock_is_file, mock_get_pack_path):
-        # pylint:disable=protected-access
-        self.assertTrue(PyOCDMap.is_supported('NUCLEO_F303RE'))
-        self.assertEqual(PyOCDMap.platform('NUCLEO_F303RE'), 'stm32f303re')
-        expected_dir = os.path.join(PyOCDMap._get_pack_path(), 'Keil.STM32F3xx_DFP.2.1.0.pack')
-        self.assertEqual(PyOCDMap.pack('NUCLEO_F303RE'), expected_dir)
-
-    def test_nrf52840_dk(self):
-        self.assertTrue(PyOCDMap.is_supported('NRF52840_DK'))
-        self.assertEqual(PyOCDMap.platform('NRF52840_DK'), 'nrf52840')
-        self.assertEqual(PyOCDMap.pack('NRF52840_DK'), None)
-
-    def test_cy8cproto_062_4343w(self):
-        self.assertTrue(PyOCDMap.is_supported('CY8CPROTO_062_4343W'))
-        self.assertEqual(PyOCDMap.platform('CY8CPROTO_062_4343W'), 'cy8c6xxA')
-        self.assertEqual(PyOCDMap.pack('CY8CPROTO_062_4343W'), None)
-
-    def test_k64f(self):
-        self.assertTrue(PyOCDMap.is_supported('K64F'))
-        self.assertEqual(PyOCDMap.platform('K64F'), 'k64f')
-        self.assertEqual(PyOCDMap.pack('K64F'), None)
-
-    def test_cy8cproto_064_sb(self):
-        self.assertTrue(PyOCDMap.is_supported('CY8CPROTO_064_SB'))
-        self.assertEqual(PyOCDMap.platform('CY8CPROTO_064_SB'), 'cy8c64xx_cm4')
-        self.assertEqual(PyOCDMap.pack('CY8CPROTO_064_SB'), None)
-
-    def test_k66f(self):
-        self.assertTrue(PyOCDMap.is_supported('K66F'))
-        self.assertEqual(PyOCDMap.platform('K66F'), 'k66f18')
-        self.assertEqual(PyOCDMap.pack('K66F'), None)
 
 
 class FlasherPyOCDTestCase(unittest.TestCase):
@@ -131,62 +38,23 @@ class FlasherPyOCDTestCase(unittest.TestCase):
 
     def test_is_ok(self):
         FlasherPyOCD()
-        self.assertTrue(hasattr(FlasherPyOCD, 'can_flash'))
-        self.assertTrue(hasattr(FlasherPyOCD, 'can_erase'))
         self.assertTrue(hasattr(FlasherPyOCD, 'flash'))
         self.assertTrue(hasattr(FlasherPyOCD, 'erase'))
         self.assertTrue(hasattr(FlasherPyOCD, '_get_session'))
-
-    def test_can_flash_does_not_care_about_extension(self):
-        target = {'platform_name': 'DISCO_L475VG_IOT01A'}
-        self.assertTrue(FlasherPyOCD.can_flash(target))
-        self.assertTrue(FlasherPyOCD.can_flash(target))
-        self.assertTrue(FlasherPyOCD.can_flash(target))
-        self.assertTrue(FlasherPyOCD.can_flash(target))
-
-    def test_can_flash_allows_only_supported_platforms(self):
-        target = {'platform_name': 'DISCO_L475VG_IOT01A'}
-        self.assertTrue(FlasherPyOCD.can_flash(target))
-        target = {'platform_name': 'NUCLEO_L073RZ'}
-        self.assertTrue(FlasherPyOCD.can_flash(target))
-        target = {'platform_name': 'DRAG-AND-DROP-PLATFORM'}
-        self.assertFalse(FlasherPyOCD.can_flash(target))
-        target = {'platform_name': ''}
-        self.assertFalse(FlasherPyOCD.can_flash(target))
-        target = {'platform_name': None}
-        self.assertFalse(FlasherPyOCD.can_flash(target))
-        target = {}
-        with self.assertRaises(KeyError):
-            FlasherPyOCD.can_flash(target)
-
-    def test_can_erase_allows_only_supported_platforms(self):
-        target = {'platform_name': 'DISCO_L475VG_IOT01A'}
-        self.assertTrue(FlasherPyOCD.can_erase(target))
-        target = {'platform_name': 'NUCLEO_L073RZ'}
-        self.assertTrue(FlasherPyOCD.can_erase(target))
-        target = {'platform_name': 'DRAG-AND-DROP-PLATFORM'}
-        self.assertFalse(FlasherPyOCD.can_erase(target))
-        target = {'platform_name': ''}
-        self.assertFalse(FlasherPyOCD.can_erase(target))
-        target = {'platform_name': None}
-        self.assertFalse(FlasherPyOCD.can_erase(target))
-        target = {}
-        with self.assertRaises(KeyError):
-            FlasherPyOCD.can_erase(target)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.ConnectHelper', autospec=ConnectHelper)
     def test_flash_session_init_fails(self, mock_connect_helper):
         target = {'target_id_usb_id': '', 'platform_name': 'DISCO_L475VG_IOT01A'}
         mock_connect_helper.session_with_chosen_probe.return_value = None
         with self.assertRaises(FlashError) as cm:
-            FlasherPyOCD().flash('', target, '', True)
+            FlasherPyOCD().flash('', target, True, 'stm32l475xg', '')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer', autospec=FileProgrammer)
     def test_flash_returns_zero_on_success(self, mock_file_programmer, mock_get_session):
-        return_value = FlasherPyOCD().flash('test_source', '', '', True)
+        return_value = FlasherPyOCD().flash('test_source', '', True, '', '')
 
         self.assertEqual(return_value, 0)
         self.assertEqual(mock_file_programmer.call_args[1], {'chip_erase': 'sector'})
@@ -195,18 +63,33 @@ class FlasherPyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer', autospec=FileProgrammer)
     def test_flash_no_reset_parameter_is_respected(self, mock_file_programmer, mock_get_session):
-        FlasherPyOCD().flash('', '', '', True)
+        FlasherPyOCD().flash('', '', True, '', '')
         self.assertEqual(mock_get_session.call_count, 1)
 
-        FlasherPyOCD().flash('', '', '', False)
+        FlasherPyOCD().flash('', '', False, '', '')
         self.assertEqual(mock_get_session.call_count, 2)
         self.assertEqual(str(mock_get_session.method_calls[0]), 'call().target.reset()')
+
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.ConnectHelper', autospec=ConnectHelper)
+    def test_flash_session_is_opened_with_correct_params(self, mock_connect_helper):
+        mock_connect_helper.session_with_chosen_probe.return_value = None
+        target = {'target_id_usb_id': 'test_id'}
+        with self.assertRaises(FlashError):
+            FlasherPyOCD().flash('', target, True, 'k64f', 'test_pack')
+        mock_connect_helper.session_with_chosen_probe.assert_called_with(
+            blocking=False,
+            halt_on_connect=True,
+            hide_programming_progress=True,
+            pack='test_pack',
+            resume_on_disconnect=False,
+            target_override='k64f',
+            unique_id='test_id')
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=ValueError)
     def test_flash_argument_error_leads_to_user_error(self, mock_file_programmer, mock_get_session):
         with self.assertRaises(FlashError) as cm:
-            FlasherPyOCD().flash('', '', '', True)
+            FlasherPyOCD().flash('', '', True, '', '')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_USER_ERROR)
 
@@ -214,7 +97,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=TypeError)
     def test_flash_handles_all_exceptions(self, mock_file_programmer, mock_get_session):
         with self.assertRaises(FlashError) as cm:
-            FlasherPyOCD().flash('', '', '', True)
+            FlasherPyOCD().flash('', '', True, '', '')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
@@ -223,14 +106,14 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         target = {'target_id_usb_id': '', 'platform_name': 'DISCO_L475VG_IOT01A'}
         mock_connect_helper.session_with_chosen_probe.return_value = None
         with self.assertRaises(EraseError) as cm:
-            FlasherPyOCD().erase(target, True)
+            FlasherPyOCD().erase(target, True, 'stm32l475xg', '')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser', autospec=FlashEraser)
     def test_erase_returns_zero_on_success(self, mock_flash_eraser, mock_get_session):
-        return_value = FlasherPyOCD().erase('', True)
+        return_value = FlasherPyOCD().erase('', True, '', '')
 
         self.assertEqual(return_value, 0)
         self.assertEqual(mock_flash_eraser.call_args[0][1], mock_flash_eraser.Mode.CHIP)
@@ -238,18 +121,33 @@ class FlasherPyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser', autospec=FlashEraser)
     def test_erase_no_reset_parameter_is_respected(self, mock_file_programmer, mock_get_session):
-        FlasherPyOCD().erase('', True)
+        FlasherPyOCD().erase('', True, '', '')
         self.assertEqual(mock_get_session.call_count, 1)
 
-        FlasherPyOCD().erase('', False)
+        FlasherPyOCD().erase('', False, '', '')
         self.assertEqual(mock_get_session.call_count, 2)
         self.assertEqual(str(mock_get_session.method_calls[0]), 'call().target.reset()')
+
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.ConnectHelper', autospec=ConnectHelper)
+    def test_erase_session_is_opened_with_correct_params(self, mock_connect_helper):
+        mock_connect_helper.session_with_chosen_probe.return_value = None
+        target = {'target_id_usb_id': 'test_id'}
+        with self.assertRaises(FlashError):
+            FlasherPyOCD().erase(target, True, 'k64f', 'test_pack')
+        mock_connect_helper.session_with_chosen_probe.assert_called_with(
+            blocking=False,
+            halt_on_connect=True,
+            hide_programming_progress=True,
+            pack='test_pack',
+            resume_on_disconnect=False,
+            target_override='k64f',
+            unique_id='test_id')
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser.erase', side_effect=ValueError)
     def test_erase_handles_all_exceptions(self, mock_flash_eraser, mock_get_session):
         with self.assertRaises(EraseError) as cm:
-            FlasherPyOCD().erase('', True)
+            FlasherPyOCD().erase('', True, '', '')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
