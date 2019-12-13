@@ -19,7 +19,7 @@ limitations under the License.
 
 from mbed_flasher.common import Logger, EraseError
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
-from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD
+from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD, ConnectMode
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE
@@ -38,7 +38,8 @@ class Erase(object):
 
     # pylint: disable=too-many-arguments
     def erase(self, target_id=None, no_reset=None, method=None,
-              pyocd_platform=None, pyocd_pack=None):
+              pyocd_platform=None, pyocd_pack=None,
+              pyocd_connect_mode=ConnectMode.UNDER_RESET.value):
         """
         Erase (mbed) device(s).
         :param target_id: target_id
@@ -46,6 +47,7 @@ class Erase(object):
         :param method: method for erase
         :param pyocd_platform: target platform to pyocd
         :param pyocd_pack: pack file path to pyocd
+        :param pyocd_connect_mode: connect_mode used with pyocd
         """
         if target_id is None:
             raise EraseError(message="target_id is missing",
@@ -62,7 +64,11 @@ class Erase(object):
             FlasherMbed(logger=self.logger).erase(target=target_mbed, no_reset=no_reset)
         elif method == 'pyocd':
             FlasherPyOCD(logger=self.logger).erase(
-                target=target_mbed, no_reset=no_reset, platform=pyocd_platform, pack=pyocd_pack)
+                target=target_mbed,
+                no_reset=no_reset,
+                platform=pyocd_platform,
+                pack=pyocd_pack,
+                connect_mode=pyocd_connect_mode)
         else:
             raise EraseError(message="Selected method {} not supported".format(method),
                              return_code=EXIT_CODE_MISUSE_CMD)

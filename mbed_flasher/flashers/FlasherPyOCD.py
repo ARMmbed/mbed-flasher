@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from enum import Enum
 import logging
 import traceback
 
@@ -28,6 +29,16 @@ from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION
 
 
+class ConnectMode(Enum):
+    """
+    Options for pyocd session connect_mode parameter.
+    """
+    HALT = "halt"
+    PRE_RESET = "pre-reset"
+    UNDER_RESET = "under-reset"
+    ATTACH = "attach"
+
+
 class FlasherPyOCD(object):
     """
     Flash and erase board using PyOCD.
@@ -38,18 +49,19 @@ class FlasherPyOCD(object):
         self.logger = logger if logger else logging.getLogger('mbed-flasher')
 
     # pylint: disable=too-many-arguments
-    def flash(self, source, target, no_reset, platform, pack):
+    def flash(self, source, target, no_reset, platform, pack, connect_mode):
         """Flash target using pyOCD
         :param source: binary to be flashed
         :param target: mbedls given target dictionary
         :param no_reset: do not reset flashed board at all
         :param platform: target platform
         :param pack: path of pack file
+        :param connect_mode: mode used when connecting
         :return: 0 if success otherwise raises
         """
         self.logger.debug('Flashing with pyOCD')
         try:
-            session = self._get_session(target, platform, pack, FlashError)
+            session = self._get_session(target, platform, pack, connect_mode, FlashError)
             with session:
                 file_programmer = FileProgrammer(session, chip_erase="sector")
                 file_programmer.program(source)
@@ -75,17 +87,18 @@ class FlasherPyOCD(object):
 
         return EXIT_CODE_SUCCESS
 
-    def erase(self, target, no_reset, platform, pack):
+    def erase(self, target, no_reset, platform, pack, connect_mode):
         """Erase target using pyOCD
         :param target: mbedls given target dictionary
         :param no_reset: do not reset flashed board at all
         :param platform: target platform
         :param pack: path of pack file
+        :param connect_mode: mode used when connecting
         :return: 0 if success otherwise raises
         """
         self.logger.debug('Erasing with pyOCD')
         try:
-            session = self._get_session(target, platform, pack, EraseError)
+            session = self._get_session(target, platform, pack, connect_mode, EraseError)
             with session:
                 flash_eraser = FlashEraser(session, FlashEraser.Mode.CHIP)
                 flash_eraser.erase()
@@ -103,23 +116,26 @@ class FlasherPyOCD(object):
 
         return EXIT_CODE_SUCCESS
 
-    def _get_session(self, target, platform, pack, error_class):
+    def _get_session(self, target, platform, pack, connect_mode, error_class):
         """
         Internal method for acquiring pyOCD session
         :param target: mbedls given target dictionary
         :param platform: target platform
         :param pack: path of pack file
+        :param connect_mode: mode used when connecting, one of
+        halt, pre-reset, under-reset, attach
         :param error_class: error to be risen on failure
         :return: Session on success, raises AssertionError or error_class on failure
         """
         assert isinstance(platform, str)
         assert isinstance(pack, str) or pack is None
+        assert isinstance(connect_mode, str)
 
         session = ConnectHelper.session_with_chosen_probe(
             unique_id=target['target_id_usb_id'],
             blocking=False,
             target_override=platform,
-            halt_on_connect=True,
+            connect_mode=connect_mode,
             resume_on_disconnect=False,
             hide_programming_progress=True,
             pack=pack)

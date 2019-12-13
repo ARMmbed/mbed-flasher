@@ -23,6 +23,7 @@ import logging
 import logging.handlers
 
 from mbed_flasher.common import FlashError, EraseError, ResetError
+from mbed_flasher.flashers.FlasherPyOCD import ConnectMode
 from mbed_flasher.flash import Flash
 from mbed_flasher.erase import Erase
 from mbed_flasher.reset import Reset
@@ -154,6 +155,14 @@ class FlasherCLI(object):
                                   help='PyOCD pack, only used with pyocd method',
                                   default=None,
                                   metavar='PYOCD_PACK')
+        parser_flash.add_argument('--pyocd_connect_mode',
+                                  help='PyOCD connect mode, only used with pyocd method',
+                                  default=ConnectMode.UNDER_RESET.value,
+                                  choices=[ConnectMode.HALT.value,
+                                           ConnectMode.PRE_RESET.value,
+                                           ConnectMode.UNDER_RESET.value,
+                                           ConnectMode.ATTACH.value],
+                                  metavar='PYOCD_CONNECT_MODE')
         # Initialize reset command
         parser_reset = get_resource_subparser(subparsers, 'reset',
                                               func=self.subcmd_reset_handler,
@@ -187,6 +196,14 @@ class FlasherCLI(object):
                                   help='PyOCD pack, only used with pyocd method',
                                   default=None,
                                   metavar='PYOCD_PACK')
+        parser_erase.add_argument('--pyocd_connect_mode',
+                                  help='PyOCD connect mode, only used with pyocd method.',
+                                  default=ConnectMode.UNDER_RESET.value,
+                                  choices=[ConnectMode.HALT.value,
+                                           ConnectMode.PRE_RESET.value,
+                                           ConnectMode.UNDER_RESET.value,
+                                           ConnectMode.ATTACH.value],
+                                  metavar='PYOCD_CONNECT_MODE')
 
         args = parser.parse_args(args=sysargs)
         if 'method' in args:
@@ -222,7 +239,8 @@ class FlasherCLI(object):
             method=self.args.method,
             no_reset=self.args.no_reset,
             pyocd_platform=self.args.pyocd_platform,
-            pyocd_pack=self.args.pyocd_pack)
+            pyocd_pack=self.args.pyocd_pack,
+            pyocd_connect_mode=self.args.pyocd_connect_mode)
 
     def subcmd_reset_handler(self):
         """

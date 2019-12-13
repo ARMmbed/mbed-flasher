@@ -47,57 +47,70 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         target = {'target_id_usb_id': '', 'platform_name': 'DISCO_L475VG_IOT01A'}
         mock_connect_helper.session_with_chosen_probe.return_value = None
         with self.assertRaises(FlashError) as cm:
-            FlasherPyOCD().flash('', target, True, 'stm32l475xg', '')
+            FlasherPyOCD().flash('', target, True, 'stm32l475xg', '', 'halt')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer', autospec=FileProgrammer)
     def test_flash_returns_zero_on_success(self, mock_file_programmer, mock_get_session):
-        return_value = FlasherPyOCD().flash('test_source', '', True, '', '')
+        return_value = FlasherPyOCD().flash('test_source', '', True, '', '', None)
 
         self.assertEqual(return_value, 0)
         self.assertEqual(mock_file_programmer.call_args[1], {'chip_erase': 'sector'})
         self.assertEqual(mock_file_programmer.method_calls[0][1], ('test_source',))
 
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer', autospec=FileProgrammer)
     def test_flash_no_reset_parameter_is_respected(self, mock_file_programmer, mock_get_session):
-        FlasherPyOCD().flash('', '', True, '', '')
-        self.assertEqual(mock_get_session.call_count, 1)
+        class Target:
+            def __init__(self):
+                self.index = 0
 
-        FlasherPyOCD().flash('', '', False, '', '')
+            def reset(self):
+                self.index += 1
+
+        t = Target()
+        m = mock.MagicMock()
+        mock_get_session.return_value = m
+        type(m).target = mock.PropertyMock(return_value=t)
+
+        FlasherPyOCD().flash('', '', True, '', '', None)
+        self.assertEqual(mock_get_session.call_count, 1)
+        self.assertEqual(t.index, 0)
+
+        FlasherPyOCD().flash('', '', False, '', '', None)
         self.assertEqual(mock_get_session.call_count, 2)
-        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().target.reset()')
+        self.assertEqual(t.index, 1)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.ConnectHelper', autospec=ConnectHelper)
     def test_flash_session_is_opened_with_correct_params(self, mock_connect_helper):
         mock_connect_helper.session_with_chosen_probe.return_value = None
         target = {'target_id_usb_id': 'test_id'}
         with self.assertRaises(FlashError):
-            FlasherPyOCD().flash('', target, True, 'k64f', 'test_pack')
+            FlasherPyOCD().flash('', target, True, 'k64f', 'test_pack', 'halt')
         mock_connect_helper.session_with_chosen_probe.assert_called_with(
             blocking=False,
-            halt_on_connect=True,
+            connect_mode='halt',
             hide_programming_progress=True,
             pack='test_pack',
             resume_on_disconnect=False,
             target_override='k64f',
             unique_id='test_id')
 
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=ValueError)
-    def test_flash_argument_error_leads_to_user_error(self, mock_file_programmer, mock_get_session):
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session',
+                side_effect=ValueError)
+    def test_flash_argument_error_leads_to_user_error(self, mock_get_session):
         with self.assertRaises(FlashError) as cm:
-            FlasherPyOCD().flash('', '', True, '', '')
+            FlasherPyOCD().flash('', '', True, '', '', None)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_USER_ERROR)
 
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FileProgrammer.program', side_effect=TypeError)
-    def test_flash_handles_all_exceptions(self, mock_file_programmer, mock_get_session):
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session',
+                side_effect=TypeError)
+    def test_flash_handles_all_exceptions(self, mock_get_session):
         with self.assertRaises(FlashError) as cm:
-            FlasherPyOCD().flash('', '', True, '', '')
+            FlasherPyOCD().flash('', '', True, '', '', None)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 
@@ -106,37 +119,49 @@ class FlasherPyOCDTestCase(unittest.TestCase):
         target = {'target_id_usb_id': '', 'platform_name': 'DISCO_L475VG_IOT01A'}
         mock_connect_helper.session_with_chosen_probe.return_value = None
         with self.assertRaises(EraseError) as cm:
-            FlasherPyOCD().erase(target, True, 'stm32l475xg', '')
+            FlasherPyOCD().erase(target, True, 'stm32l475xg', '', 'halt')
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE)
 
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser', autospec=FlashEraser)
     def test_erase_returns_zero_on_success(self, mock_flash_eraser, mock_get_session):
-        return_value = FlasherPyOCD().erase('', True, '', '')
+        return_value = FlasherPyOCD().erase('', True, '', '', None)
 
         self.assertEqual(return_value, 0)
         self.assertEqual(mock_flash_eraser.call_args[0][1], mock_flash_eraser.Mode.CHIP)
 
-    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session', autospec=Session)
+    @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlasherPyOCD._get_session')
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser', autospec=FlashEraser)
     def test_erase_no_reset_parameter_is_respected(self, mock_file_programmer, mock_get_session):
-        FlasherPyOCD().erase('', True, '', '')
-        self.assertEqual(mock_get_session.call_count, 1)
+        class Target:
+            def __init__(self):
+                self.index = 0
 
-        FlasherPyOCD().erase('', False, '', '')
+            def reset(self):
+                self.index += 1
+
+        t = Target()
+        m = mock.MagicMock()
+        mock_get_session.return_value = m
+        type(m).target = mock.PropertyMock(return_value=t)
+        FlasherPyOCD().erase('', True, '', '', None)
+        self.assertEqual(mock_get_session.call_count, 1)
+        self.assertEqual(t.index, 0)
+
+        FlasherPyOCD().erase('', False, '', '', None)
         self.assertEqual(mock_get_session.call_count, 2)
-        self.assertEqual(str(mock_get_session.method_calls[0]), 'call().target.reset()')
+        self.assertEqual(t.index, 1)
 
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.ConnectHelper', autospec=ConnectHelper)
     def test_erase_session_is_opened_with_correct_params(self, mock_connect_helper):
         mock_connect_helper.session_with_chosen_probe.return_value = None
         target = {'target_id_usb_id': 'test_id'}
         with self.assertRaises(FlashError):
-            FlasherPyOCD().erase(target, True, 'k64f', 'test_pack')
+            FlasherPyOCD().erase(target, True, 'k64f', 'test_pack', 'under-reset')
         mock_connect_helper.session_with_chosen_probe.assert_called_with(
             blocking=False,
-            halt_on_connect=True,
+            connect_mode='under-reset',
             hide_programming_progress=True,
             pack='test_pack',
             resume_on_disconnect=False,
@@ -147,7 +172,7 @@ class FlasherPyOCDTestCase(unittest.TestCase):
     @mock.patch('mbed_flasher.flashers.FlasherPyOCD.FlashEraser.erase', side_effect=ValueError)
     def test_erase_handles_all_exceptions(self, mock_flash_eraser, mock_get_session):
         with self.assertRaises(EraseError) as cm:
-            FlasherPyOCD().erase('', True, '', '')
+            FlasherPyOCD().erase('', True, '', '', None)
 
         self.assertEqual(cm.exception.return_code, EXIT_CODE_PYOCD_UNHANDLED_EXCEPTION)
 

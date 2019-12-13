@@ -17,7 +17,7 @@ limitations under the License.
 from mbed_flasher.common import Logger, FlashError,\
     check_file, check_file_exists, check_file_extension
 from mbed_flasher.flashers.FlasherMbed import FlasherMbed
-from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD
+from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD, ConnectMode
 from mbed_flasher.mbed_common import MbedCommon
 from mbed_flasher.return_codes import EXIT_CODE_TARGET_ID_MISSING
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
@@ -45,7 +45,8 @@ class Flash(object):
 
     # pylint: disable=too-many-arguments
     def flash(self, build, target_id=None, method=MSD_METHOD, no_reset=None,
-              pyocd_platform=None, pyocd_pack=None):
+              pyocd_platform=None, pyocd_pack=None,
+              pyocd_connect_mode=ConnectMode.UNDER_RESET.value):
         """Flash (mbed) device
         :param build: string (file-path)
         :param target_id: target_id
@@ -53,6 +54,7 @@ class Flash(object):
         :param no_reset: whether to reset the board after flash
         :param pyocd_platform: target platform to pyocd
         :param pyocd_pack: pack file path to pyocd
+        :param pyocd_connect_mode: connect_mode used with pyocd
         """
         if target_id is None:
             msg = "Target_id is missing"
@@ -80,7 +82,8 @@ class Flash(object):
                     target=target_mbed,
                     no_reset=no_reset,
                     platform=pyocd_platform,
-                    pack=pyocd_pack)
+                    pack=pyocd_pack,
+                    connect_mode=pyocd_connect_mode)
             else:
                 raise FlashError(message="Selected method {} not supported".format(method),
                                  return_code=EXIT_CODE_MISUSE_CMD)
