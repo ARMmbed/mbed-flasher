@@ -20,7 +20,8 @@ import traceback
 
 from intelhex import IntelHexError
 from pyocd.core.helpers import ConnectHelper
-from pyocd.flash.loader import FileProgrammer, FlashEraser
+from pyocd.flash.file_programmer import FileProgrammer
+from pyocd.flash.eraser import FlashEraser
 
 from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.return_codes import EXIT_CODE_COULD_NOT_MAP_TARGET_ID_TO_DEVICE

@@ -23,7 +23,8 @@ import unittest
 
 import mock
 from pyocd.core.helpers import ConnectHelper, Session
-from pyocd.flash.loader import FileProgrammer, FlashEraser
+from pyocd.flash.file_programmer import FileProgrammer
+from pyocd.flash.eraser import FlashEraser
 
 from mbed_flasher.flashers.FlasherPyOCD import FlasherPyOCD
 from mbed_flasher.common import FlashError, EraseError
