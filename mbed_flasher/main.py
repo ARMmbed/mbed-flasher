@@ -259,7 +259,8 @@ class FlasherCLI(object):
             no_reset=self.args.no_reset,
             method=self.args.method,
             pyocd_platform=self.args.pyocd_platform,
-            pyocd_pack=self.args.pyocd_pack)
+            pyocd_pack=self.args.pyocd_pack,
+            pyocd_connect_mode=self.args.pyocd_connect_mode)
 
     @staticmethod
     def _get_version():
