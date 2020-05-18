@@ -21,6 +21,7 @@ import sys
 import argparse
 import logging
 import logging.handlers
+import traceback
 
 from mbed_flasher.common import FlashError, EraseError, ResetError
 from mbed_flasher.flashers.FlasherPyOCD import ConnectMode
@@ -295,6 +296,7 @@ def mbedflash_main():
         exit(error.return_code)
     except Exception as error:
         cli.logger.error("Failed with unknown reason: %s", str(error))
+        cli.logger.error(traceback.format_exc())
         exit(EXIT_CODE_UNHANDLED_EXCEPTION)
 
 
