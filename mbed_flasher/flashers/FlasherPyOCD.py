@@ -132,14 +132,26 @@ class FlasherPyOCD(object):
         assert isinstance(pack, str) or pack is None
         assert isinstance(connect_mode, str)
 
-        session = ConnectHelper.session_with_chosen_probe(
-            unique_id=target['target_id_usb_id'],
-            blocking=False,
-            target_override=platform,
-            connect_mode=connect_mode,
-            resume_on_disconnect=False,
-            hide_programming_progress=True,
-            pack=pack)
+        if target["platform_name"] == "MIMXRT1050_EVK_QSPI":
+            self.logger.info("platform is MIMXRT1050_EVK_QSPI, disable smart_flash")
+            session = ConnectHelper.session_with_chosen_probe(
+                unique_id=target['target_id_usb_id'],
+                blocking=False,
+                target_override=platform,
+                connect_mode=connect_mode,
+                resume_on_disconnect=False,
+                hide_programming_progress=True,
+                pack=pack,
+                smart_flash=False)
+        else:
+            session = ConnectHelper.session_with_chosen_probe(
+                unique_id=target['target_id_usb_id'],
+                blocking=False,
+                target_override=platform,
+                connect_mode=connect_mode,
+                resume_on_disconnect=False,
+                hide_programming_progress=True,
+                pack=pack)
 
         if session is None:
             msg = "Did not find pyOCD target: {}".format(target["target_id_usb_id"])
