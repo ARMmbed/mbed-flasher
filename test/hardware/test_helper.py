@@ -17,7 +17,7 @@ limitations under the License.
 import os
 import platform
 
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 import serial
 
 
@@ -66,7 +66,7 @@ class Helper(object):
         """
         Return targets matching passed platform name
         """
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         selected_targets = []
 
@@ -82,7 +82,7 @@ class Helper(object):
         """
          :return: list of mbeds with details.txt content
         """
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         return mbeds.list_mbeds(read_details_txt=True)
 
     @staticmethod

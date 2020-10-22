@@ -24,7 +24,7 @@ from test.hardware.test_helper import Helper
 
 import serial
 import six
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 
 from mbed_flasher.flash import Flash
 from mbed_flasher.reset import Reset
@@ -63,7 +63,7 @@ def verify_output_per_device(serial_port, command, output):
 
 # this is not a const
 # pylint: disable=invalid-name
-mbed = mbed_lstools.create()
+mbed = create_board_detect()
 
 
 class FlashVerifyTestCase(unittest.TestCase):
@@ -84,7 +84,7 @@ class FlashVerifyTestCase(unittest.TestCase):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_verify_hw_flash(self):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         flasher = Flash()
         target_id = None
@@ -111,7 +111,7 @@ class FlashVerifyTestCase(unittest.TestCase):
             self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
 
     def test_verify_hw_flash_no_reset(self):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         flasher = Flash()
         resetter = Reset()
@@ -144,6 +144,7 @@ class FlashVerifyTestCase(unittest.TestCase):
             build=self.bin_path, target_id=target_id, method='pyocd', pyocd_platform='k64f')
         self.assertEqual(ret, EXIT_CODE_SUCCESS)
         self.assertEqual(verify_output_per_device(serial_port, 'help', 'echo'), False)
+
 
 if __name__ == '__main__':
     unittest.main()

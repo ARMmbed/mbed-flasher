@@ -17,7 +17,7 @@ limitations under the License.
 import os
 import time
 
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 
 
 CHECK_BINARY_DISAPPEAR_RETRIES = 60
@@ -49,7 +49,7 @@ class MbedCommon(object):
         :param target_id: target_id to be searched for
         :return: list of targets
         """
-        mbedls = mbed_lstools.create()
+        mbedls = create_board_detect()
         return mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)
 
     @staticmethod
@@ -59,7 +59,7 @@ class MbedCommon(object):
         :param target_id: target_id to be searched for
         :return: target or None
         """
-        mbedls = mbed_lstools.create()
+        mbedls = create_board_detect()
 
         for _ in range(REFRESH_TARGET_RETRIES):
             mbeds = mbedls.list_mbeds(filter_function=lambda m: m["target_id"] == target_id)

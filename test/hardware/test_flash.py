@@ -31,7 +31,7 @@ except ImportError:
 import platform
 
 import mock
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 
 from mbed_flasher.common import FlashError
 from mbed_flasher.flash import Flash
@@ -45,7 +45,7 @@ from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 class FlashTestCaseHW(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
-    mbeds = mbed_lstools.create()
+    mbeds = create_board_detect()
     bin_path = os.path.join('test', 'helloworld.bin')
 
     def setUp(self):
@@ -59,7 +59,7 @@ class FlashTestCaseHW(unittest.TestCase):
 
     def test_run_file_does_not_exist(self):
         flasher = Flash()
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         with self.assertRaises(FlashError) as context:
             flasher.flash(build='file.bin', target_id=targets[0], method='msd')
@@ -67,7 +67,7 @@ class FlashTestCaseHW(unittest.TestCase):
         self.assertEqual(context.exception.return_code, EXIT_CODE_FILE_MISSING)
 
     def test_hw_flash(self):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         target_id = None
         for target in targets:
@@ -85,7 +85,7 @@ class FlashTestCaseHW(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_fail_file(self, mock_stdout):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         mount_point = None
         target_to_test = None
@@ -117,7 +117,7 @@ class FlashTestCaseHW(unittest.TestCase):
     # Success is expected as K64F moves to PyOCD.
     @mock.patch('sys.stdout', new_callable=StringIO)
     def test_run_fail_binary(self, mock_stdout):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         target_id = None
         fail_bin_path = os.path.join('test', 'fail.bin')
@@ -142,7 +142,7 @@ class FlashTestCaseHW(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=StringIO)
     @unittest.skipIf(platform.system() != 'Linux', 'require linux')
     def test_run_fail_binary_pyocd(self, mock_stdout):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         targets = mbeds.list_mbeds()
         target_id = None
         fail_bin_path = os.path.join('test', 'corrupt_app_NUCLEO_F429ZI.hex')

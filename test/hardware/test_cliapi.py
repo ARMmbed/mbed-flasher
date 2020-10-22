@@ -22,7 +22,7 @@ import subprocess
 import unittest
 
 from test.hardware.test_helper import Helper
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
@@ -30,7 +30,7 @@ from mbed_flasher.return_codes import EXIT_CODE_PYOCD_USER_ERROR
 
 class ApiTests(unittest.TestCase):
 
-    mbeds = mbed_lstools.create()
+    mbeds = create_board_detect()
 
     @staticmethod
     def spawn(parameters):

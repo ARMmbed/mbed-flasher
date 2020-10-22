@@ -19,7 +19,7 @@ limitations under the License.
 import logging
 import unittest
 from test.hardware.test_helper import Helper
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 from mbed_flasher.reset import Reset
 from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 
@@ -27,7 +27,7 @@ from mbed_flasher.return_codes import EXIT_CODE_SUCCESS
 class ResetTestCaseHW(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
-    mbeds = mbed_lstools.create()
+    mbeds = create_board_detect()
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
@@ -37,7 +37,7 @@ class ResetTestCaseHW(unittest.TestCase):
         Helper(platform_name='K64F', allowed_files=['DETAILS.TXT', 'MBED.HTM']).clear()
 
     def test_reset_with_target_id(self):
-        mbeds = mbed_lstools.create()
+        mbeds = create_board_detect()
         devices = mbeds.list_mbeds()
         resetter = Reset()
         ret = None

@@ -34,7 +34,7 @@ class MbedCommonTestCase(unittest.TestCase):
         self.assertEqual(
             result, os.path.abspath(os.path.join("/test/mount_point_0_1_0", "test.bin")))
 
-    @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
+    @mock.patch('mbed_flasher.mbed_common.create_board_detect')
     def test_refresh_target_returns_target(self, mock_mbed_lstools_create):
         # pylint:disable=too-few-public-methods
         class MockLS(object):
@@ -51,7 +51,7 @@ class MbedCommonTestCase(unittest.TestCase):
         self.assertEqual(target, MbedCommon.refresh_target(target["target_id"]))
 
     @mock.patch("time.sleep", return_value=None)
-    @mock.patch('mbed_flasher.mbed_common.mbed_lstools.create')
+    @mock.patch('mbed_flasher.mbed_common.create_board_detect')
     def test_refresh_target_returns_empty_list_when_no_devices(
             self, mock_mbed_lstools_create, mock_sleep):
         # pylint:disable=too-few-public-methods

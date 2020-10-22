@@ -26,7 +26,7 @@ except ImportError:
     # python 3 compatible import
     from io import StringIO
 import mock
-import mbed_lstools
+from mbed_os_tools.detect import create as create_board_detect
 
 from mbed_flasher.common import FlashError, EraseError
 from mbed_flasher.main import FlasherCLI
@@ -38,7 +38,7 @@ class MainTestCaseHW(unittest.TestCase):
     """ Basic true asserts to see that testing is executed
     """
 
-    mbeds = mbed_lstools.create()
+    mbeds = create_board_detect()
 
     def setUp(self):
         self.logging_patcher = mock.patch("mbed_flasher.main.logging")
